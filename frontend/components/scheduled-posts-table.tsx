@@ -73,6 +73,9 @@ export function ScheduledPostsTable({
                 <td>{formatDate(post.scheduled_at)}</td>
                 <td>
                   <span className={`status ${post.status}`}>{post.status}</span>
+                  <div className="helper-text" style={{ marginTop: 8 }}>
+                    {post.posted_at ? `Completed ${formatDate(post.posted_at)}` : "Awaiting execution"}
+                  </div>
                 </td>
                 <td>
                   {post.retry_count} / {post.max_retries}

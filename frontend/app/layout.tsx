@@ -1,11 +1,22 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { DM_Sans, Space_Grotesk } from "next/font/google";
 
 import "./globals.css";
 
+const bodyFont = DM_Sans({
+  subsets: ["latin"],
+  variable: "--font-body",
+});
+
+const displayFont = Space_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-display",
+});
+
 export const metadata: Metadata = {
-  title: "SocialSync",
-  description: "Simple dashboard for connected accounts, universal posting, and scheduling.",
+  title: "SnapKey CRM | Social Publishing",
+  description: "Social publishing module for SnapKey CRM.",
 };
 
 export default function RootLayout({
@@ -15,19 +26,19 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>
+      <body className={`${bodyFont.variable} ${displayFont.variable}`}>
         <div className="shell">
           <header className="topbar">
             <div className="brand">
-              <h1>SocialSync</h1>
+              <div className="brand-kicker">SnapKey CRM</div>
+              <h1>Social Publishing</h1>
               <p>
-                Connect platform accounts, compose once, and track scheduled posts
-                from one calm dashboard.
+                Connect channels, prepare campaign content, and monitor scheduled execution inside
+                the SnapKey operating workspace.
               </p>
             </div>
             <nav className="nav">
               <Link href="/">Dashboard</Link>
-              <Link href="/create-post">Create Post</Link>
               <Link href="/posts">Scheduled Posts</Link>
             </nav>
           </header>

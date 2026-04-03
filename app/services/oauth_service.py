@@ -1,8 +1,11 @@
 import requests
 from datetime import datetime, timedelta
+from app.core.logging import get_logger
 from app.core.security import encrypt_token
 from app.models.social_account import SocialAccount
-from app.db.database import SessionLocal
+from app.db.database import SessionLocal, reset_tenant_context, set_tenant_context
+
+logger = get_logger("app.oauth")
 
 
 def save_social_account(
@@ -15,6 +18,7 @@ def save_social_account(
     expires_in=None
 ):
     db = SessionLocal()
+    set_tenant_context(db, tenant_id)
 
     encrypted_access = encrypt_token(access_token)
     encrypted_refresh = encrypt_token(refresh_token) if refresh_token else None
@@ -36,5 +40,13 @@ def save_social_account(
     db.add(account)
     db.commit()
     db.refresh(account)
+    logger.info(
+        "oauth.account_saved tenant_id=%s platform=%s platform_account_id=%s",
+        tenant_id,
+        platform,
+        platform_account_id,
+    )
+    reset_tenant_context(db)
+    db.close()
 
     return account

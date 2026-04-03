@@ -17,7 +17,14 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
 
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(text || `Request failed with ${response.status}`);
+    try {
+      const parsed = JSON.parse(text) as { detail?: string; request_id?: string };
+      const detail = parsed.detail || `Request failed with ${response.status}`;
+      const requestId = parsed.request_id ? ` (Request ID: ${parsed.request_id})` : "";
+      throw new Error(`${detail}${requestId}`);
+    } catch {
+      throw new Error(text || `Request failed with ${response.status}`);
+    }
   }
 
   if (response.status === 204) {

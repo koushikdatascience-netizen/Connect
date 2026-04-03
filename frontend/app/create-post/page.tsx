@@ -1,9 +1,5 @@
-import { PostComposer } from "@/components/post-composer";
+import { redirect } from "next/navigation";
 
 export default function CreatePostPage() {
-  return (
-    <main>
-      <PostComposer />
-    </main>
-  );
+  redirect("/");
 }

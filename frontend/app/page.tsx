@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import { PlatformCards } from "@/components/platform-cards";
+import { PostComposerModal } from "@/components/post-composer-modal";
 import { fetchAccounts, fetchAccountStatus, getApiBaseUrl, getTenantId } from "@/lib/api";
 import { Account, AccountStatusResponse } from "@/lib/types";
 
@@ -19,6 +19,7 @@ export default function DashboardPage() {
   const [status, setStatus] = useState<AccountStatusResponse>(emptyStatus);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [composerOpen, setComposerOpen] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -52,58 +53,77 @@ export default function DashboardPage() {
 
   return (
     <main className="grid" style={{ gap: 20 }}>
-      <section className="card section">
-        <h2 className="section-title">Operations Hub</h2>
-        <p className="section-copy">
-          Your frontend is wired to <strong>{getApiBaseUrl()}</strong> using tenant{" "}
-          <strong>{getTenantId()}</strong>. Use this space to verify platform connections before
-          moving into the composer.
-        </p>
+      <section className="card hero-card">
+        <div className="hero-panel">
+          <div className="brand-kicker">SnapKey CRM module</div>
+          <h2 className="section-title" style={{ fontSize: "2.15rem", marginBottom: 12 }}>
+            Social publishing dashboard
+          </h2>
+          <p className="section-copy">
+            Connect channels, prepare campaign content, and push scheduled work into execution from
+            one SnapKey workspace. Backend: <strong>{getApiBaseUrl()}</strong>. Tenant:{" "}
+            <strong>{getTenantId()}</strong>.
+          </p>
 
-        {error ? <div className="banner error">{error}</div> : null}
+          <div className="cta-row" style={{ marginBottom: 22 }}>
+            <button className="btn primary" onClick={() => setComposerOpen(true)} type="button">
+              Create post
+            </button>
+            <a className="btn secondary" href="/posts">
+              View scheduled posts
+            </a>
+          </div>
 
-        <div className="stat-grid">
-          <div className="stat">
-            <span>Connected platforms</span>
-            <strong>{stats.connectedPlatforms}</strong>
-          </div>
-          <div className="stat">
-            <span>Total accounts</span>
-            <strong>{stats.totalAccounts}</strong>
-          </div>
-          <div className="stat">
-            <span>Active accounts</span>
-            <strong>{stats.activeAccounts}</strong>
-          </div>
-          <div className="stat">
-            <span>Inactive accounts</span>
-            <strong>{stats.inactiveAccounts}</strong>
+          {error ? <div className="banner error">{error}</div> : null}
+
+          <div className="stat-grid">
+            <div className="stat">
+              <span>Connected platforms</span>
+              <strong>{stats.connectedPlatforms}</strong>
+            </div>
+            <div className="stat">
+              <span>Total accounts</span>
+              <strong>{stats.totalAccounts}</strong>
+            </div>
+            <div className="stat">
+              <span>Active accounts</span>
+              <strong>{stats.activeAccounts}</strong>
+            </div>
+            <div className="stat">
+              <span>Inactive accounts</span>
+              <strong>{stats.inactiveAccounts}</strong>
+            </div>
           </div>
         </div>
 
-        <div className="cta-row" style={{ marginTop: 20 }}>
-          <Link className="btn primary" href="/create-post">
-            Open composer
-          </Link>
-          <Link className="btn secondary" href="/posts">
-            View scheduled posts
-          </Link>
+        <div className="hero-visual">
+          <div className="hero-dots" />
+          <div className="hero-window">
+            <div className="hero-window-grid">
+              <div className="hero-row long" />
+              <div className="hero-row mid" />
+              <div className="hero-row short" />
+              <div className="hero-row long" />
+            </div>
+            <div className="hero-stamp">Campaigns in motion</div>
+          </div>
         </div>
       </section>
 
       <section className="card section">
-        <h2 className="section-title">Connect Platforms</h2>
+        <h2 className="section-title">Channel Connections</h2>
         <p className="section-copy">
-          Connect each network from here. The cards highlight once the backend reports at least
-          one connected account for that platform.
+          Link each social channel from here. Once connected, each platform becomes available inside
+          the create-post modal and can be scheduled from the dashboard.
         </p>
         <PlatformCards accountStatus={status} />
       </section>
 
       <section className="card section">
-        <h2 className="section-title">Connected Accounts</h2>
+        <h2 className="section-title">Workspace Accounts</h2>
         <p className="section-copy">
-          A quick list of the account records already stored in your backend.
+          A quick operational view of the accounts already stored inside this SnapKey tenant
+          workspace.
         </p>
         {accounts.length ? (
           <div className="table-wrap">
@@ -138,6 +158,8 @@ export default function DashboardPage() {
           </div>
         )}
       </section>
+
+      <PostComposerModal onClose={() => setComposerOpen(false)} open={composerOpen} />
     </main>
   );
 }

@@ -1,12 +1,10 @@
 import base64
 import hashlib
-import os
 import secrets
 from urllib.parse import urlencode
-from fastapi import Cookie
+from fastapi import APIRouter, Cookie, HTTPException, Query, status
 
 import requests
-from fastapi import APIRouter, HTTPException, Query, status
 from fastapi.responses import RedirectResponse
 
 from app.core.config import get_settings
@@ -51,7 +49,7 @@ def facebook_login(tenant_id: str = Query(...)):
     state = _build_state(tenant_id)
     params = {
         "client_id": settings.FACEBOOK_CLIENT_ID,
-        "redirect_uri": settings.FACEBOOK_REDIRECT_URI,
+        "redirect_uri": settings.facebook_redirect_uri,
         "state": state,
         "scope": "pages_manage_posts,pages_read_engagement,instagram_basic,instagram_content_publish",
     }
@@ -66,7 +64,7 @@ def facebook_callback(code: str = Query(...), state: str = Query(...)):
     token_params = {
         "client_id": settings.FACEBOOK_CLIENT_ID,
         "client_secret": settings.FACEBOOK_SECRET,
-        "redirect_uri": settings.FACEBOOK_REDIRECT_URI,
+        "redirect_uri": settings.facebook_redirect_uri,
         "code": code,
     }
     token_response = requests.get(
@@ -113,7 +111,7 @@ def instagram_login(tenant_id: str = Query(...)):
     state = _build_state(tenant_id)
     params = {
         "client_id": settings.FACEBOOK_CLIENT_ID,
-        "redirect_uri": settings.FACEBOOK_REDIRECT_URI,
+        "redirect_uri": settings.instagram_redirect_uri,
         "state": state,
         "scope": "instagram_basic,instagram_content_publish,pages_show_list",
     }
@@ -123,7 +121,51 @@ def instagram_login(tenant_id: str = Query(...)):
 
 @router.get("/instagram/callback")
 def instagram_callback(code: str = Query(...), state: str = Query(...)):
-    return facebook_callback(code=code, state=state)
+    tenant_id = _extract_tenant_from_state(state)
+
+    token_params = {
+        "client_id": settings.FACEBOOK_CLIENT_ID,
+        "client_secret": settings.FACEBOOK_SECRET,
+        "redirect_uri": settings.instagram_redirect_uri,
+        "code": code,
+    }
+    token_response = requests.get(
+        "https://graph.facebook.com/v18.0/oauth/access_token",
+        params=token_params,
+        timeout=30,
+    )
+    if not token_response.ok:
+        _raise_provider_error("instagram", token_response)
+
+    token_data = token_response.json()
+    access_token = token_data["access_token"]
+
+    pages_response = requests.get(
+        "https://graph.facebook.com/v18.0/me/accounts",
+        params={"access_token": access_token},
+        timeout=30,
+    )
+    if not pages_response.ok:
+        _raise_provider_error("instagram", pages_response)
+
+    pages = pages_response.json()
+    saved_accounts = []
+
+    for page in pages.get("data", []):
+        account = save_social_account(
+            tenant_id=tenant_id,
+            platform="instagram",
+            platform_account_id=page["id"],
+            account_name=page["name"],
+            access_token=page["access_token"],
+        )
+        saved_accounts.append({
+            "id": account.id,
+            "platform_account_id": account.platform_account_id,
+            "account_name": account.account_name,
+        })
+
+    return {"message": "Instagram connected", "accounts": saved_accounts}
 
 
 @router.get("/linkedin/login")
@@ -132,7 +174,7 @@ def linkedin_login(tenant_id: str = Query(...)):
     params = {
         "response_type": "code",
         "client_id": settings.LINKEDIN_CLIENT_ID,
-        "redirect_uri": settings.LINKEDIN_REDIRECT_URI,
+        "redirect_uri": settings.linkedin_redirect_uri,
         "state": state,
         "scope": "r_liteprofile w_member_social",
     }
@@ -147,7 +189,7 @@ def linkedin_callback(code: str = Query(...), state: str = Query(...)):
     data = {
         "grant_type": "authorization_code",
         "code": code,
-        "redirect_uri": settings.LINKEDIN_REDIRECT_URI,
+        "redirect_uri": settings.linkedin_redirect_uri,
         "client_id": settings.LINKEDIN_CLIENT_ID,
         "client_secret": settings.LINKEDIN_SECRET,
     }
@@ -195,7 +237,7 @@ def google_login(tenant_id: str = Query(...)):
     state = _build_state(tenant_id)
     params = {
         "client_id": settings.GOOGLE_CLIENT_ID,
-        "redirect_uri": settings.GOOGLE_REDIRECT_URI,
+        "redirect_uri": settings.google_redirect_uri,
         "response_type": "code",
         "access_type": "offline",
         "prompt": "consent",
@@ -214,7 +256,7 @@ def google_callback(code: str = Query(...), state: str = Query(...)):
         "code": code,
         "client_id": settings.GOOGLE_CLIENT_ID,
         "client_secret": settings.GOOGLE_SECRET,
-        "redirect_uri": settings.GOOGLE_REDIRECT_URI,
+        "redirect_uri": settings.google_redirect_uri,
         "grant_type": "authorization_code",
     }
     token_response = requests.post(
@@ -246,6 +288,37 @@ def google_callback(code: str = Query(...), state: str = Query(...)):
         },
     }
 
+
+@router.get("/twitter/login")
+def twitter_login(tenant_id: str = Query(...)):
+    state = _build_state(tenant_id)
+    verifier = secrets.token_urlsafe(48)
+    challenge = base64.urlsafe_b64encode(
+        hashlib.sha256(verifier.encode("utf-8")).digest()
+    ).decode("utf-8").rstrip("=")
+
+    params = {
+        "response_type": "code",
+        "client_id": settings.TWITTER_CLIENT_ID,
+        "redirect_uri": settings.twitter_redirect_uri,
+        "scope": "tweet.read tweet.write users.read offline.access",
+        "state": state,
+        "code_challenge": challenge,
+        "code_challenge_method": "S256",
+    }
+
+    url = "https://twitter.com/i/oauth2/authorize?{0}".format(urlencode(params))
+    response = RedirectResponse(url)
+    response.set_cookie(
+        key="twitter_code_verifier",
+        value=verifier,
+        httponly=True,
+        secure=settings.backend_public_url.startswith("https://"),
+        samesite="lax",
+        max_age=600,
+    )
+    return response
+
 @router.get("/twitter/callback")
 def twitter_callback(
     code: str = Query(...),
@@ -264,7 +337,7 @@ def twitter_callback(
     data = {
         "grant_type": "authorization_code",
         "code": code,
-        "redirect_uri": settings.TWITTER_REDIRECT_URI,
+        "redirect_uri": settings.twitter_redirect_uri,
         "client_id": settings.TWITTER_CLIENT_ID,
         "code_verifier": verifier,
     }

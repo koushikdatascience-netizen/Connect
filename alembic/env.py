@@ -5,7 +5,8 @@ from sqlalchemy import pool
 
 from alembic import context
 
-from app.core.config import DATABASE_URL
+from app.core.config import get_settings
+
 from app.db.base import Base
 
 # import all models so metadata is populated for autogenerate
@@ -16,7 +17,8 @@ from app.models import media_asset, post_media, scheduled_post, social_account
 config = context.config
 
 # set the DB URL from app config
-config.set_main_option("sqlalchemy.url", DATABASE_URL)
+config.set_main_option("sqlalchemy.url", get_settings().DATABASE_URL)
+
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.

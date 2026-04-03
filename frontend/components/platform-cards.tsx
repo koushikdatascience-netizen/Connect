@@ -8,11 +8,31 @@ const platforms: Array<{
   label: string;
   description: string;
 }> = [
-  { key: "facebook", label: "Facebook", description: "Pages, engagement, and Instagram-linked publishing flows." },
-  { key: "instagram", label: "Instagram", description: "Feed, reels, and visual storytelling entrypoint." },
-  { key: "linkedin", label: "LinkedIn", description: "Professional updates, link posts, and network publishing." },
-  { key: "twitter", label: "Twitter / X", description: "Fast updates, threads, and real-time campaign messaging." },
-  { key: "youtube", label: "YouTube", description: "Long-form video publishing with channel-connected posting." },
+  {
+    key: "facebook",
+    label: "Facebook",
+    description: "Manage page publishing, engagement flows, and Meta-linked distribution.",
+  },
+  {
+    key: "instagram",
+    label: "Instagram",
+    description: "Handle visual campaigns, reels, and Instagram professional publishing.",
+  },
+  {
+    key: "linkedin",
+    label: "LinkedIn",
+    description: "Deliver professional updates, company posts, and high-intent social reach.",
+  },
+  {
+    key: "twitter",
+    label: "X / Twitter",
+    description: "Coordinate fast updates, campaign reactions, and conversational brand posts.",
+  },
+  {
+    key: "youtube",
+    label: "YouTube",
+    description: "Prepare video publishing workflows using the connected Google channel.",
+  },
 ];
 
 export function PlatformCards({
@@ -33,7 +53,15 @@ export function PlatformCards({
           >
             <div className="platform-head">
               <div>
-                <h3 style={{ margin: 0 }}>{platform.label}</h3>
+                <h3
+                  style={{
+                    margin: 0,
+                    fontFamily: "var(--font-display), sans-serif",
+                    letterSpacing: "-0.03em",
+                  }}
+                >
+                  {platform.label}
+                </h3>
                 <p className="meta" style={{ margin: "8px 0 0" }}>
                   {platform.description}
                 </p>
@@ -44,12 +72,12 @@ export function PlatformCards({
             </div>
 
             <div className="meta">
-              Active accounts: <strong>{state.active_accounts}</strong>
+              Active workspace accounts: <strong>{state.active_accounts}</strong>
             </div>
 
             <div className="cta-row">
               <a className="btn primary" href={getOAuthLoginUrl(platform.key)}>
-                {isConnected ? "Reconnect" : "Connect"}
+                {isConnected ? "Relink social" : "Link social"}
               </a>
             </div>
           </article>

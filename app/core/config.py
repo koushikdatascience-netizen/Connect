@@ -1,7 +1,6 @@
-# app/core/config.py
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
-from typing import Optional
+from typing import List, Optional
 
 class Settings(BaseSettings):
     # Database
@@ -13,6 +12,11 @@ class Settings(BaseSettings):
     # Security
     ENCRYPTION_KEY: str
 
+    # Public application URLs
+    BACKEND_PUBLIC_URL: str = "http://127.0.0.1:8000"
+    FRONTEND_URL: str = "http://localhost:3000"
+    ADDITIONAL_CORS_ORIGINS: str = ""
+
     # OAuth
     FACEBOOK_CLIENT_ID: str
     FACEBOOK_SECRET: str
@@ -20,21 +24,20 @@ class Settings(BaseSettings):
     LINKEDIN_SECRET: str
     GOOGLE_CLIENT_ID: str
     GOOGLE_SECRET: str
+    TWITTER_CLIENT_ID: str
+    TWITTER_CLIENT_SECRET: str
 
     # Cloudinary (for media uploads)
     CLOUDINARY_CLOUD_NAME: str
     CLOUDINARY_API_KEY: str
     CLOUDINARY_API_SECRET: str
 
-    # Twitter OAuth
-    TWITTER_CLIENT_ID: str
-    TWITTER_CLIENT_SECRET: str
-    TWITTER_REDIRECT_URI: str = "http://127.0.0.1:8000/api/v1/oauth/twitter/callback"
-
-    FACEBOOK_REDIRECT_URI: str = "http://127.0.0.1:8000/api/v1/oauth/facebook/callback"
-    LINKEDIN_REDIRECT_URI: str = "http://127.0.0.1:8000/api/v1/oauth/linkedin/callback"
-    GOOGLE_REDIRECT_URI: str = "http://127.0.0.1:8000/api/v1/oauth/google/callback"
-
+    # OAuth callback overrides
+    FACEBOOK_REDIRECT_URI: Optional[str] = None
+    INSTAGRAM_REDIRECT_URI: Optional[str] = None
+    LINKEDIN_REDIRECT_URI: Optional[str] = None
+    GOOGLE_REDIRECT_URI: Optional[str] = None
+    TWITTER_REDIRECT_URI: Optional[str] = None
 
     # Application
     PROJECT_NAME: str = "SocialSync"
@@ -47,6 +50,53 @@ class Settings(BaseSettings):
         case_sensitive=True,
         extra="ignore"
     )
+
+    @property
+    def backend_public_url(self) -> str:
+        return self.BACKEND_PUBLIC_URL.rstrip("/")
+
+    @property
+    def frontend_url(self) -> str:
+        return self.FRONTEND_URL.rstrip("/")
+
+    @property
+    def facebook_redirect_uri(self) -> str:
+        return self.FACEBOOK_REDIRECT_URI or (
+            self.backend_public_url + self.API_V1_STR + "/oauth/facebook/callback"
+        )
+
+    @property
+    def instagram_redirect_uri(self) -> str:
+        return self.INSTAGRAM_REDIRECT_URI or (
+            self.backend_public_url + self.API_V1_STR + "/oauth/instagram/callback"
+        )
+
+    @property
+    def linkedin_redirect_uri(self) -> str:
+        return self.LINKEDIN_REDIRECT_URI or (
+            self.backend_public_url + self.API_V1_STR + "/oauth/linkedin/callback"
+        )
+
+    @property
+    def google_redirect_uri(self) -> str:
+        return self.GOOGLE_REDIRECT_URI or (
+            self.backend_public_url + self.API_V1_STR + "/oauth/google/callback"
+        )
+
+    @property
+    def twitter_redirect_uri(self) -> str:
+        return self.TWITTER_REDIRECT_URI or (
+            self.backend_public_url + self.API_V1_STR + "/oauth/twitter/callback"
+        )
+
+    def cors_origins(self) -> List[str]:
+        origins = [self.frontend_url]
+        extra_origins = [
+            origin.strip()
+            for origin in self.ADDITIONAL_CORS_ORIGINS.split(",")
+            if origin.strip()
+        ]
+        return origins + extra_origins
 
 
 @lru_cache()

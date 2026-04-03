@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -10,6 +10,14 @@ from app.utils.deps import get_db, get_tenant
 router = APIRouter()
 
 
+def _is_future_timestamp(value):
+    if not value:
+        return False
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    return value > datetime.now(timezone.utc)
+
+
 @router.post("/", response_model=PostCreateResponse, status_code=status.HTTP_201_CREATED)
 def create(
     data: PostCreate,
@@ -19,7 +27,7 @@ def create(
     post = create_post(db, tenant_id, data)
     task = None
 
-    if post.scheduled_at and post.scheduled_at > datetime.utcnow():
+    if _is_future_timestamp(post.scheduled_at):
         task = publish_post_task.apply_async(args=[post.id, tenant_id], eta=post.scheduled_at)
     else:
         task = publish_post_task.delay(post.id, tenant_id)

@@ -1,10 +1,11 @@
-from sqlalchemy import Column, Integer, ForeignKey
+from sqlalchemy import Column, Integer, ForeignKey, String
 from app.db.base import Base
 
 class PostMedia(Base):
     __tablename__ = "post_media"
 
     id = Column(Integer, primary_key=True, index=True)
+    tenant_id = Column(String(100), nullable=False, index=True)
 
     post_id = Column(
         Integer,

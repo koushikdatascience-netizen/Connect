@@ -54,11 +54,15 @@ export default function PostsPage() {
 
   return (
     <main className="card section">
-      <h2 className="section-title">Scheduled Posts</h2>
-      <p className="section-copy">
-        This sheet view reads directly from your FastAPI backend. It is meant to stay simple,
-        readable, and easy to expand as you add retry, cancel, and publish-now actions later.
-      </p>
+      <div className="ops-header">
+        <div>
+          <h2 className="section-title">Scheduled Posts</h2>
+          <p className="section-copy">
+            Track queued, scheduled, processing, posted, failed, and cancelled work from one clean
+            execution view inside SnapKey CRM.
+          </p>
+        </div>
+      </div>
 
       {error ? <div className="banner error">{error}</div> : null}
 
