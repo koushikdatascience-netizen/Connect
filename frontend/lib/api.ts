@@ -36,7 +36,8 @@ export function getTenantId() {
 }
 
 export function getOAuthLoginUrl(platform: string) {
-  return `${API_BASE_URL}/api/v1/oauth/${platform}/login?tenant_id=${TENANT_ID}`;
+  const oauthPlatform = platform === "youtube" ? "google" : platform;
+  return `${API_BASE_URL}/api/v1/oauth/${oauthPlatform}/login?tenant_id=${TENANT_ID}`;
 }
 
 export function fetchAccountStatus() {

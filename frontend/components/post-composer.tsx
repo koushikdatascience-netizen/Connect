@@ -3,22 +3,17 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import { createPost, fetchAccounts, fetchMedia, uploadMedia } from "@/lib/api";
-import { Account, MediaAsset, PlatformName } from "@/lib/types";
+import { Account, MediaAsset } from "@/lib/types";
 
-const platformKeys: PlatformName[] = [
-  "facebook",
-  "instagram",
-  "linkedin",
-  "twitter",
-  "youtube",
-];
-
-const starterPlatformOptions: Record<PlatformName, Record<string, unknown>> = {
-  facebook: { post_as_reel: false },
-  instagram: { caption_style: "feed" },
-  linkedin: { visibility: "PUBLIC" },
-  twitter: { reply_settings: "everyone" },
-  youtube: { title: "", privacyStatus: "private" },
+type PlatformFormState = {
+  facebookPostAsReel: boolean;
+  instagramCaptionMode: string;
+  instagramFirstComment: string;
+  linkedinVisibility: string;
+  twitterReplySettings: string;
+  youtubeTitle: string;
+  youtubePrivacyStatus: string;
+  youtubeTags: string;
 };
 
 export function PostComposer() {
@@ -28,10 +23,17 @@ export function PostComposer() {
   const [content, setContent] = useState("");
   const [scheduledAt, setScheduledAt] = useState("");
   const [selectedMediaIds, setSelectedMediaIds] = useState<number[]>([]);
-  const [platformOptionsText, setPlatformOptionsText] = useState(
-    JSON.stringify(starterPlatformOptions, null, 2),
-  );
   const [altText, setAltText] = useState("");
+  const [platformForm, setPlatformForm] = useState<PlatformFormState>({
+    facebookPostAsReel: false,
+    instagramCaptionMode: "feed",
+    instagramFirstComment: "",
+    linkedinVisibility: "PUBLIC",
+    twitterReplySettings: "everyone",
+    youtubeTitle: "",
+    youtubePrivacyStatus: "private",
+    youtubeTags: "",
+  });
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -59,6 +61,53 @@ export function PostComposer() {
     () => accounts.find((account) => account.id === selectedAccountId) ?? null,
     [accounts, selectedAccountId],
   );
+
+  const platformOptionsPreview = useMemo(() => {
+    if (!selectedAccount) {
+      return {};
+    }
+
+    switch (selectedAccount.platform) {
+      case "facebook":
+        return {
+          facebook: {
+            post_as_reel: platformForm.facebookPostAsReel,
+          },
+        };
+      case "instagram":
+        return {
+          instagram: {
+            caption_mode: platformForm.instagramCaptionMode,
+            first_comment: platformForm.instagramFirstComment || null,
+          },
+        };
+      case "linkedin":
+        return {
+          linkedin: {
+            visibility: platformForm.linkedinVisibility,
+          },
+        };
+      case "twitter":
+        return {
+          twitter: {
+            reply_settings: platformForm.twitterReplySettings,
+          },
+        };
+      case "youtube":
+        return {
+          youtube: {
+            title: platformForm.youtubeTitle,
+            privacyStatus: platformForm.youtubePrivacyStatus,
+            tags: platformForm.youtubeTags
+              .split(",")
+              .map((tag) => tag.trim())
+              .filter(Boolean),
+          },
+        };
+      default:
+        return {};
+    }
+  }, [platformForm, selectedAccount]);
 
   async function handleUpload(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -102,14 +151,6 @@ export function PostComposer() {
       return;
     }
 
-    let parsedPlatformOptions: Record<string, unknown> = {};
-    try {
-      parsedPlatformOptions = JSON.parse(platformOptionsText);
-    } catch {
-      setError("Platform metadata JSON is not valid.");
-      return;
-    }
-
     try {
       setSubmitting(true);
       setError(null);
@@ -120,7 +161,7 @@ export function PostComposer() {
         content,
         scheduled_at: scheduledAt || null,
         media_ids: selectedMediaIds,
-        platform_options: parsedPlatformOptions,
+        platform_options: platformOptionsPreview,
       });
 
       setMessage(`Post #${result.post_id} created with status "${result.status}".`);
@@ -185,12 +226,128 @@ export function PostComposer() {
           </div>
 
           <div className="field">
-            <label htmlFor="platformOptions">Platform metadata JSON</label>
-            <textarea
-              id="platformOptions"
-              value={platformOptionsText}
-              onChange={(event) => setPlatformOptionsText(event.target.value)}
-            />
+            <label>Platform-specific settings</label>
+            {selectedAccount?.platform === "facebook" ? (
+              <label className="checkbox-card">
+                <input
+                  type="checkbox"
+                  checked={platformForm.facebookPostAsReel}
+                  onChange={(event) =>
+                    setPlatformForm((current) => ({
+                      ...current,
+                      facebookPostAsReel: event.target.checked,
+                    }))
+                  }
+                />
+                <div>
+                  <strong>Publish as reel</strong>
+                  <div className="meta">Use Facebook reel-style publishing for this post.</div>
+                </div>
+              </label>
+            ) : null}
+
+            {selectedAccount?.platform === "instagram" ? (
+              <>
+                <select
+                  value={platformForm.instagramCaptionMode}
+                  onChange={(event) =>
+                    setPlatformForm((current) => ({
+                      ...current,
+                      instagramCaptionMode: event.target.value,
+                    }))
+                  }
+                >
+                  <option value="feed">Feed post</option>
+                  <option value="reel">Reel</option>
+                </select>
+                <input
+                  type="text"
+                  placeholder="First comment (optional)"
+                  value={platformForm.instagramFirstComment}
+                  onChange={(event) =>
+                    setPlatformForm((current) => ({
+                      ...current,
+                      instagramFirstComment: event.target.value,
+                    }))
+                  }
+                />
+              </>
+            ) : null}
+
+            {selectedAccount?.platform === "linkedin" ? (
+              <select
+                value={platformForm.linkedinVisibility}
+                onChange={(event) =>
+                  setPlatformForm((current) => ({
+                    ...current,
+                    linkedinVisibility: event.target.value,
+                  }))
+                }
+              >
+                <option value="PUBLIC">Public</option>
+                <option value="CONNECTIONS">Connections</option>
+              </select>
+            ) : null}
+
+            {selectedAccount?.platform === "twitter" ? (
+              <select
+                value={platformForm.twitterReplySettings}
+                onChange={(event) =>
+                  setPlatformForm((current) => ({
+                    ...current,
+                    twitterReplySettings: event.target.value,
+                  }))
+                }
+              >
+                <option value="everyone">Everyone</option>
+                <option value="mentionedUsers">Mentioned users</option>
+                <option value="following">People you follow</option>
+              </select>
+            ) : null}
+
+            {selectedAccount?.platform === "youtube" ? (
+              <>
+                <input
+                  type="text"
+                  placeholder="Video title"
+                  value={platformForm.youtubeTitle}
+                  onChange={(event) =>
+                    setPlatformForm((current) => ({
+                      ...current,
+                      youtubeTitle: event.target.value,
+                    }))
+                  }
+                />
+                <select
+                  value={platformForm.youtubePrivacyStatus}
+                  onChange={(event) =>
+                    setPlatformForm((current) => ({
+                      ...current,
+                      youtubePrivacyStatus: event.target.value,
+                    }))
+                  }
+                >
+                  <option value="private">Private</option>
+                  <option value="unlisted">Unlisted</option>
+                  <option value="public">Public</option>
+                </select>
+                <input
+                  type="text"
+                  placeholder="Tags, comma separated"
+                  value={platformForm.youtubeTags}
+                  onChange={(event) =>
+                    setPlatformForm((current) => ({
+                      ...current,
+                      youtubeTags: event.target.value,
+                    }))
+                  }
+                />
+              </>
+            ) : null}
+
+            <div className="inline-note">
+              These fields are converted to JSON automatically before submission.
+            </div>
           </div>
 
           <div className="field">
@@ -258,27 +415,20 @@ export function PostComposer() {
         </form>
 
         <div style={{ marginTop: 24 }}>
-          <h3 style={{ marginTop: 0 }}>Starter metadata ideas</h3>
-          <div className="meta">
-            {platformKeys.map((platform) => (
-              <div key={platform} style={{ marginBottom: 10 }}>
-                <strong style={{ textTransform: "capitalize" }}>{platform}</strong>
-                <pre
-                  style={{
-                    margin: "8px 0 0",
-                    whiteSpace: "pre-wrap",
-                    background: "rgba(255,255,255,0.82)",
-                    borderRadius: 16,
-                    border: "1px solid var(--line)",
-                    padding: 14,
-                    overflowX: "auto",
-                  }}
-                >
-                  {JSON.stringify(starterPlatformOptions[platform], null, 2)}
-                </pre>
-              </div>
-            ))}
-          </div>
+          <h3 style={{ marginTop: 0 }}>JSON preview sent to backend</h3>
+          <pre
+            style={{
+              margin: 0,
+              whiteSpace: "pre-wrap",
+              background: "rgba(255,255,255,0.82)",
+              borderRadius: 16,
+              border: "1px solid var(--line)",
+              padding: 14,
+              overflowX: "auto",
+            }}
+          >
+            {JSON.stringify(platformOptionsPreview, null, 2)}
+          </pre>
         </div>
       </section>
     </div>
