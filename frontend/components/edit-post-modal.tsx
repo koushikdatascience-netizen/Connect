@@ -44,6 +44,9 @@ export function EditPostModal({ post, onClose, onSaved }: Props) {
   }
 
   async function handleSave() {
+    if (!post) {
+      return;
+    }
     try {
       setSaving(true);
       setError(null);
