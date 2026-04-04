@@ -63,8 +63,22 @@ def save_social_account(
             account.token_expiry = expiry
             account.is_active = True
 
+        db.flush()
+        account_id = account.id
         db.commit()
-        db.refresh(account)
+        if account_id is not None:
+            reloaded = (
+                db.query(SocialAccount)
+                .filter_by(
+                    id=account_id,
+                    tenant_id=tenant_id,
+                    platform=platform,
+                    platform_account_id=platform_account_id,
+                )
+                .first()
+            )
+            if reloaded is not None:
+                account = reloaded
         logger.info(
             "oauth.account_saved tenant_id=%s platform=%s platform_account_id=%s",
             tenant_id,
