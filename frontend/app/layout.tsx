@@ -40,6 +40,8 @@ export default function RootLayout({
             <nav className="nav">
               <Link href="/">Dashboard</Link>
               <Link href="/posts">Scheduled Posts</Link>
+              <Link href="/privacy-policy">Privacy</Link>
+              <Link href="/terms">Terms</Link>
             </nav>
           </header>
           {children}

@@ -1,29 +1,36 @@
 # app/utils/deps.py
-from typing import Generator, Optional
+from typing import Generator
 
-from fastapi import Header
+from fastapi import HTTPException, Request, status
 from sqlalchemy.orm import Session
 
-from app.core.config import get_settings
-from app.db.database import SessionLocal, reset_tenant_context, set_tenant_context
-
-settings = get_settings()
+from app.core.auth import CurrentUser
+from app.db.database import SessionLocal, reset_tenant_context, set_request_context
 
 
-def _resolve_tenant_id(x_tenant_id: Optional[str]) -> str:
-    if x_tenant_id:
-        return x_tenant_id
-    # TODO: Replace this with proper JWT tenant extraction later
-    return "tenant_123"
+def _request_context(request: Request):
+    context = getattr(request.state, "request_context", None)
+    if context is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Request context is missing",
+        )
+    return context
 
 
-def get_db(x_tenant_id: Optional[str] = Header(None)) -> Generator[Session, None, None]:
+def get_db(
+    request: Request,
+) -> Generator[Session, None, None]:
     db = SessionLocal()
-    tenant_id = _resolve_tenant_id(x_tenant_id)
+    context = _request_context(request)
 
     try:
-        # Phase 1 RLS support: attach the tenant to the PostgreSQL session.
-        set_tenant_context(db, tenant_id)
+        set_request_context(
+            db,
+            tenant_id=context.tenant_id,
+            user_id=context.user_id,
+            role=context.role,
+        )
         yield db
     finally:
         try:
@@ -33,15 +40,19 @@ def get_db(x_tenant_id: Optional[str] = Header(None)) -> Generator[Session, None
         db.close()
 
 
-def get_tenant(x_tenant_id: Optional[str] = Header(None)) -> str:
-    """
-    Get tenant from header (X-Tenant-ID)
-    Fallback for development
-    """
-    return _resolve_tenant_id(x_tenant_id)
+def get_tenant(
+    request: Request,
+) -> str:
+    return _request_context(request).tenant_id
 
 
-# Optional: Current user dependency (for future JWT)
-def get_current_user():
-    # Will implement JWT later
-    pass
+def get_current_user(
+    request: Request,
+) -> CurrentUser:
+    user = getattr(request.state, "current_user", None)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Unable to resolve current user",
+        )
+    return user

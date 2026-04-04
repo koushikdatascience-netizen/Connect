@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse
 import app.db.models  # noqa: F401
 from app.core.config import get_settings
 from app.core.logging import configure_logging, get_logger
+from app.middleware.jwt_context import jwt_context_middleware
 
 configure_logging()
 logger = get_logger("app.main")
@@ -39,6 +40,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+app.middleware("http")(jwt_context_middleware)
 
 
 @app.middleware("http")

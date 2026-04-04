@@ -3,12 +3,62 @@ import { Account, AccountStatusResponse, MediaAsset, Post } from "@/lib/types";
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8000";
 const TENANT_ID = process.env.NEXT_PUBLIC_TENANT_ID ?? "tenant_123";
+const TOKEN_STORAGE_KEY =
+  process.env.NEXT_PUBLIC_AUTH_TOKEN_STORAGE_KEY ?? "snapkey_jwt";
+const TENANT_CLAIMS = ["TenantId", "tenant_id"];
+
+function readJwtClaim(token: string, claim: string) {
+  try {
+    const [, payload] = token.split(".");
+    if (!payload) {
+      return null;
+    }
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+    const decoded = JSON.parse(atob(padded)) as Record<string, unknown>;
+    const value = decoded[claim];
+    return typeof value === "string" ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+function readTenantClaim(token: string) {
+  for (const claim of TENANT_CLAIMS) {
+    const value = readJwtClaim(token, claim);
+    if (value) {
+      return value;
+    }
+  }
+  return null;
+}
+
+function getAuthToken() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+  return (
+    window.localStorage.getItem(TOKEN_STORAGE_KEY) ||
+    window.sessionStorage.getItem(TOKEN_STORAGE_KEY)
+  );
+}
+
+function getRuntimeTenantId() {
+  const token = getAuthToken();
+  if (token) {
+    return readTenantClaim(token) ?? TENANT_ID;
+  }
+  return TENANT_ID;
+}
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const token = getAuthToken();
+  const tenantId = getRuntimeTenantId();
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers: {
-      "X-Tenant-ID": TENANT_ID,
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(!token ? { "X-Tenant-ID": tenantId } : {}),
       ...(init?.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
       ...(init?.headers ?? {}),
     },
@@ -39,12 +89,12 @@ export function getApiBaseUrl() {
 }
 
 export function getTenantId() {
-  return TENANT_ID;
+  return getRuntimeTenantId();
 }
 
 export function getOAuthLoginUrl(platform: string) {
   const oauthPlatform = platform === "youtube" ? "google" : platform;
-  return `${API_BASE_URL}/api/v1/oauth/${oauthPlatform}/login?tenant_id=${TENANT_ID}`;
+  return `${API_BASE_URL}/api/v1/oauth/${oauthPlatform}/login?tenant_id=${getRuntimeTenantId()}`;
 }
 
 export function fetchAccountStatus() {
@@ -81,6 +131,24 @@ export function createPost(payload: {
     method: "POST",
     body: JSON.stringify(payload),
   });
+}
+
+export function updatePost(
+  postId: number,
+  payload: {
+    content?: string;
+    scheduled_at?: string | null;
+    media_ids?: number[];
+    platform_options?: Record<string, unknown>;
+  },
+) {
+  return apiFetch<{ post_id: number; status: string; task_id: string | null }>(
+    `/api/v1/posts/${postId}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    },
+  );
 }
 
 export function publishPostNow(postId: number) {

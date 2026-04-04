@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { EditPostModal } from "@/components/edit-post-modal";
 import { ScheduledPostsTable } from "@/components/scheduled-posts-table";
 import { cancelPost, fetchAccounts, fetchPosts, publishPostNow } from "@/lib/api";
 import { Account, Post } from "@/lib/types";
@@ -11,6 +12,7 @@ export default function PostsPage() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busyPostId, setBusyPostId] = useState<number | null>(null);
+  const [editingPost, setEditingPost] = useState<Post | null>(null);
 
   async function load() {
     try {
@@ -69,10 +71,12 @@ export default function PostsPage() {
       <ScheduledPostsTable
         accounts={accounts}
         busyPostId={busyPostId}
+        onEdit={setEditingPost}
         onCancel={handleCancel}
         onPublishNow={handlePublishNow}
         posts={posts}
       />
+      <EditPostModal onClose={() => setEditingPost(null)} onSaved={load} post={editingPost} />
     </main>
   );
 }

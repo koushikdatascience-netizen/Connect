@@ -1,6 +1,7 @@
 import base64
 import hashlib
 import secrets
+from typing import Optional
 from urllib.parse import urlencode
 from fastapi import APIRouter, Cookie, HTTPException, Query, status
 
@@ -26,6 +27,17 @@ def _extract_tenant_from_state(state):
             detail="Invalid OAuth state",
         )
     return state.split(":", 1)[0]
+
+
+def _page_accounts(access_token: str):
+    pages_response = requests.get(
+        "https://graph.facebook.com/v18.0/me/accounts",
+        params={"access_token": access_token},
+        timeout=30,
+    )
+    if not pages_response.ok:
+        _raise_provider_error("facebook", pages_response)
+    return pages_response.json().get("data", [])
 
 
 def _raise_provider_error(provider, response):
@@ -78,24 +90,16 @@ def facebook_callback(code: str = Query(...), state: str = Query(...)):
     token_data = token_response.json()
     access_token = token_data["access_token"]
 
-    pages_response = requests.get(
-        "https://graph.facebook.com/v18.0/me/accounts",
-        params={"access_token": access_token},
-        timeout=30,
-    )
-    if not pages_response.ok:
-        _raise_provider_error("facebook", pages_response)
-
-    pages = pages_response.json()
     saved_accounts = []
 
-    for page in pages.get("data", []):
+    for page in _page_accounts(access_token):
         account = save_social_account(
             tenant_id=tenant_id,
             platform="facebook",
             platform_account_id=page["id"],
             account_name=page["name"],
             access_token=page["access_token"],
+            account_type="page",
         )
         saved_accounts.append({
             "id": account.id,
@@ -140,30 +144,45 @@ def instagram_callback(code: str = Query(...), state: str = Query(...)):
     token_data = token_response.json()
     access_token = token_data["access_token"]
 
-    pages_response = requests.get(
-        "https://graph.facebook.com/v18.0/me/accounts",
-        params={"access_token": access_token},
-        timeout=30,
-    )
-    if not pages_response.ok:
-        _raise_provider_error("instagram", pages_response)
-
-    pages = pages_response.json()
     saved_accounts = []
 
-    for page in pages.get("data", []):
+    for page in _page_accounts(access_token):
+        page_details = requests.get(
+            f"https://graph.facebook.com/v18.0/{page['id']}",
+            params={
+                "access_token": page["access_token"],
+                "fields": "instagram_business_account{id,username,profile_picture_url},name",
+            },
+            timeout=30,
+        )
+        if not page_details.ok:
+            _raise_provider_error("instagram", page_details)
+
+        page_data = page_details.json()
+        instagram_account = page_data.get("instagram_business_account")
+        if not instagram_account:
+            continue
+
         account = save_social_account(
             tenant_id=tenant_id,
             platform="instagram",
-            platform_account_id=page["id"],
-            account_name=page["name"],
+            platform_account_id=instagram_account["id"],
+            account_name=instagram_account.get("username") or page_data.get("name") or page["name"],
             access_token=page["access_token"],
+            account_type="business",
+            profile_picture_url=instagram_account.get("profile_picture_url"),
         )
         saved_accounts.append({
             "id": account.id,
             "platform_account_id": account.platform_account_id,
             "account_name": account.account_name,
         })
+
+    if not saved_accounts:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No Instagram Business or Creator account is linked to the authenticated Facebook Pages.",
+        )
 
     return {"message": "Instagram connected", "accounts": saved_accounts}
 
@@ -242,7 +261,8 @@ def google_login(tenant_id: str = Query(...)):
         "access_type": "offline",
         "prompt": "consent",
         "state": state,
-        "scope": "https://www.googleapis.com/auth/youtube.upload",
+        "scope": "https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube.readonly",
+
     }
     url = "https://accounts.google.com/o/oauth2/v2/auth?{0}".format(urlencode(params))
     return RedirectResponse(url)
@@ -269,14 +289,34 @@ def google_callback(code: str = Query(...), state: str = Query(...)):
 
     tokens = token_response.json()
 
+    channel_response = requests.get(
+        "https://www.googleapis.com/youtube/v3/channels",
+        headers={"Authorization": f"Bearer {tokens['access_token']}"},
+        params={"part": "snippet", "mine": "true"},
+        timeout=30,
+    )
+    if not channel_response.ok:
+        _raise_provider_error("google", channel_response)
+
+    channel_items = channel_response.json().get("items", [])
+    if not channel_items:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No YouTube channel was found for the authenticated Google account.",
+        )
+
+    channel = channel_items[0]
+    channel_snippet = channel.get("snippet", {})
+
     account = save_social_account(
         tenant_id=tenant_id,
         platform="youtube",
-        platform_account_id="youtube_channel",
-        account_name="YouTube",
+        platform_account_id=channel["id"],
+        account_name=channel_snippet.get("title", "YouTube"),
         access_token=tokens["access_token"],
         refresh_token=tokens.get("refresh_token"),
         expires_in=tokens.get("expires_in"),
+        profile_picture_url=(channel_snippet.get("thumbnails", {}).get("default") or {}).get("url"),
     )
 
     return {

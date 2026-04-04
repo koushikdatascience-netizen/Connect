@@ -15,12 +15,14 @@ function formatDate(value?: string | null) {
 export function ScheduledPostsTable({
   posts,
   accounts,
+  onEdit,
   onPublishNow,
   onCancel,
   busyPostId,
 }: {
   posts: Post[];
   accounts: Account[];
+  onEdit: (post: Post) => void;
   onPublishNow: (postId: number) => void;
   onCancel: (postId: number) => void;
   busyPostId: number | null;
@@ -64,6 +66,11 @@ export function ScheduledPostsTable({
                 <td style={{ textTransform: "capitalize" }}>{post.platform}</td>
                 <td>
                   <div>{post.content || "No content"}</div>
+                  {post.media_ids.length ? (
+                    <div className="helper-text" style={{ marginTop: 8 }}>
+                      Attached media: {post.media_ids.join(", ")}
+                    </div>
+                  ) : null}
                   {post.error_message ? (
                     <div className="meta" style={{ color: "var(--danger)", marginTop: 8 }}>
                       {post.error_message}
@@ -82,6 +89,19 @@ export function ScheduledPostsTable({
                 </td>
                 <td>
                   <div className="cta-row">
+                    <button
+                      className="btn ghost"
+                      disabled={
+                        busyPostId === post.id ||
+                        post.status === "posted" ||
+                        post.status === "processing" ||
+                        post.status === "cancelled"
+                      }
+                      onClick={() => onEdit(post)}
+                      type="button"
+                    >
+                      Edit
+                    </button>
                     <button
                       className="btn secondary"
                       disabled={busyPostId === post.id || post.status === "posted" || post.status === "processing"}

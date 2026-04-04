@@ -412,6 +412,41 @@ th {
   gap: 18px;
 }
 .inline-note { margin-top: 6px; color: var(--muted); font-size: 0.9rem; }
+.legal-page {
+  max-width: 920px;
+  margin: 0 auto;
+}
+.legal-header {
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 22px;
+}
+.legal-content {
+  display: grid;
+  gap: 18px;
+}
+.legal-section {
+  padding: 20px 22px;
+  border-radius: 20px;
+  border: 1px solid rgba(29, 33, 39, 0.08);
+  background: var(--surface-soft);
+}
+.legal-section h3 {
+  margin: 0 0 10px;
+  font-family: var(--font-display), sans-serif;
+  font-size: 1.05rem;
+}
+.legal-section p {
+  margin: 0;
+  color: var(--text);
+  line-height: 1.7;
+}
+.legal-section ul {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  color: var(--text);
+  line-height: 1.7;
+}
 
 @media (max-width: 980px) {
   .hero-card,

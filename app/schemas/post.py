@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class PostCreate(BaseModel):
@@ -10,6 +10,13 @@ class PostCreate(BaseModel):
     platform_options: Optional[Dict] = Field(default_factory=dict)
     scheduled_at: Optional[datetime] = None
     media_ids: Optional[List[int]] = Field(default_factory=list)
+
+
+class PostUpdate(BaseModel):
+    content: Optional[str] = None
+    platform_options: Optional[Dict] = None
+    scheduled_at: Optional[datetime] = None
+    media_ids: Optional[List[int]] = None
 
 
 class PostRead(BaseModel):
@@ -26,11 +33,11 @@ class PostRead(BaseModel):
     max_retries: int
     error_message: Optional[str] = None
     platform_post_id: Optional[str] = None
+    media_ids: List[int] = Field(default_factory=list)
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PostCreateResponse(BaseModel):

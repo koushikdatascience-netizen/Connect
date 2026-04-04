@@ -49,6 +49,7 @@ export type Post = {
   max_retries: number;
   error_message?: string | null;
   platform_post_id?: string | null;
+  media_ids: number[];
   created_at?: string | null;
   updated_at?: string | null;
 };

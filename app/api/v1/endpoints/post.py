@@ -3,8 +3,8 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.schemas.post import PostCreate, PostCreateResponse, PostRead
-from app.crud.post import create_post, get_post, list_posts, update_post_status
+from app.schemas.post import PostCreate, PostCreateResponse, PostRead, PostUpdate
+from app.crud.post import create_post, get_post, list_posts, update_post, update_post_status
 from app.utils.deps import get_db, get_tenant
 
 router = APIRouter()
@@ -56,6 +56,37 @@ def get_single_post(
             detail="Post not found",
         )
     return post
+
+
+@router.patch("/{post_id}", response_model=PostCreateResponse)
+def edit_post(
+    post_id: int,
+    data: PostUpdate,
+    db: Session = Depends(get_db),
+    tenant_id: str = Depends(get_tenant),
+):
+    post = get_post(db, tenant_id, post_id)
+    if not post:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Post not found",
+        )
+
+    try:
+        post = update_post(db, tenant_id, post_id, data)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+
+    task = None
+    if post.status == "scheduled":
+        task = publish_post_task.apply_async(args=[post.id, tenant_id], eta=post.scheduled_at)
+    elif post.status == "queued":
+        task = publish_post_task.delay(post.id, tenant_id)
+
+    return {"post_id": post.id, "status": post.status, "task_id": task.id if task else None}
 
 
 @router.post("/{post_id}/publish-now", response_model=PostCreateResponse)

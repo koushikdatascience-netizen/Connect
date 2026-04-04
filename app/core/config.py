@@ -44,6 +44,19 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
 
+    # Auth / JWT
+    AUTH_REQUIRED: bool = False
+    ALLOW_DEV_TENANT_HEADER: bool = True
+    JWT_ALGORITHM: str = "HS256"
+    JWT_SECRET: Optional[str] = None
+    JWT_PUBLIC_KEY: Optional[str] = None
+    JWT_AUDIENCE: Optional[str] = None
+    JWT_ISSUER: Optional[str] = None
+    JWT_TENANT_CLAIM: str = "TenantId"
+    JWT_SUBJECT_CLAIM: str = "UserId"
+    JWT_ROLE_CLAIM: str = "ISAdmin"
+    QUERY_TENANT_PARAM: str = "tenantId"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
