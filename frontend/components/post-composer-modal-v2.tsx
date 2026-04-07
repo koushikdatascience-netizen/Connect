@@ -31,7 +31,14 @@ function SuccessIcon() {
   );
 }
 
-// Platform icon with hover animation`nfunction PlatformIcon({ platform, enabled }: { platform: PlatformName; enabled: boolean }) {`n  return (`n    <div className={`transition-transform duration-200 ${enabled ? "scale-110" : "group-hover:scale-105"}`}>`n      <PlatformLogo platform={platform} className="h-6 w-6" />`n    </div>`n  );`n}
+// Platform icon with hover animation
+function PlatformIcon({ platform, enabled }: { platform: PlatformName; enabled: boolean }) {
+  return (
+    <div className={`transition-transform duration-200 ${enabled ? "scale-110" : "group-hover:scale-105"}`}>
+      <PlatformLogo platform={platform} className="h-6 w-6" />
+    </div>
+  );
+}
 type Config = {
   enabled: boolean;
   accountId: number | null;
@@ -563,42 +570,53 @@ export function PostComposerModal({ open, onClose, onCreated }: Props) {
                 <div className="mb-4 flex items-center justify-between">
                   <div>
                     <h3 className="text-lg font-semibold text-ink-900">Select Platforms</h3>
-                    <p className="text-sm text-ink-600">Enable the channels you want and open settings to fine-tune them.</p>
+                    <p className="text-sm text-ink-600">Enable the channels you want and click Settings to fine-tune.</p>
                   </div>
                 </div>
-                <div className="space-y-3">
+                <div className="grid gap-3 sm:grid-cols-2">
                   {platforms.map((platform) => {
                     const hasAccounts = accountsByPlatform[platform].length > 0;
                     const enabled = configs[platform].enabled;
                     return (
-                      <div key={platform} className={`group flex cursor-pointer items-center gap-4 rounded-[22px] border px-4 py-4 transition-all duration-200 ${enabled ? "border-brand-300 bg-[#fff9e9] shadow-md ring-2 ring-brand-200/50" : "border-[#ebdfcf] bg-white hover:border-brand-200 hover:shadow-lg hover:-translate-y-0.5"} ${!hasAccounts ? "opacity-60 cursor-not-allowed" : ""}`}>
-                        <input
-                          type="checkbox"
-                          checked={enabled}
-                          disabled={!hasAccounts}
-                          onChange={(event) => handlePlatformToggle(platform, event.target.checked)}
-                          className="h-5 w-5 rounded border-gray-300 text-brand-500 focus:ring-brand-400 transition duration-150 cursor-pointer"
-                        />
-                        <div className={`flex h-12 w-12 items-center justify-center rounded-2xl text-sm font-semibold transition-all duration-200 ${enabled ? "scale-110 shadow-md" : "group-hover:scale-105 group-hover:shadow-sm"} ${platformTone[platform]}`}>
-                          <PlatformIcon platform={platform} enabled={enabled} />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                            <h4 className="text-base font-semibold text-ink-900">{labels[platform]}</h4>
-                            <span className={`h-2.5 w-2.5 rounded-full transition-all duration-200 ${hasAccounts ? "bg-[#8dc63f] shadow-sm" : "bg-[#d7cdbd]"}`} />
+                      <div key={platform} className={`group flex flex-col cursor-pointer gap-3 rounded-[22px] border p-4 transition-all duration-200 ${enabled ? "border-brand-300 bg-[#fff9e9] shadow-md ring-2 ring-brand-200/50" : "border-[#ebdfcf] bg-white hover:border-brand-200 hover:shadow-lg hover:-translate-y-0.5"} ${!hasAccounts ? "opacity-60 cursor-not-allowed" : ""}`}>
+                        <div className="flex items-start gap-3">
+                          <input
+                            type="checkbox"
+                            checked={enabled}
+                            disabled={!hasAccounts}
+                            onChange={(event) => handlePlatformToggle(platform, event.target.checked)}
+                            className="mt-1 h-5 w-5 rounded border-gray-300 text-brand-500 focus:ring-brand-400 transition duration-150 cursor-pointer"
+                          />
+                          <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-sm font-semibold transition-all duration-200 ${enabled ? "scale-110 shadow-md" : "group-hover:scale-105 group-hover:shadow-sm"} ${platformTone[platform]}`}>
+                            <PlatformIcon platform={platform} enabled={enabled} />
                           </div>
-                          <p className="mt-1 text-sm text-ink-600">{descriptions[platform]}</p>
-                          <p className={`mt-1 text-xs font-medium ${mediaStateByPlatform[platform].valid ? "text-[#5f7f2e]" : "text-[#b25a4f]"}`}>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <h4 className="text-sm font-semibold text-ink-900">{labels[platform]}</h4>
+                              <span className={`h-2 w-2 rounded-full transition-all duration-200 ${hasAccounts ? "bg-[#8dc63f] shadow-sm" : "bg-[#d7cdbd]"}`} />
+                            </div>
+                            <p className="mt-0.5 text-xs text-ink-600">{descriptions[platform]}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between gap-2 pl-8">
+                          <p className={`text-xs ${mediaStateByPlatform[platform].valid ? "text-[#5f7f2e]" : "text-[#b25a4f]"}`}>
                             {mediaStateByPlatform[platform].message}
                           </p>
+                          {hasAccounts ? (
+                            <button 
+                              type="button" 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActivePlatform(platform);
+                              }} 
+                              className="secondary-button px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0"
+                            >
+                              Settings
+                            </button>
+                          ) : (
+                            <span className="text-xs text-ink-500">No account</span>
+                          )}
                         </div>
-                        {hasAccounts ? (
-                          <button type="button" onClick={() => setActivePlatform(platform)} className="secondary-button px-4 py-2 text-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0">
-                            Settings
-                          </button>
-                        ) : (
-                          <span className="text-xs text-ink-500">No account</span>
-                        )}
                       </div>
                     );
                   })}
