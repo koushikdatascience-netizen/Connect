@@ -79,28 +79,6 @@ services:
       - beat
       - --loglevel=info
 
-  flower:
-    build:
-      context: .
-      dockerfile: dockerfile
-    container_name: socialsync_flower
-    env_file: .env
-    ports:
-      - "5555:5555"
-    depends_on:
-      redis:
-        condition: service_started
-      worker:
-        condition: service_started
-      backend:
-        condition: service_started
-    command: >
-      sh -c "sleep 15 && 
-             uv run celery -A app.worker.celery_app.celery_app flower --port=5555"
-    environment:
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
-
   redis:
     image: redis:7-alpine
     container_name: socialsync_redis
@@ -108,16 +86,6 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
-
-  redis-commander:
-    image: rediscommander/redis-commander:latest
-    container_name: socialsync_redis_ui
-    environment:
-      - REDIS_HOSTS=local:redis:6379
-    ports:
-      - "8081:8081"
-    depends_on:
-      - redis
 
   db:
     image: postgres:16-alpine
