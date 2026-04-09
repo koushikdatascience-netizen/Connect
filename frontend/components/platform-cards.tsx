@@ -1,6 +1,8 @@
 "use client";
 
-import { getOAuthLoginUrl } from "@/lib/api";
+import { useState } from "react";
+
+import { beginOAuthLogin } from "@/lib/api";
 import { Account, AccountStatusResponse, PlatformName } from "@/lib/types";
 
 const platforms: Array<{
@@ -60,8 +62,24 @@ export function PlatformCards({
   accountStatus: AccountStatusResponse;
   accounts: Account[];
 }) {
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleOAuthConnect(platform: PlatformName) {
+    try {
+      setError(null);
+      await beginOAuthLogin(platform);
+    } catch (oauthError) {
+      setError(oauthError instanceof Error ? oauthError.message : "Unable to start social login.");
+    }
+  }
+
   return (
     <div className="grid three">
+      {error ? (
+        <div className="empty" style={{ gridColumn: "1 / -1", padding: 16, textAlign: "left" }}>
+          {error}
+        </div>
+      ) : null}
       {platforms.map((platform) => {
         const state = accountStatus[platform.key];
         const isConnected = state.connected;
@@ -156,9 +174,13 @@ export function PlatformCards({
             )}
 
             <div className="cta-row">
-              <a className="btn primary" href={getOAuthLoginUrl(platform.key)}>
+              <button
+                type="button"
+                className="btn primary"
+                onClick={() => void handleOAuthConnect(platform.key)}
+              >
                 {isConnected ? `Add another ${platform.label} account` : platform.connectLabel}
-              </a>
+              </button>
             </div>
           </article>
         );

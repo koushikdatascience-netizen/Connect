@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -44,3 +44,44 @@ class PostCreateResponse(BaseModel):
     post_id: int
     status: str
     task_id: Optional[str] = None
+
+
+class PostAnalyticsSummary(BaseModel):
+    total_posts: int
+    queued_posts: int
+    scheduled_posts: int
+    processing_posts: int
+    posted_posts: int
+    failed_posts: int
+    cancelled_posts: int
+    success_rate: int
+
+
+class PostPlatformAnalytics(BaseModel):
+    platform: str
+    total_posts: int
+    queued_posts: int
+    scheduled_posts: int
+    processing_posts: int
+    posted_posts: int
+    failed_posts: int
+    cancelled_posts: int
+
+
+class PostFailureRead(BaseModel):
+    post_id: int
+    platform: str
+    status: str
+    error_message: str
+    retry_count: int
+    updated_at: Optional[datetime] = None
+
+
+class PostLiveMetricsResponse(BaseModel):
+    post_id: int
+    platform: str
+    provider_post_id: Optional[str] = None
+    available: bool
+    fetched_at: datetime
+    metrics: Dict[str, Any] = Field(default_factory=dict)
+    message: Optional[str] = None

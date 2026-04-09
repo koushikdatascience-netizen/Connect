@@ -186,6 +186,13 @@ function normalizeTags(value: string, prefix: "#" | "@") {
     .join(" ");
 }
 
+function toUtcIsoString(value: string) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toISOString();
+}
+
 function platformPayload(platform: PlatformName, config: Config) {
   if (platform === "facebook") return { facebook: { post_as_reel: config.facebookPostAsReel } };
   if (platform === "instagram") {
@@ -427,7 +434,7 @@ export function PostComposerModal({ open, onClose, onCreated }: Props) {
           createPost({
             social_account_id: configs[platform].accountId as number,
             content,
-            scheduled_at: scheduledAt || null,
+            scheduled_at: toUtcIsoString(scheduledAt),
             media_ids: selectedMediaIds,
             platform_options: platformPayload(platform, configs[platform]),
           }),

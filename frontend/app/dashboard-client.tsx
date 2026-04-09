@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { PostComposerModal } from "@/components/post-composer-modal-v2";
-import { fetchAccounts, fetchAccountStatus, fetchPosts, getApiBaseUrl, getTenantId } from "@/lib/api";
+import { beginOAuthLogin, fetchAccounts, fetchAccountStatus, fetchPosts } from "@/lib/api";
 import { Account, AccountStatusResponse, PlatformName, Post } from "@/lib/types";
 
 const platformMeta: Array<{ key: PlatformName; label: string; hint: string; tone: string; gradient: string }> = [
@@ -72,10 +72,6 @@ function formatDate(value?: string | null) {
   }
 }
 
-function getOauthUrl(platform: PlatformName) {
-  return `${getApiBaseUrl()}/api/v1/oauth/${platform === "youtube" ? "google" : platform}/login?tenant_id=${getTenantId()}`;
-}
-
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
     posted: "bg-[#eef8d8] text-[#4a6d16]",
@@ -99,6 +95,15 @@ export default function DashboardClient() {
   const [error, setError] = useState<string | null>(null);
   const [composerOpen, setComposerOpen] = useState(false);
   const [oauthBanner, setOauthBanner] = useState<{ tone: "success" | "error"; text: string } | null>(null);
+
+  async function handleOAuthConnect(platform: PlatformName) {
+    try {
+      setError(null);
+      await beginOAuthLogin(platform);
+    } catch (oauthError) {
+      setError(oauthError instanceof Error ? oauthError.message : "Unable to start social login.");
+    }
+  }
 
   async function load() {
     try {
@@ -224,9 +229,10 @@ export default function DashboardClient() {
                   const platformAccounts = connectedAccounts.filter(a => a.platform === platform.key);
                   const connected = status[platform.key].connected;
                   return (
-                    <a
+                    <button
                       key={platform.key}
-                      href={getOauthUrl(platform.key)}
+                      type="button"
+                      onClick={() => void handleOAuthConnect(platform.key)}
                       style={{ animationDelay: `${0.05 + i * 0.06}s` }}
                       className={`platform-card fade-up group rounded-[24px] border p-5 ${
                         connected
@@ -253,7 +259,7 @@ export default function DashboardClient() {
                           {connected ? "Manage" : "Connect"}
                         </span>
                       </div>
-                    </a>
+                    </button>
                   );
                 })}
               </div>

@@ -96,6 +96,97 @@ def list_posts(db: Session, tenant_id: str):
     return posts
 
 
+def get_post_analytics_summary(db: Session, tenant_id: str):
+    posts = (
+        db.query(ScheduledPost)
+        .filter(ScheduledPost.tenant_id == tenant_id)
+        .all()
+    )
+    total_posts = len(posts)
+    queued_posts = sum(post.status == "queued" for post in posts)
+    scheduled_posts = sum(post.status == "scheduled" for post in posts)
+    processing_posts = sum(post.status == "processing" for post in posts)
+    posted_posts = sum(post.status == "posted" for post in posts)
+    failed_posts = sum(post.status == "failed" for post in posts)
+    cancelled_posts = sum(post.status == "cancelled" for post in posts)
+    success_rate = round((posted_posts / total_posts) * 100) if total_posts else 0
+
+    return {
+        "total_posts": total_posts,
+        "queued_posts": queued_posts,
+        "scheduled_posts": scheduled_posts,
+        "processing_posts": processing_posts,
+        "posted_posts": posted_posts,
+        "failed_posts": failed_posts,
+        "cancelled_posts": cancelled_posts,
+        "success_rate": success_rate,
+    }
+
+
+def get_post_analytics_by_platform(db: Session, tenant_id: str):
+    posts = (
+        db.query(ScheduledPost)
+        .filter(ScheduledPost.tenant_id == tenant_id)
+        .all()
+    )
+
+    platform_map = {}
+    for post in posts:
+        bucket = platform_map.setdefault(
+            post.platform,
+            {
+                "platform": post.platform,
+                "total_posts": 0,
+                "queued_posts": 0,
+                "scheduled_posts": 0,
+                "processing_posts": 0,
+                "posted_posts": 0,
+                "failed_posts": 0,
+                "cancelled_posts": 0,
+            },
+        )
+        bucket["total_posts"] += 1
+        if post.status == "queued":
+            bucket["queued_posts"] += 1
+        elif post.status == "scheduled":
+            bucket["scheduled_posts"] += 1
+        elif post.status == "processing":
+            bucket["processing_posts"] += 1
+        elif post.status == "posted":
+            bucket["posted_posts"] += 1
+        elif post.status == "failed":
+            bucket["failed_posts"] += 1
+        elif post.status == "cancelled":
+            bucket["cancelled_posts"] += 1
+
+    return sorted(platform_map.values(), key=lambda item: item["platform"])
+
+
+def list_recent_post_failures(db: Session, tenant_id: str, limit: int = 10):
+    posts = (
+        db.query(ScheduledPost)
+        .filter(
+            ScheduledPost.tenant_id == tenant_id,
+            ScheduledPost.status == "failed",
+            ScheduledPost.error_message.isnot(None),
+        )
+        .order_by(ScheduledPost.updated_at.desc(), ScheduledPost.id.desc())
+        .limit(limit)
+        .all()
+    )
+    return [
+        {
+            "post_id": post.id,
+            "platform": post.platform,
+            "status": post.status,
+            "error_message": post.error_message,
+            "retry_count": post.retry_count,
+            "updated_at": post.updated_at,
+        }
+        for post in posts
+    ]
+
+
 def get_post(db: Session, tenant_id: str, post_id: int):
     post = (
         db.query(ScheduledPost)

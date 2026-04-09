@@ -5,6 +5,7 @@ const API_BASE_URL =
 const TENANT_ID = process.env.NEXT_PUBLIC_TENANT_ID ?? "tenant_123";
 const TOKEN_STORAGE_KEY =
   process.env.NEXT_PUBLIC_AUTH_TOKEN_STORAGE_KEY ?? "snapkey_jwt";
+const DEMO_BEARER_TOKEN = process.env.NEXT_PUBLIC_DEBUG_BEARER_TOKEN ?? "";
 const TENANT_CLAIMS = ["TenantId", "tenant_id"];
 
 function readJwtClaim(token: string, claim: string) {
@@ -41,6 +42,34 @@ function getAuthToken() {
     window.localStorage.getItem(TOKEN_STORAGE_KEY) ||
     window.sessionStorage.getItem(TOKEN_STORAGE_KEY)
   );
+}
+
+export function getStoredAuthToken() {
+  return getAuthToken();
+}
+
+export function hasStoredAuthToken() {
+  return Boolean(getAuthToken());
+}
+
+export function setStoredAuthToken(token: string) {
+  if (typeof window === "undefined") {
+    return;
+  }
+  window.localStorage.setItem(TOKEN_STORAGE_KEY, token);
+  window.sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+}
+
+export function clearStoredAuthToken() {
+  if (typeof window === "undefined") {
+    return;
+  }
+  window.localStorage.removeItem(TOKEN_STORAGE_KEY);
+  window.sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+}
+
+export function getDemoBearerToken() {
+  return DEMO_BEARER_TOKEN;
 }
 
 function getRuntimeTenantId() {
@@ -95,6 +124,16 @@ export function getTenantId() {
 export function getOAuthLoginUrl(platform: string) {
   const oauthPlatform = platform === "youtube" ? "google" : platform;
   return `${API_BASE_URL}/api/v1/oauth/${oauthPlatform}/login?tenant_id=${getRuntimeTenantId()}`;
+}
+
+export async function beginOAuthLogin(platform: string) {
+  const oauthPlatform = platform === "youtube" ? "google" : platform;
+  const response = await apiFetch<{ authorization_url: string }>(
+    `/api/v1/oauth/${oauthPlatform}/authorize`,
+  );
+  if (typeof window !== "undefined") {
+    window.location.href = response.authorization_url;
+  }
 }
 
 export function fetchAccountStatus() {

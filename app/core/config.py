@@ -47,6 +47,7 @@ class Settings(BaseSettings):
     # Auth / JWT
     AUTH_REQUIRED: bool = True
     ALLOW_DEV_TENANT_HEADER: bool = True
+    ALLOW_PUBLIC_OAUTH_LOGIN: bool = False
     JWT_ALGORITHM: str = "HS256"
     JWT_SECRET: Optional[str] = None
     JWT_PUBLIC_KEY: Optional[str] = None

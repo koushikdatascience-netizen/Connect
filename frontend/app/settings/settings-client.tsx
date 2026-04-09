@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
-import { fetchAccounts, fetchAccountStatus, getApiBaseUrl, getTenantId, getOAuthLoginUrl } from "@/lib/api";
+import { beginOAuthLogin, fetchAccounts, fetchAccountStatus, getApiBaseUrl, getTenantId } from "@/lib/api";
 import { Account, AccountStatusResponse, PlatformName } from "@/lib/types";
 
 const platforms: Array<{ key: PlatformName; label: string; tone: string; icon: string }> = [
@@ -27,6 +27,15 @@ export default function SettingsClient() {
   const [status, setStatus] = useState<AccountStatusResponse>(emptyStatus);
   const [error, setError] = useState<string | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  async function handleOAuthConnect(platform: PlatformName) {
+    try {
+      setError(null);
+      await beginOAuthLogin(platform);
+    } catch (oauthError) {
+      setError(oauthError instanceof Error ? oauthError.message : "Unable to start social login.");
+    }
+  }
 
   useEffect(() => {
     async function load() {
@@ -195,9 +204,10 @@ export default function SettingsClient() {
               const count = status[platform.key].active_accounts;
               const preview = activeAccounts.find(a => a.platform === platform.key);
               return (
-                <a
+                <button
                   key={platform.key}
-                  href={getOAuthLoginUrl(platform.key)}
+                  type="button"
+                  onClick={() => void handleOAuthConnect(platform.key)}
                   style={{ animationDelay: `${0.05 + i * 0.06}s` }}
                   className={`platform-card fade-up group rounded-[22px] border p-4 ${
                     connected
@@ -226,7 +236,7 @@ export default function SettingsClient() {
                       {connected ? "Manage" : "Connect"}
                     </span>
                   </div>
-                </a>
+                </button>
               );
             })}
           </div>

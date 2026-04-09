@@ -180,6 +180,10 @@ def _provider_query_error(platform: str, error: Optional[str], error_description
     return None
 
 
+def _authorization_url_response(url: str):
+    return {"authorization_url": url}
+
+
 def _store_verifier(nonce: str, verifier: str) -> None:
     redis_client.setex(f"pkce:twitter:{nonce}", 600, verifier)
 
@@ -191,7 +195,89 @@ def _pop_verifier(nonce: str) -> Optional[str]:
     return verifier
 
 
+def _facebook_authorization_url(tenant_id: str, user_id: str) -> str:
+    state = _build_state(tenant_id, user_id)
+    params = {
+        "client_id": settings.FACEBOOK_CLIENT_ID,
+        "redirect_uri": settings.facebook_redirect_uri,
+        "state": state,
+        "scope": "pages_manage_posts,pages_read_engagement,instagram_basic,instagram_content_publish",
+    }
+    return "https://www.facebook.com/v18.0/dialog/oauth?{0}".format(urlencode(params))
+
+
+def _instagram_authorization_url(tenant_id: str, user_id: str) -> str:
+    state = _build_state(tenant_id, user_id)
+    params = {
+        "client_id": settings.FACEBOOK_CLIENT_ID,
+        "redirect_uri": settings.instagram_redirect_uri,
+        "state": state,
+        "scope": "instagram_basic,instagram_content_publish,pages_show_list",
+    }
+    return "https://www.facebook.com/v18.0/dialog/oauth?{0}".format(urlencode(params))
+
+
+def _linkedin_authorization_url(tenant_id: str, user_id: str) -> str:
+    state = _build_state(tenant_id, user_id)
+    params = {
+        "response_type": "code",
+        "client_id": settings.LINKEDIN_CLIENT_ID,
+        "redirect_uri": settings.linkedin_redirect_uri,
+        "state": state,
+        "scope": "openid profile email w_member_social",
+    }
+    return "https://www.linkedin.com/oauth/v2/authorization?{0}".format(urlencode(params))
+
+
+def _google_authorization_url(tenant_id: str, user_id: str) -> str:
+    state = _build_state(tenant_id, user_id)
+    params = {
+        "client_id": settings.GOOGLE_CLIENT_ID,
+        "redirect_uri": settings.google_redirect_uri,
+        "response_type": "code",
+        "access_type": "offline",
+        "prompt": "consent",
+        "state": state,
+        "scope": "https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube.readonly",
+    }
+    return "https://accounts.google.com/o/oauth2/v2/auth?{0}".format(urlencode(params))
+
+
+def _twitter_authorization_url(tenant_id: str, user_id: str) -> str:
+    state = _build_state(tenant_id, user_id)
+    decoded = json.loads(base64.urlsafe_b64decode(state.encode()).decode())
+    nonce = decoded["nonce"]
+
+    verifier = secrets.token_urlsafe(48)
+    challenge = base64.urlsafe_b64encode(
+        hashlib.sha256(verifier.encode("utf-8")).digest()
+    ).decode("utf-8").rstrip("=")
+    _store_verifier(nonce, verifier)
+
+    params = {
+        "response_type": "code",
+        "client_id": settings.TWITTER_CLIENT_ID,
+        "redirect_uri": settings.twitter_redirect_uri,
+        "scope": "tweet.read tweet.write users.read offline.access",
+        "state": state,
+        "code_challenge": challenge,
+        "code_challenge_method": "S256",
+    }
+
+    return "https://x.com/i/oauth2/authorize?{0}".format(urlencode(params))
+
+
 # ── Facebook ────────────────────────────────────────────────────────────
+
+@router.get("/facebook/authorize")
+def facebook_authorize(
+    request: Request,
+    user=Depends(get_current_user)
+):
+    tenant_id, user_id = _get_tenant_and_user(request)
+    logger.info("oauth.authorize.start tenant=%s user=%s provider=facebook", tenant_id, user_id)
+    return _authorization_url_response(_facebook_authorization_url(tenant_id, user_id))
+
 
 @router.get("/facebook/login")
 def facebook_login(
@@ -206,16 +292,7 @@ def facebook_login(
         user_id
     )
 
-    state = _build_state(tenant_id, user_id)
-
-    params = {
-        "client_id": settings.FACEBOOK_CLIENT_ID,
-        "redirect_uri": settings.facebook_redirect_uri,
-        "state": state,
-        "scope": "pages_manage_posts,pages_read_engagement,instagram_basic,instagram_content_publish",
-    }
-    url = "https://www.facebook.com/v18.0/dialog/oauth?{0}".format(urlencode(params))
-    return RedirectResponse(url)
+    return RedirectResponse(_facebook_authorization_url(tenant_id, user_id))
 
 
 @router.get("/facebook/callback")
@@ -282,6 +359,16 @@ def facebook_callback(
 
 # ── Instagram ───────────────────────────────────────────────────────────
 
+@router.get("/instagram/authorize")
+def instagram_authorize(
+    request: Request,
+    user=Depends(get_current_user)
+):
+    tenant_id, user_id = _get_tenant_and_user(request)
+    logger.info("oauth.authorize.start tenant=%s user=%s provider=instagram", tenant_id, user_id)
+    return _authorization_url_response(_instagram_authorization_url(tenant_id, user_id))
+
+
 @router.get("/instagram/login")
 def instagram_login(
     request: Request,
@@ -295,16 +382,7 @@ def instagram_login(
         user_id
     )
 
-    state = _build_state(tenant_id, user_id)
-
-    params = {
-        "client_id": settings.FACEBOOK_CLIENT_ID,
-        "redirect_uri": settings.instagram_redirect_uri,
-        "state": state,
-        "scope": "instagram_basic,instagram_content_publish,pages_show_list",
-    }
-    url = "https://www.facebook.com/v18.0/dialog/oauth?{0}".format(urlencode(params))
-    return RedirectResponse(url)
+    return RedirectResponse(_instagram_authorization_url(tenant_id, user_id))
 
 @router.get("/instagram/callback")
 def instagram_callback(
@@ -401,6 +479,16 @@ def instagram_callback(
 from fastapi import Depends
 from app.utils.deps import get_current_user
 
+@router.get("/linkedin/authorize")
+def linkedin_authorize(
+    request: Request,
+    user=Depends(get_current_user)
+):
+    tenant_id, user_id = _get_tenant_and_user(request)
+    logger.info("oauth.authorize.start tenant=%s user=%s provider=linkedin", tenant_id, user_id)
+    return _authorization_url_response(_linkedin_authorization_url(tenant_id, user_id))
+
+
 @router.get("/linkedin/login")
 def linkedin_login(
     request: Request,
@@ -414,17 +502,7 @@ def linkedin_login(
         user_id
     )
 
-    state = _build_state(tenant_id, user_id)
-
-    params = {
-        "response_type": "code",
-        "client_id": settings.LINKEDIN_CLIENT_ID,
-        "redirect_uri": settings.linkedin_redirect_uri,
-        "state": state,
-        "scope": "openid profile email w_member_social",
-    }
-    url = "https://www.linkedin.com/oauth/v2/authorization?{0}".format(urlencode(params))
-    return RedirectResponse(url)
+    return RedirectResponse(_linkedin_authorization_url(tenant_id, user_id))
 
 @router.get("/linkedin/callback")
 def linkedin_callback(
@@ -499,6 +577,16 @@ def linkedin_callback(
 # ── Google / YouTube ────────────────────────────────────────────────────
 
 
+@router.get("/google/authorize")
+def google_authorize(
+    request: Request,
+    user=Depends(get_current_user)
+):
+    tenant_id, user_id = _get_tenant_and_user(request)
+    logger.info("oauth.authorize.start tenant=%s user=%s provider=youtube", tenant_id, user_id)
+    return _authorization_url_response(_google_authorization_url(tenant_id, user_id))
+
+
 @router.get("/google/login")
 def google_login(
     request: Request,
@@ -512,19 +600,7 @@ def google_login(
         user_id
     )
 
-    state = _build_state(tenant_id, user_id)
-
-    params = {
-        "client_id": settings.GOOGLE_CLIENT_ID,
-        "redirect_uri": settings.google_redirect_uri,
-        "response_type": "code",
-        "access_type": "offline",
-        "prompt": "consent",
-        "state": state,
-        "scope": "https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube.readonly",
-    }
-    url = "https://accounts.google.com/o/oauth2/v2/auth?{0}".format(urlencode(params))
-    return RedirectResponse(url)
+    return RedirectResponse(_google_authorization_url(tenant_id, user_id))
 
 @router.get("/google/callback")
 def google_callback(
@@ -604,6 +680,16 @@ def google_callback(
 
 # ── Twitter / X ─────────────────────────────────────────────────────────
 
+@router.get("/twitter/authorize")
+def twitter_authorize(
+    request: Request,
+    user=Depends(get_current_user)
+):
+    tenant_id, user_id = _get_tenant_and_user(request)
+    logger.info("oauth.authorize.start tenant=%s user=%s provider=twitter", tenant_id, user_id)
+    return _authorization_url_response(_twitter_authorization_url(tenant_id, user_id))
+
+
 @router.get("/twitter/login")
 def twitter_login(
     request: Request,
@@ -617,30 +703,7 @@ def twitter_login(
         user_id
     )
 
-    state = _build_state(tenant_id, user_id)
-
-    # extract nonce from the state we just built (for PKCE verifier storage)
-    decoded = json.loads(base64.urlsafe_b64decode(state.encode()).decode())
-    nonce = decoded["nonce"]
-
-    verifier = secrets.token_urlsafe(48)
-    challenge = base64.urlsafe_b64encode(
-        hashlib.sha256(verifier.encode("utf-8")).digest()
-    ).decode("utf-8").rstrip("=")
-    _store_verifier(nonce, verifier)
-
-    params = {
-        "response_type": "code",
-        "client_id": settings.TWITTER_CLIENT_ID,
-        "redirect_uri": settings.twitter_redirect_uri,
-        "scope": "tweet.read tweet.write users.read offline.access",
-        "state": state,
-        "code_challenge": challenge,
-        "code_challenge_method": "S256",
-    }
-
-    url = "https://x.com/i/oauth2/authorize?{0}".format(urlencode(params))
-    return RedirectResponse(url)
+    return RedirectResponse(_twitter_authorization_url(tenant_id, user_id))
 
 @router.get("/twitter/callback")
 def twitter_callback(

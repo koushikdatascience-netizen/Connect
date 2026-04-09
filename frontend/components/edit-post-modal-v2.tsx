@@ -13,6 +13,13 @@ function toLocalDateTime(value?: string | null) {
   return new Date(date.getTime() - offset * 60 * 1000).toISOString().slice(0, 16);
 }
 
+function toUtcIsoString(value: string) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toISOString();
+}
+
 type Props = {
   post: Post | null;
   onClose: () => void;
@@ -42,7 +49,7 @@ export function EditPostModal({ post, onClose, onSaved }: Props) {
     try {
       setSaving(true);
       setError(null);
-      await updatePost(post.id, { content, scheduled_at: scheduledAt || null });
+      await updatePost(post.id, { content, scheduled_at: toUtcIsoString(scheduledAt) });
       await onSaved();
       onClose();
     } catch (saveError) {

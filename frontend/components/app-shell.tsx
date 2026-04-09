@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { PostComposerModal } from "@/components/post-composer-modal-v2";
+import { clearStoredAuthToken } from "@/lib/api";
 
 const navigation = [
   { href: "/", label: "Dashboard", icon: "⊞" },
@@ -24,7 +25,17 @@ function LogoMark() {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [composerOpen, setComposerOpen] = useState(false);
+
+  function handleLogout() {
+    clearStoredAuthToken();
+    router.replace("/login");
+  }
+
+  if (pathname === "/login") {
+    return <>{children}</>;
+  }
 
   return (
     <>
@@ -87,6 +98,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               Upgrade to Pro
             </button>
           </div>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="secondary-button w-full justify-center py-2.5 text-xs"
+          >
+            Sign Out
+          </button>
         </div>
       </aside>
 

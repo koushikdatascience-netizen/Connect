@@ -28,8 +28,30 @@ def _extract_bearer_token(authorization: Optional[str]) -> Optional[str]:
     return parts[1]
 
 
+def _build_developer_user(request: Request, settings) -> CurrentUser:
+    query_tenant_id = (
+        request.query_params.get(settings.QUERY_TENANT_PARAM)
+        or request.query_params.get("tenant_id")
+    )
+    header_tenant_id = request.headers.get("X-Tenant-ID")
+    tenant_id = header_tenant_id or query_tenant_id or "tenant_123"
+    return CurrentUser(
+        subject="00000000-0000-0000-0000-000000000000",
+        tenant_id=tenant_id,
+        role="developer",
+        is_admin=False,
+        claims={
+            settings.JWT_TENANT_CLAIM: tenant_id,
+            settings.JWT_SUBJECT_CLAIM: "00000000-0000-0000-0000-000000000000",
+            settings.JWT_ROLE_CLAIM: "false",
+        },
+    )
+
+
 async def jwt_context_middleware(request: Request, call_next):
-    
+    oauth_path = request.url.path.startswith("/api/v1/oauth/")
+    oauth_callback_path = oauth_path and request.url.path.endswith("/callback")
+
     public_paths = [
         "/docs",
         "/openapi.json",
@@ -38,6 +60,9 @@ async def jwt_context_middleware(request: Request, call_next):
         "/api/v1/openapi.json",
     ]
     if any(request.url.path.startswith(p) for p in public_paths):
+        return await call_next(request)
+
+    if oauth_callback_path:
         return await call_next(request)
     
     if request.method == "OPTIONS":
@@ -54,24 +79,13 @@ async def jwt_context_middleware(request: Request, call_next):
             detail = getattr(exc, "detail", "Invalid bearer token")
             status_code = getattr(exc, "status_code", 401)
             return JSONResponse(status_code=status_code, content={"detail": detail})
+    elif oauth_path and settings.ALLOW_PUBLIC_OAUTH_LOGIN:
+        current_user = _build_developer_user(request, settings)
     elif settings.AUTH_REQUIRED and not settings.ALLOW_DEV_TENANT_HEADER:
         return JSONResponse(status_code=401, content={"detail": "Bearer token is required"})
 
     if current_user is None and settings.ALLOW_DEV_TENANT_HEADER:
-        query_tenant_id = request.query_params.get(settings.QUERY_TENANT_PARAM)
-        header_tenant_id = request.headers.get("X-Tenant-ID")
-        tenant_id = header_tenant_id or query_tenant_id or "tenant_123"
-        current_user = CurrentUser(
-            subject="00000000-0000-0000-0000-000000000000",
-            tenant_id=tenant_id,
-            role="developer",
-            is_admin=False,
-            claims={
-                settings.JWT_TENANT_CLAIM: tenant_id,
-                settings.JWT_SUBJECT_CLAIM: "00000000-0000-0000-0000-000000000000",
-                settings.JWT_ROLE_CLAIM: "false",
-            },
-        )
+        current_user = _build_developer_user(request, settings)
     elif current_user is None:
         return JSONResponse(status_code=401, content={"detail": "Tenant context is missing"})
 

@@ -1669,6 +1669,138 @@ def publish_to_youtube(
     return upload_response.json().get("id") or account.platform_account_id
 
 
+def fetch_provider_live_metrics(
+    post: ScheduledPost,
+    account: SocialAccount,
+) -> Dict[str, Any]:
+    if not post.platform_post_id:
+        raise UnsupportedPublishError("Provider post ID is not available for this post yet.")
+
+    platform = post.platform
+
+    if platform == "youtube":
+        access_token = _get_youtube_access_token(account)
+        response = requests.get(
+            "https://www.googleapis.com/youtube/v3/videos",
+            headers={"Authorization": f"Bearer {access_token}"},
+            params={
+                "part": "statistics,snippet,status",
+                "id": post.platform_post_id,
+            },
+            timeout=30,
+        )
+        if not response.ok:
+            _raise_provider_error("youtube-metrics", response)
+        items = response.json().get("items", [])
+        if not items:
+            raise UnsupportedPublishError("YouTube did not return metrics for this video.")
+        item = items[0]
+        statistics = item.get("statistics", {})
+        snippet = item.get("snippet", {})
+        status_payload = item.get("status", {})
+        return {
+            "title": snippet.get("title"),
+            "publishedAt": snippet.get("publishedAt"),
+            "privacyStatus": status_payload.get("privacyStatus"),
+            "viewCount": int(statistics.get("viewCount", 0)),
+            "likeCount": int(statistics.get("likeCount", 0)),
+            "favoriteCount": int(statistics.get("favoriteCount", 0)),
+            "commentCount": int(statistics.get("commentCount", 0)),
+        }
+
+    access_token = decrypt_token(account.encrypted_token)
+
+    if platform == "twitter":
+        response = requests.get(
+            f"https://api.twitter.com/2/tweets/{quote(post.platform_post_id, safe='')}",
+            headers=_twitter_json_headers(access_token),
+            params={"tweet.fields": "public_metrics,created_at,text"},
+            timeout=30,
+        )
+        if not response.ok:
+            _raise_provider_error("twitter-metrics", response, retryable=False)
+        tweet = response.json().get("data", {})
+        metrics = tweet.get("public_metrics", {})
+        return {
+            "createdAt": tweet.get("created_at"),
+            "text": tweet.get("text"),
+            "replyCount": int(metrics.get("reply_count", 0)),
+            "retweetCount": int(metrics.get("retweet_count", 0)),
+            "likeCount": int(metrics.get("like_count", 0)),
+            "quoteCount": int(metrics.get("quote_count", 0)),
+            "impressionCount": int(metrics.get("impression_count", 0)),
+        }
+
+    if platform == "linkedin":
+        encoded_urn = quote(post.platform_post_id, safe="")
+        response = requests.get(
+            f"https://api.linkedin.com/rest/socialActions/{encoded_urn}",
+            headers=_linkedin_headers(access_token, content_type="application/json"),
+            timeout=30,
+        )
+        if not response.ok:
+            _raise_provider_error("linkedin-metrics", response, retryable=False)
+        payload = response.json()
+        return {
+            "likes": int(payload.get("likesSummary", {}).get("totalLikes", 0)),
+            "comments": int(payload.get("commentsSummary", {}).get("totalFirstLevelComments", 0)),
+        }
+
+    if platform == "facebook":
+        response = requests.get(
+            f"https://graph.facebook.com/v18.0/{post.platform_post_id}",
+            params={
+                "fields": "likes.summary(true),comments.summary(true),shares,insights.metric(post_impressions_unique)",
+                "access_token": access_token,
+            },
+            timeout=30,
+        )
+        if not response.ok:
+            _raise_provider_error("facebook-metrics", response, retryable=False)
+        payload = response.json()
+        insights = payload.get("insights", {}).get("data", [])
+        impressions = 0
+        if insights:
+            values = insights[0].get("values", [])
+            if values:
+                impressions = int(values[0].get("value", 0))
+        return {
+            "likes": int(payload.get("likes", {}).get("summary", {}).get("total_count", 0)),
+            "comments": int(payload.get("comments", {}).get("summary", {}).get("total_count", 0)),
+            "shares": int(payload.get("shares", {}).get("count", 0)),
+            "impressions": impressions,
+        }
+
+    if platform == "instagram":
+        response = requests.get(
+            f"https://graph.facebook.com/v18.0/{post.platform_post_id}",
+            params={
+                "fields": "comments_count,like_count,media_type,permalink,insights.metric(impressions,reach,saved,video_views)",
+                "access_token": access_token,
+            },
+            timeout=30,
+        )
+        if not response.ok:
+            _raise_provider_error("instagram-metrics", response, retryable=False)
+        payload = response.json()
+        insight_map = {}
+        for item in payload.get("insights", {}).get("data", []):
+            values = item.get("values", [])
+            insight_map[item.get("name")] = values[0].get("value", 0) if values else 0
+        return {
+            "mediaType": payload.get("media_type"),
+            "permalink": payload.get("permalink"),
+            "likes": int(payload.get("like_count", 0)),
+            "comments": int(payload.get("comments_count", 0)),
+            "impressions": int(insight_map.get("impressions", 0)),
+            "reach": int(insight_map.get("reach", 0)),
+            "saved": int(insight_map.get("saved", 0)),
+            "videoViews": int(insight_map.get("video_views", 0)),
+        }
+
+    raise UnsupportedPublishError(f"Live metrics are not supported for platform '{platform}'.")
+
+
 # ============================================================================
 # PUBLISHER INSTANCES (Must be after class definitions)
 # ============================================================================
