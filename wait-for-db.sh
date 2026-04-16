@@ -34,7 +34,8 @@ except Exception as e:
     sys.exit(1)
 " 2>&1; then
             echo "Postgres is ready!"
-            exec "$@"
+            # Exit successfully - the calling script will continue
+            exit 0
         else
             echo "PostgreSQL port open but not accepting connections yet..."
         fi
