@@ -20,8 +20,8 @@ while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
         # Give PostgreSQL a moment to fully initialize
         sleep 3
         
-        # Test actual PostgreSQL connection using Python
-        if python3 -c "
+        # Test actual PostgreSQL connection using Python in the uv environment
+        if uv run python -c "
 import sys
 try:
     import psycopg2
