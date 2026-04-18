@@ -15,6 +15,29 @@ jobs:
   backend-tests:
     name: Backend Tests
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: socialsync
+        options: >-
+          --health-cmd "pg_isready -U postgres -d socialsync"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+        ports:
+          - 6379:6379
 
     steps:
       - name: Checkout
@@ -31,13 +54,70 @@ jobs:
       - name: Install backend dependencies
         run: uv sync --dev
 
+      - name: Run migrations
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/socialsync
+          REDIS_URL: redis://localhost:6379/0
+          ENCRYPTION_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+          BACKEND_PUBLIC_URL: http://127.0.0.1:8000
+          FRONTEND_URL: http://localhost:3000
+          AUTH_REQUIRED: "false"
+          FACEBOOK_CLIENT_ID: ci
+          FACEBOOK_SECRET: ci
+          LINKEDIN_CLIENT_ID: ci
+          LINKEDIN_SECRET: ci
+          GOOGLE_CLIENT_ID: ci
+          GOOGLE_SECRET: ci
+          TWITTER_CLIENT_ID: ci
+          TWITTER_CLIENT_SECRET: ci
+          CLOUDINARY_CLOUD_NAME: ci
+          CLOUDINARY_API_KEY: ci
+          CLOUDINARY_API_SECRET: ci
+        run: uv run alembic upgrade head
+
+      - name: Start API
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/socialsync
+          REDIS_URL: redis://localhost:6379/0
+          ENCRYPTION_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+          BACKEND_PUBLIC_URL: http://127.0.0.1:8000
+          FRONTEND_URL: http://localhost:3000
+          AUTH_REQUIRED: "false"
+          FACEBOOK_CLIENT_ID: ci
+          FACEBOOK_SECRET: ci
+          LINKEDIN_CLIENT_ID: ci
+          LINKEDIN_SECRET: ci
+          GOOGLE_CLIENT_ID: ci
+          GOOGLE_SECRET: ci
+          TWITTER_CLIENT_ID: ci
+          TWITTER_CLIENT_SECRET: ci
+          CLOUDINARY_CLOUD_NAME: ci
+          CLOUDINARY_API_KEY: ci
+          CLOUDINARY_API_SECRET: ci
+        run: |
+          nohup uv run uvicorn app.main:app --host 127.0.0.1 --port 8000 > uvicorn.log 2>&1 &
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:8000/api/v1/health >/dev/null; then
+              echo "API is ready"
+              exit 0
+            fi
+            echo "Waiting for API... ($i/30)"
+            sleep 2
+          done
+          echo "API failed to start"
+          cat uvicorn.log
+          exit 1
+
       - name: Run backend tests
         env:
           ENCRYPTION_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
-          DATABASE_URL: postgresql://social_manager:dummy@localhost:5432/socialsync
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/socialsync
           REDIS_URL: redis://localhost:6379/0
           BACKEND_PUBLIC_URL: http://127.0.0.1:8000
           FRONTEND_URL: http://localhost:3000
+          AUTH_REQUIRED: "false"
+          API_BASE_URL: http://127.0.0.1:8000
+          API_TENANT_ID: tenant_123
           FACEBOOK_CLIENT_ID: ci
           FACEBOOK_SECRET: ci
           LINKEDIN_CLIENT_ID: ci
