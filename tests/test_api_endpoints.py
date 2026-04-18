@@ -143,7 +143,8 @@ class TestPlatformEndpoints:
         _assert_ok(response)
         payload = response.json()
         assert "platforms" in payload
-        assert isinstance(payload["platforms"], list)
+        assert isinstance(payload["platforms"], dict)
+        assert "facebook" in payload["platforms"]
 
 
 class TestAccountEndpoints:
