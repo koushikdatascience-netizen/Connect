@@ -10,11 +10,8 @@ import { clearStoredAuthToken, logoutSession } from "@/lib/api";
 const navigation = [
   { href: "/", label: "Dashboard", icon: "home" },
   { href: "/create-post", label: "Compose Post", icon: "compose" },
-  { href: "/calendar", label: "Calendar", icon: "calendar" },
   { href: "/posts", label: "Scheduled Posts", icon: "clock" },
-  { href: "/analytics", label: "Analytics", icon: "chart" },
   { href: "/connections", label: "Social Accounts", icon: "spark" },
-  { href: "/settings", label: "Settings", icon: "settings" },
 ] as const;
 
 function LogoMark() {
@@ -34,9 +31,7 @@ function NavIcon({ icon }: { icon: (typeof navigation)[number]["icon"] }) {
   if (icon === "home") return <svg {...shared}><path d="M4 10.5 12 4l8 6.5" /><path d="M6.5 9.8V19h11V9.8" /></svg>;
   if (icon === "compose") return <svg {...shared}><path d="M4.5 19.5h4l10-10a2.1 2.1 0 0 0-4-4l-10 10v4Z" /><path d="m13.5 6.5 4 4" /></svg>;
   if (icon === "spark") return <svg {...shared}><path d="M12 3v4M12 17v4M3 12h4M17 12h4" /><path d="m6 6 2 2M16 16l2 2M18 6l-2 2M8 16l-2 2" /></svg>;
-  if (icon === "calendar") return <svg {...shared}><rect x="4.5" y="5.5" width="15" height="14" rx="2.5" /><path d="M8 3.5v4M16 3.5v4M4.5 9.5h15" /></svg>;
   if (icon === "clock") return <svg {...shared}><circle cx="12" cy="12" r="8" /><path d="M12 8v5l3 2" /></svg>;
-  if (icon === "chart") return <svg {...shared}><path d="M5 18.5V10.5M12 18.5V6.5M19 18.5V13.5" /><path d="M3.5 18.5h17" /></svg>;
   return <svg {...shared}><circle cx="12" cy="12" r="3" /><path d="M12 4.5v2.1M12 17.4v2.1M19.5 12h-2.1M6.6 12H4.5M17.3 6.7l-1.5 1.5M8.2 15.8l-1.5 1.5M17.3 17.3l-1.5-1.5M8.2 8.2 6.7 6.7" /></svg>;
 }
 

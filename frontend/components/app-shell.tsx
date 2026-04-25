@@ -9,8 +9,7 @@ import { clearStoredAuthToken, logoutSession } from "@/lib/api";
 const navigation = [
   { href: "/", label: "Dashboard", icon: "⊞" },
   { href: "/posts", label: "Scheduled Posts", icon: "📅" },
-  { href: "/analytics", label: "Analytics", icon: "📊" },
-  { href: "/settings", label: "Settings", icon: "⚙" },
+  { href: "/connections", label: "Connections", icon: "🔗" },
 ];
 
 function LogoMark() {

@@ -10,8 +10,7 @@ import { clearStoredAuthToken, logoutSession } from "@/lib/api";
 const navigation = [
   { href: "/", label: "Dashboard", icon: "dashboard" },
   { href: "/posts", label: "Scheduled Posts", icon: "posts" },
-  { href: "/analytics", label: "Analytics", icon: "analytics" },
-  { href: "/settings", label: "Settings", icon: "settings" },
+  { href: "/connections", label: "Connections", icon: "connections" },
 ] as const;
 
 function LogoMark() {
@@ -28,7 +27,7 @@ function NavIcon({ icon, className = "h-5 w-5" }: { icon: (typeof navigation)[nu
   const shared = { viewBox: "0 0 24 24", className, "aria-hidden": true, fill: "none", stroke: "currentColor", strokeWidth: 1.9, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
   if (icon === "dashboard") return <svg {...shared}><path d="M4.5 5.5h6.5v6.5H4.5zM13 5.5h6.5V10H13zM13 12.5h6.5v6H13zM4.5 14h6.5v4.5H4.5z" /></svg>;
   if (icon === "posts") return <svg {...shared}><rect x="5" y="4.5" width="14" height="15" rx="2.5" /><path d="M8 8.5h8M8 12h8M8 15.5h5" /></svg>;
-  if (icon === "analytics") return <svg {...shared}><path d="M5 18.5V10.5M12 18.5V6.5M19 18.5V13.5" /><path d="M3.5 18.5h17" /></svg>;
+  if (icon === "connections") return <svg {...shared}><path d="M10 13a5 5 0 0 0 7.54.53l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.53l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>;
   return <svg {...shared}><circle cx="12" cy="12" r="3.2" /><path d="M12 4.5v2.1M12 17.4v2.1M19.5 12h-2.1M6.6 12H4.5M17.3 6.7l-1.5 1.5M8.2 15.8l-1.5 1.5M17.3 17.3l-1.5-1.5M8.2 8.2 6.7 6.7" /></svg>;
 }
 
