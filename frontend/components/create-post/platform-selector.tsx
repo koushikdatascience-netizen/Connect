@@ -160,20 +160,27 @@ export function PlatformSelector({
                               alt={account.account_name}
                               className="h-10 w-10 shrink-0 rounded-full border border-[#f0e2b2] object-cover"
                               onError={(e) => {
-                                (e.target as HTMLImageElement).style.display = 'none';
+                                // Hide broken image and show fallback instead
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                                const fallback = target.nextElementSibling as HTMLElement;
+                                if (fallback) {
+                                  fallback.style.display = 'flex';
+                                }
                               }}
                             />
-                          ) : (
-                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#f0e2b2] bg-[#fff7d1] text-[14px] font-semibold text-[#8c6f00]">
-                              {account.account_name.charAt(0).toUpperCase()}
-                            </div>
-                          )}
+                          ) : null}
+                          <div 
+                            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#f0e2b2] bg-[#fff7d1] text-[14px] font-semibold text-[#8c6f00] ${account.profile_picture_url ? 'hidden' : ''}`}
+                          >
+                            {account.account_name.charAt(0).toUpperCase()}
+                          </div>
 
                           <div className="min-w-0 flex-1">
                             <div className="text-[10px] text-[#8c6f00]">
                               {getEntityLabel(account.account_type)}
                             </div>
-                            <div className="truncate text-[12px] font-semibold text-[#111111]">
+                            <div className="truncate text-[12px] font-semibold text-[#111111]" title={account.account_name}>
                               {account.account_name}
                             </div>
                             <div className="mt-1 text-[10px] text-[#344054]">
