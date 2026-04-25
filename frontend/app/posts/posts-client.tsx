@@ -51,7 +51,12 @@ function normalizeMetrics(response?: PostLiveMetricsResponse | null): Normalized
   };
 }
 
+// FIX: Corrected URL construction for all platforms.
+// - Instagram now uses instagram.com (was incorrectly using facebook.com)
+// - google_business has no public post URL, returns null intentionally
+// - blogger/wordpress with numeric IDs return null (no way to construct URL without blog domain)
 function getLivePostUrl(post: Post, metrics?: PostLiveMetricsResponse | null) {
+  // Priority 1: use permalink from metrics API if available
   const permalink = metrics?.metrics?.permalink;
   if (typeof permalink === "string" && permalink.trim()) {
     return permalink;
@@ -61,10 +66,12 @@ function getLivePostUrl(post: Post, metrics?: PostLiveMetricsResponse | null) {
     return null;
   }
 
+  // Priority 2: if the stored ID is already a full URL, use it directly
   if (/^https?:\/\//i.test(post.platform_post_id)) {
     return post.platform_post_id;
   }
 
+  // Priority 3: construct URL from platform + ID
   switch (post.platform) {
     case "youtube":
       return `https://www.youtube.com/watch?v=${encodeURIComponent(post.platform_post_id)}`;
@@ -74,14 +81,20 @@ function getLivePostUrl(post: Post, metrics?: PostLiveMetricsResponse | null) {
     case "linkedin":
       return `https://www.linkedin.com/feed/update/${encodeURIComponent(post.platform_post_id)}/`;
     case "facebook":
-    case "instagram":
       return `https://www.facebook.com/${encodeURIComponent(post.platform_post_id)}`;
+    case "instagram":
+      // FIX: Instagram uses instagram.com/p/<shortcode>, not facebook.com
+      return `https://www.instagram.com/p/${encodeURIComponent(post.platform_post_id)}/`;
     case "blogger":
     case "wordpress":
-      // For blog platforms, try to construct URL if we have the ID
+      // Numeric post IDs can't form a URL without the blog's domain.
+      // If the ID somehow contains a URL fragment, surface it.
       if (post.platform_post_id.includes("http")) {
         return post.platform_post_id;
       }
+      return null;
+    case "google_business":
+      // Google Business Profile posts have no stable public permalink.
       return null;
     default:
       return null;
@@ -252,7 +265,6 @@ export default function PostsClient() {
       const result = await processOverduePosts();
       await load();
       if (result.processed_posts.length > 0) {
-        // Show success message briefly
         console.log(`Processed ${result.processed_posts.length} overdue posts`);
       }
     } catch (e) {
@@ -430,6 +442,8 @@ export default function PostsClient() {
                     const canCancel = !["posted","cancelled"].includes(post.status);
                     const liveMetrics = metricsByPost[post.id];
                     const normalizedMetrics = normalizeMetrics(liveMetrics);
+                    // FIX: liveMetrics may still be loading when the component first renders.
+                    // Pass it in so getLivePostUrl can use the permalink once metrics resolve.
                     const livePostUrl = getLivePostUrl(post, liveMetrics);
                     const showMetrics =
                       liveMetrics?.available &&
@@ -437,13 +451,6 @@ export default function PostsClient() {
 
                     return (
                       <div key={post.id} className="post-card rounded-[22px] border border-[#ece3d3] bg-[#fffcf7] p-4 sm:p-5">
-                        {/* Debug - always show */}
-                        <div className="mb-2 text-[10px] text-blue-600 font-mono bg-blue-50 p-1 rounded">
-                          DEBUG: id={post.id}, status={post.status}, platform={post.platform}, 
-                          platform_post_id={post.platform_post_id || "NULL/UNDEFINED"}, 
-                          livePostUrl={livePostUrl || "NULL"}
-                        </div>
-                        
                         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                           {/* Content area */}
                           <div className="min-w-0 flex-1">
@@ -490,15 +497,18 @@ export default function PostsClient() {
                               </div>
                             ) : null}
 
-                            {post.platform_post_id && (
+                            {/* FIX: Show platform ID row for posted posts regardless of whether
+                                a URL could be constructed. The "View Live Post" button is shown
+                                when a URL is available; otherwise a small note explains why it
+                                isn't available — so the button is never silently missing. */}
+                            {post.status === "posted" && (
                               <div className="mt-3 flex flex-wrap items-center gap-3">
-                                <span className="text-xs text-ink-500">
-                                  Platform ID: <span className="font-mono text-ink-700">{post.platform_post_id}</span>
-                                </span>
-                                <span className="text-[10px] text-ink-400">
-                                  [debug: status={post.status}, platform={post.platform}, hasUrl={String(!!livePostUrl)}]
-                                </span>
-                                {post.status === "posted" && livePostUrl ? (
+                                {post.platform_post_id && (
+                                  <span className="text-xs text-ink-500">
+                                    Platform ID: <span className="font-mono text-ink-700">{post.platform_post_id}</span>
+                                  </span>
+                                )}
+                                {livePostUrl ? (
                                   <a
                                     href={livePostUrl}
                                     target="_blank"
@@ -507,7 +517,15 @@ export default function PostsClient() {
                                   >
                                     🔗 View Live Post
                                   </a>
-                                ) : null}
+                                ) : (
+                                  <span className="text-xs text-ink-400 italic">
+                                    {metricsLoadingIds[post.id]
+                                      ? "Resolving post URL…"
+                                      : post.platform_post_id
+                                        ? "Live URL unavailable for this platform"
+                                        : "No platform post ID recorded"}
+                                  </span>
+                                )}
                               </div>
                             )}
 
@@ -561,6 +579,8 @@ export default function PostsClient() {
                                 ✕ Cancel
                               </button>
                             )}
+                            {/* FIX: "View Live" sidebar button — same condition as the inline
+                                button above. Only rendered when a URL is actually available. */}
                             {post.status === "posted" && livePostUrl && (
                               <a
                                 href={livePostUrl}

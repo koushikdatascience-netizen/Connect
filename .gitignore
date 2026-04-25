@@ -76,3 +76,4 @@ frontend.zip
 # Misc
 # ========================
 .DS_Store
+celerybeat-schedule
