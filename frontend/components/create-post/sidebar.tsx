@@ -42,7 +42,7 @@ export function Sidebar({
   const allSelected = totalSelectedAccounts === totalAccounts && totalAccounts > 0;
 
   return (
-    <aside className="h-full bg-[#fffdf7] xl:sticky xl:top-6 xl:h-[calc(100vh-3rem)]">
+    <aside className="h-full bg-[#fffdf7] xl:sticky xl:top-6 xl:h-[calc(160vh)]">
       <div className="flex h-full min-h-0 flex-col">
         <div className="border-b border-[#f0e2b2] px-5 py-5">
           <p className="text-[10px] font-medium uppercase tracking-[0.15em] text-[#8c6f00]">
