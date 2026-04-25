@@ -42,7 +42,7 @@ function PlatformIcon({ platform, enabled }: { platform: PlatformName; enabled: 
 }
 type Config = {
   enabled: boolean;
-  accountId: number | null;
+  accountIds: number[];
   scheduledAt: string;
   instagramFirstComment: string;
   instagramMode: string;
@@ -76,14 +76,14 @@ const labels: Record<PlatformName, string> = {
 };
 
 const platformTone: Record<PlatformName, string> = {
-  facebook: "bg-[#edf3ff] text-[#315ed2]",
-  instagram: "bg-[#fff0f7] text-[#c13982]",
-  linkedin: "bg-[#eef7ff] text-[#0f6ab8]",
-  twitter: "bg-[#171717] text-white",
-  youtube: "bg-[#fff1ef] text-[#d8342b]",
-  blogger: "bg-[#fff2e8] text-[#ef6c00]",
-  google_business: "bg-[#eef5ff] text-[#1a73e8]",
-  wordpress: "bg-[#f0f3f5] text-[#1f2933]",
+  facebook: "bg-[#0e1830] text-[#6ea8fe]",
+  instagram: "bg-[#2a0f1e] text-[#f472b6]",
+  linkedin: "bg-[#0c1e30] text-[#60a5fa]",
+  twitter: "bg-[#111] text-white",
+  youtube: "bg-[#2a0f0e] text-[#f87171]",
+  blogger: "bg-[#2a1508] text-[#fb923c]",
+  google_business: "bg-[#0c1e30] text-[#60a5fa]",
+  wordpress: "bg-[#141924] text-[#9aa4b2]",
 };
 
 const descriptions: Record<PlatformName, string> = {
@@ -99,7 +99,7 @@ const descriptions: Record<PlatformName, string> = {
 
 const emptyConfig = (): Config => ({
   enabled: false,
-  accountId: null,
+  accountIds: [],
   scheduledAt: "",
   instagramFirstComment: "",
   instagramMode: "feed",
@@ -119,6 +119,29 @@ const emptyConfig = (): Config => ({
   facebookLink: "",
   facebookVideoTitle: "",
 });
+
+type SavedAccountGroup = {
+  id: string;
+  name: string;
+  accountIds: number[];
+};
+
+const ACCOUNT_GROUPS_KEY = "snapkey_account_groups_v1";
+
+function readSavedGroups() {
+  if (typeof window === "undefined") return [] as SavedAccountGroup[];
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(ACCOUNT_GROUPS_KEY) || "[]");
+    return Array.isArray(parsed) ? parsed as SavedAccountGroup[] : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeSavedGroups(groups: SavedAccountGroup[]) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(ACCOUNT_GROUPS_KEY, JSON.stringify(groups));
+}
 
 function dedupeIds(values: number[]) {
   return [...new Set(values)];
@@ -301,6 +324,8 @@ function formatAccountTypeLabel(accountType: string | null | undefined) {
 export function PostComposerModal({ open, onClose, onCreated }: Props) {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [media, setMedia] = useState<MediaAsset[]>([]);
+  const [accountGroups, setAccountGroups] = useState<SavedAccountGroup[]>([]);
+  const [groupName, setGroupName] = useState("");
   const [caption, setCaption] = useState("");
   const [hashtags, setHashtags] = useState("");
   const [mentions, setMentions] = useState("");
@@ -327,22 +352,10 @@ export function PostComposerModal({ open, onClose, onCreated }: Props) {
       const [accountData, mediaData] = await Promise.all([fetchAccounts(), fetchMedia()]);
       const activeAccounts = accountData.filter((account) => account.is_active);
       setAccounts(activeAccounts);
+      setAccountGroups(readSavedGroups());
       setMedia(mediaData);
       setMessage(null);
       setError(null);
-      setConfigs((current) => {
-        const next = { ...current };
-        for (const platform of platforms) {
-          next[platform] = {
-            ...next[platform],
-            accountId:
-              next[platform].accountId ??
-              activeAccounts.find((account) => normalizePlatform(account.platform) === platform)?.id ??
-              null,
-          };
-        }
-        return next;
-      });
 
       const firstPlatformWithAccount = platforms.find(
         (platform) => activeAccounts.some((account) => normalizePlatform(account.platform) === platform),
@@ -386,6 +399,71 @@ export function PostComposerModal({ open, onClose, onCreated }: Props) {
     setConfigs((current) => ({ ...current, [platform]: { ...current[platform], ...patch } }));
   }
 
+  function toggleAccount(account: Account, selected: boolean) {
+    const platform = normalizePlatform(account.platform) as PlatformName;
+    if (!platforms.includes(platform)) return;
+    const currentIds = configs[platform].accountIds;
+    const nextIds = selected
+      ? dedupeIds([...currentIds, account.id])
+      : currentIds.filter((id) => id !== account.id);
+    updateConfig(platform, { accountIds: nextIds, enabled: nextIds.length > 0 });
+    setActivePlatform(platform);
+  }
+
+  function applyGroup(group: SavedAccountGroup) {
+    const availableIds = new Set(accounts.map((account) => account.id));
+    const filteredIds = group.accountIds.filter((id) => availableIds.has(id));
+    setConfigs((current) =>
+      Object.fromEntries(
+        platforms.map((platform) => {
+          const platformIds = filteredIds.filter((id) =>
+            accounts.some((account) => account.id === id && normalizePlatform(account.platform) === platform),
+          );
+          return [
+            platform,
+            {
+              ...current[platform],
+              accountIds: platformIds,
+              enabled: platformIds.length > 0,
+            },
+          ];
+        }),
+      ) as Record<PlatformName, Config>,
+    );
+
+    const firstPlatform = platforms.find((platform) =>
+      filteredIds.some((id) => accounts.some((account) => account.id === id && normalizePlatform(account.platform) === platform)),
+    );
+    if (firstPlatform) setActivePlatform(firstPlatform);
+  }
+
+  function saveCurrentGroup() {
+    const trimmed = groupName.trim();
+    const selectedIds = dedupeIds(platforms.flatMap((platform) => configs[platform].accountIds));
+    if (!trimmed) {
+      setError("Give the account group a name first.");
+      return;
+    }
+    if (!selectedIds.length) {
+      setError("Select at least one connected account before saving a group.");
+      return;
+    }
+    const nextGroups = [
+      ...accountGroups,
+      { id: `${Date.now()}`, name: trimmed, accountIds: selectedIds },
+    ];
+    setAccountGroups(nextGroups);
+    writeSavedGroups(nextGroups);
+    setGroupName("");
+    setMessage(`Saved "${trimmed}" as an account group.`);
+  }
+
+  function removeGroup(groupId: string) {
+    const nextGroups = accountGroups.filter((group) => group.id !== groupId);
+    setAccountGroups(nextGroups);
+    writeSavedGroups(nextGroups);
+  }
+
   function handlePlatformToggle(platform: PlatformName, enabled: boolean) {
     const mediaState = mediaStateByPlatform[platform];
     if (enabled && !mediaState.valid) {
@@ -393,8 +471,16 @@ export function PostComposerModal({ open, onClose, onCreated }: Props) {
       setActivePlatform(platform);
       return;
     }
+    if (enabled && !configs[platform].accountIds.length) {
+      const defaultIds = accountsByPlatform[platform].slice(0, 1).map((account) => account.id);
+      updateConfig(platform, { enabled: defaultIds.length > 0, accountIds: defaultIds });
+      if (!defaultIds.length) {
+        setError(`No connected ${labels[platform]} account is available.`);
+      }
+      return;
+    }
 
-    updateConfig(platform, { enabled });
+    updateConfig(platform, { enabled, accountIds: enabled ? configs[platform].accountIds : [] });
   }
 
   function validateBeforeSubmit(selectedPlatforms: PlatformName[]) {
@@ -515,9 +601,9 @@ export function PostComposerModal({ open, onClose, onCreated }: Props) {
   }
 
   async function handleSubmit() {
-    const selectedPlatforms = platforms.filter((platform) => configs[platform].enabled && configs[platform].accountId);
+    const selectedPlatforms = platforms.filter((platform) => configs[platform].enabled && configs[platform].accountIds.length);
     if (!selectedPlatforms.length) {
-      setError("Select at least one platform.");
+      setError("Select at least one connected account.");
       return;
     }
 
@@ -535,10 +621,10 @@ export function PostComposerModal({ open, onClose, onCreated }: Props) {
         .filter(Boolean)
         .join("\n\n");
 
-      await Promise.all(
-        selectedPlatforms.map((platform) =>
+      const selectedJobs = selectedPlatforms.flatMap((platform) =>
+        configs[platform].accountIds.map((accountId) =>
           createPost({
-            social_account_id: configs[platform].accountId as number,
+            social_account_id: accountId,
             content,
             scheduled_at: toUtcIsoString(configs[platform].scheduledAt),
             media_ids: selectedMediaIds,
@@ -547,22 +633,23 @@ export function PostComposerModal({ open, onClose, onCreated }: Props) {
         ),
       );
 
-      setMessage(`${selectedPlatforms.length} post${selectedPlatforms.length > 1 ? "s" : ""} created successfully.`);
+      await Promise.all(selectedJobs);
+
+      setMessage(`${selectedJobs.length} post${selectedJobs.length > 1 ? "s" : ""} created successfully.`);
       setCaption("");
       setHashtags("");
       setMentions("");
       setSelectedMediaIds([]);
       setConfigs((current) =>
-        Object.fromEntries(
-          platforms.map((platform) => [
-            platform,
-            {
-              ...current[platform],
-              enabled: false,
-              scheduledAt: "",
-            },
-          ]),
-        ) as Record<PlatformName, Config>,
+        platforms.reduce<Record<PlatformName, Config>>((next, platform) => {
+          next[platform] = {
+            ...current[platform],
+            enabled: false,
+            accountIds: [],
+            scheduledAt: "",
+          };
+          return next;
+        }, {} as Record<PlatformName, Config>),
       );
       await onCreated?.();
     } catch (submitError) {
@@ -574,10 +661,15 @@ export function PostComposerModal({ open, onClose, onCreated }: Props) {
 
   const selectedPlatformAccounts = accountsByPlatform[activePlatform];
   const config = configs[activePlatform];
+  const selectedAccountIds = dedupeIds(platforms.flatMap((platform) => configs[platform].accountIds));
+  const selectedAccountCount = selectedAccountIds.length;
+  const groupedAccounts = platforms
+    .map((platform) => ({ platform, accounts: accountsByPlatform[platform] }))
+    .filter((entry) => entry.accounts.length);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(20,20,20,0.45)] p-4 backdrop-blur-sm animate-fade-in">
-      <div className="relative flex max-h-[94vh] w-full max-w-[1240px] overflow-hidden rounded-[34px] border border-white/70 bg-white shadow-[0_30px_80px_rgba(18,18,18,0.22)] animate-slide-up">
+      <div className="relative flex max-h-[94vh] w-full max-w-[1240px] overflow-hidden rounded-[34px] border border-[#1e2535] bg-[#0d1018] shadow-[0_30px_80px_rgba(18,18,18,0.22)] animate-slide-up">
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
           <div className="flex items-start justify-between border-b border-[#f0e6d5] px-6 py-5 sm:px-8">
             <div>
@@ -598,7 +690,71 @@ export function PostComposerModal({ open, onClose, onCreated }: Props) {
             </button>
           </div>
 
-          <div className="grid flex-1 gap-6 px-6 py-6 sm:px-8 xl:grid-cols-[1.35fr_0.95fr]">
+          <div className="grid flex-1 gap-6 px-6 py-6 sm:px-8 xl:grid-cols-[320px_1.2fr_0.9fr]">
+            <aside className="rounded-[28px] border border-[#1d2330] bg-[#10151d] p-5 shadow-[0_12px_30px_rgba(0,0,0,0.22)]">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-sm font-semibold text-ink-900">Connected Accounts</div>
+                  <p className="mt-1 text-xs text-ink-700">{selectedAccountCount} selected for this post</p>
+                </div>
+                <span className="rounded-full bg-[#171d28] px-3 py-1 text-[11px] font-semibold text-brand-300">{groupedAccounts.length} platforms</span>
+              </div>
+
+              <div className="mt-4 rounded-[22px] border border-[#232a38] bg-[#0c1118] p-3">
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-700">Saved Groups</label>
+                <div className="flex gap-2">
+                  <input value={groupName} onChange={(event) => setGroupName(event.target.value)} placeholder="Group name" className="field-input h-11 text-sm" />
+                  <button type="button" onClick={saveCurrentGroup} className="primary-button h-11 px-4 py-0 text-xs">Save</button>
+                </div>
+                <div className="mt-3 space-y-2">
+                  {accountGroups.length ? accountGroups.map((group) => (
+                    <div key={group.id} className="flex items-center gap-2 rounded-2xl border border-[#222936] bg-[#111720] px-3 py-2">
+                      <button type="button" onClick={() => applyGroup(group)} className="flex-1 text-left text-sm font-medium text-ink-900">{group.name}</button>
+                      <span className="text-[11px] text-ink-700">{group.accountIds.length}</span>
+                      <button type="button" onClick={() => removeGroup(group.id)} className="text-xs font-medium text-[#ff9a8d]">Remove</button>
+                    </div>
+                  )) : <div className="rounded-2xl border border-dashed border-[#232a38] px-3 py-4 text-xs text-ink-700">Save a group once and reuse the same account set next time.</div>}
+                </div>
+              </div>
+
+              <div className="mt-4 space-y-4">
+                {groupedAccounts.map(({ platform, accounts: platformAccounts }) => (
+                  <div key={platform} className="rounded-[22px] border border-[#202733] bg-[#0c1118] p-3">
+                    <div className="mb-3 flex items-center gap-2">
+                      <div className={`flex h-9 w-9 items-center justify-center rounded-2xl ${platformTone[platform]}`}><PlatformIcon platform={platform} enabled={configs[platform].enabled} /></div>
+                      <div className="flex-1">
+                        <div className="text-sm font-semibold text-ink-900">{labels[platform]}</div>
+                        <div className="text-[11px] text-ink-700">{platformAccounts.length} connected account{platformAccounts.length === 1 ? "" : "s"}</div>
+                      </div>
+                      <button type="button" onClick={() => setActivePlatform(platform)} className="text-[11px] font-semibold text-brand-300">Settings</button>
+                    </div>
+                    <div className="space-y-2">
+                      {platformAccounts.map((account) => {
+                        const selected = configs[platform].accountIds.includes(account.id);
+                        return (
+                          <label key={account.id} className={`flex cursor-pointer items-center gap-3 rounded-2xl border px-3 py-2 transition ${selected ? "border-brand-300 bg-[#171d28]" : "border-[#202733] bg-[#111720]"}`}>
+                            <input
+                              type="checkbox"
+                              checked={selected}
+                              onChange={(event) => toggleAccount(account, event.target.checked)}
+                              className="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-400"
+                            />
+                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#202736] text-xs font-semibold text-ink-900">
+                              {account.profile_picture_url ? <img src={account.profile_picture_url} alt={account.account_name} className="h-full w-full rounded-full object-cover" /> : initials(account.account_name)}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="truncate text-sm font-medium text-ink-900">{account.account_name}</div>
+                              <div className="truncate text-[11px] text-ink-700">{formatAccountTypeLabel(account.account_type)}</div>
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </aside>
+
             <div className="space-y-5">
               {message ? (
                 <div className="rounded-2xl border border-[#d7e9c0] bg-[#f7fbef] px-4 py-4 text-sm text-[#53722c] flex items-center gap-3 animate-fade-in shadow-sm">
@@ -615,7 +771,7 @@ export function PostComposerModal({ open, onClose, onCreated }: Props) {
                   <input value={hashtags} onChange={(event) => setHashtags(event.target.value)} placeholder="hashtags" className="field-input" />
                   <input value={mentions} onChange={(event) => setMentions(event.target.value)} placeholder="mentions" className="field-input" />
                 </div>
-                <div className="mt-4 rounded-[22px] border border-[#ece2d2] bg-white px-4 py-3 text-sm text-ink-600">
+                <div className="mt-4 rounded-[22px] border border-[#252030] bg-[#0d1018] px-4 py-3 text-sm text-ink-600">
                   Scheduling is now set per platform in the right-side settings panel so each channel can publish at its own time.
                 </div>
               </div>
@@ -628,7 +784,7 @@ export function PostComposerModal({ open, onClose, onCreated }: Props) {
                   </div>
                 </div>
                 <form className="grid gap-4 md:grid-cols-[1fr_1fr_auto]" onSubmit={handleUpload}>
-                  <input id="mediaFile" name="mediaFile" type="file" className="field-input file:mr-3 file:rounded-full file:border-0 file:bg-brand-100 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-ink-900 hover:file:bg-brand-200 transition-colors duration-150" />
+                  <input id="mediaFile" name="mediaFile" type="file" className="field-input file:mr-3 file:rounded-full file:border-0 file:bg-[rgba(255,213,42,0.15)] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-ink-900 hover:file:bg-[rgba(255,213,42,0.15)] transition-colors duration-150" />
                   <input value={altText} onChange={(event) => setAltText(event.target.value)} placeholder="Alt text (optional)" className="field-input" />
                   <button 
                     type="submit" 
@@ -652,7 +808,7 @@ export function PostComposerModal({ open, onClose, onCreated }: Props) {
                     return (
                       <label 
                         key={asset.id} 
-                        className={`group flex cursor-pointer items-start gap-3 rounded-[22px] border p-4 transition-all duration-200 ${selected ? "border-brand-300 bg-brand-50 shadow-md ring-2 ring-brand-200/50 scale-[1.02]" : "border-[#ebdfcf] bg-white hover:border-brand-200 hover:shadow-lg hover:-translate-y-0.5"}`}
+                        className={`group flex cursor-pointer items-start gap-3 rounded-[22px] border p-4 transition-all duration-200 ${selected ? "border-brand-300 bg-[#141924] shadow-md ring-2 ring-brand-200/50 scale-[1.02]" : "border-[#ebdfcf] bg-[#0d1018] hover:border-brand-200 hover:shadow-lg hover:-translate-y-0.5"}`}
                       >
                         <input
                           type="checkbox"
@@ -673,7 +829,7 @@ export function PostComposerModal({ open, onClose, onCreated }: Props) {
                       </label>
                     );
                   }) : (
-                    <div className="rounded-[22px] border-2 border-dashed border-[#e5dbc8] bg-gradient-to-br from-[#faf6ef] to-[#fff6de] px-4 py-12 text-center transition-all duration-200 hover:border-brand-300 hover:from-[#fff9e9] hover:to-[#fffaf0]">
+                    <div className="rounded-[22px] border-2 border-dashed border-[#e5dbc8] bg-gradient-to-br from-[#faf6ef] to-[#100e1a] px-4 py-12 text-center transition-all duration-200 hover:border-brand-300 hover:from-[#fff9e9] hover:to-[#fffaf0]">
                       <div className="text-4xl mb-3">📁</div>
                       <div className="text-sm font-medium text-ink-600">No media uploaded yet.</div>
                       <div className="text-xs text-ink-500 mt-1">Upload images or videos above to get started</div>
@@ -685,16 +841,16 @@ export function PostComposerModal({ open, onClose, onCreated }: Props) {
               <div className="soft-panel p-5">
                 <div className="mb-4 flex items-center justify-between">
                   <div>
-                    <h3 className="text-lg font-semibold text-ink-900">Select Platforms</h3>
-                    <p className="text-sm text-ink-600">Enable the channels you want and click Settings to fine-tune.</p>
+                    <h3 className="text-lg font-semibold text-ink-900">Publishing Summary</h3>
+                    <p className="text-sm text-ink-600">Use the left panel to choose one or many connected accounts, or apply a saved group.</p>
                   </div>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {platforms.map((platform) => {
                     const hasAccounts = accountsByPlatform[platform].length > 0;
-                    const enabled = configs[platform].enabled;
+                    const enabled = configs[platform].accountIds.length > 0;
                     return (
-                      <div key={platform} className={`group flex flex-col cursor-pointer gap-3 rounded-[22px] border p-4 transition-all duration-200 ${enabled ? "border-brand-300 bg-[#fff9e9] shadow-md ring-2 ring-brand-200/50" : "border-[#ebdfcf] bg-white hover:border-brand-200 hover:shadow-lg hover:-translate-y-0.5"} ${!hasAccounts ? "opacity-60 cursor-not-allowed" : ""}`}>
+                      <div key={platform} className={`group flex flex-col cursor-pointer gap-3 rounded-[22px] border p-4 transition-all duration-200 ${enabled ? "border-brand-300 bg-[#fff9e9] shadow-md ring-2 ring-brand-200/50" : "border-[#ebdfcf] bg-[#0d1018] hover:border-brand-200 hover:shadow-lg hover:-translate-y-0.5"} ${!hasAccounts ? "opacity-60 cursor-not-allowed" : ""}`}>
                         <div className="flex items-start gap-3">
                           <input
                             type="checkbox"
@@ -716,6 +872,7 @@ export function PostComposerModal({ open, onClose, onCreated }: Props) {
                         </div>
                         <div className="flex items-center justify-between gap-2 pl-8">
                           <div className="space-y-1">
+                            <p className="text-[11px] font-semibold text-ink-500">{configs[platform].accountIds.length} account{configs[platform].accountIds.length === 1 ? "" : "s"} selected</p>
                             <p className={`text-xs ${mediaStateByPlatform[platform].valid ? "text-[#5f7f2e]" : "text-[#b25a4f]"}`}>
                               {mediaStateByPlatform[platform].message}
                             </p>
@@ -783,37 +940,35 @@ export function PostComposerModal({ open, onClose, onCreated }: Props) {
                   </div>
                 </div>
 
-                <div className="mb-4 rounded-[22px] border border-[#e8decd] bg-white px-4 py-3 text-sm text-ink-600">
+                <div className="mb-4 rounded-[22px] border border-[#e8decd] bg-[#0d1018] px-4 py-3 text-sm text-ink-600">
                   Each enabled platform can use its own account, schedule, and publishing options here.
                 </div>
 
                 <div className="space-y-4">
                   <div>
                     <label className="mb-2 block text-sm font-semibold text-ink-900">
-                      {`Post to ${labels[activePlatform]} account`}
+                      {`Selected ${labels[activePlatform]} accounts`}
                     </label>
-                    <select
-                      value={config.accountId ?? ""}
-                      onChange={(event) =>
-                        updateConfig(activePlatform, {
-                          accountId: event.target.value ? Number(event.target.value) : null,
-                        })
-                      }
-                      className="field-input"
-                    >
-                      {!selectedPlatformAccounts.length ? <option value="">No connected account</option> : null}
-                      {selectedPlatformAccounts.map((account) => (
-                        <option key={account.id} value={account.id}>
-                          {account.account_name}
-                          {account.account_type ? ` (${formatAccountTypeLabel(account.account_type)})` : ""}
-                        </option>
-                      ))}
-                    </select>
-                    {selectedPlatformAccounts.length > 1 ? (
-                      <p className="mt-2 text-xs text-ink-500">
-                        Multiple accounts are connected for this platform. Choose exactly which page, profile, or channel should receive this post.
-                      </p>
-                    ) : null}
+                    <div className="rounded-[22px] border border-[#e8decd] bg-[#0d1018] p-3">
+                      {config.accountIds.length ? (
+                        <div className="flex flex-wrap gap-2">
+                          {selectedPlatformAccounts.filter((account) => config.accountIds.includes(account.id)).map((account) => (
+                            <span key={account.id} className="inline-flex items-center gap-2 rounded-full bg-[#f5efe0] px-3 py-1.5 text-xs font-semibold text-ink-900">
+                              <span>{account.account_name}</span>
+                              <button
+                                type="button"
+                                onClick={() => toggleAccount(account, false)}
+                                className="text-ink-600"
+                              >
+                                ×
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-ink-500">Choose one or more connected accounts from the left panel.</p>
+                      )}
+                    </div>
                   </div>
 
                   <div>
@@ -945,28 +1100,28 @@ export function PostComposerModal({ open, onClose, onCreated }: Props) {
                         <label className="mb-2 block text-sm font-semibold text-ink-900">Tags</label>
                         <input value={configs.youtube.youtubeTags} onChange={(event) => updateConfig("youtube", { youtubeTags: event.target.value })} placeholder="crm, marketing, launch" className="field-input" />
                       </div>
-                      <label className="flex items-start gap-3 rounded-[22px] border border-[#ebdfcf] bg-white p-4">
+                      <label className="flex items-start gap-3 rounded-[22px] border border-[#ebdfcf] bg-[#0d1018] p-4">
                         <input type="checkbox" checked={configs.youtube.youtubeMadeForKids} onChange={(event) => updateConfig("youtube", { youtubeMadeForKids: event.target.checked })} className="mt-1" />
                         <div>
                           <div className="text-sm font-semibold text-ink-900">Made for kids</div>
                           <p className="mt-1 text-sm text-ink-600">Send the audience flag with the YouTube upload metadata.</p>
                         </div>
                       </label>
-                      <label className="flex items-start gap-3 rounded-[22px] border border-[#ebdfcf] bg-white p-4">
+                      <label className="flex items-start gap-3 rounded-[22px] border border-[#ebdfcf] bg-[#0d1018] p-4">
                         <input type="checkbox" checked={configs.youtube.youtubeNotifySubscribers} onChange={(event) => updateConfig("youtube", { youtubeNotifySubscribers: event.target.checked })} className="mt-1" />
                         <div>
                           <div className="text-sm font-semibold text-ink-900">Notify subscribers</div>
                           <p className="mt-1 text-sm text-ink-600">Control whether YouTube sends subscriber notifications for this upload.</p>
                         </div>
                       </label>
-                      <label className="flex items-start gap-3 rounded-[22px] border border-[#ebdfcf] bg-white p-4">
+                      <label className="flex items-start gap-3 rounded-[22px] border border-[#ebdfcf] bg-[#0d1018] p-4">
                         <input type="checkbox" checked={configs.youtube.youtubeEmbeddable} onChange={(event) => updateConfig("youtube", { youtubeEmbeddable: event.target.checked })} className="mt-1" />
                         <div>
                           <div className="text-sm font-semibold text-ink-900">Allow embedding</div>
                           <p className="mt-1 text-sm text-ink-600">Publish the video as embeddable on external sites.</p>
                         </div>
                       </label>
-                      <label className="flex items-start gap-3 rounded-[22px] border border-[#ebdfcf] bg-white p-4">
+                      <label className="flex items-start gap-3 rounded-[22px] border border-[#ebdfcf] bg-[#0d1018] p-4">
                         <input type="checkbox" checked={configs.youtube.youtubePublicStatsViewable} onChange={(event) => updateConfig("youtube", { youtubePublicStatsViewable: event.target.checked })} className="mt-1" />
                         <div>
                           <div className="text-sm font-semibold text-ink-900">Public stats viewable</div>
@@ -976,11 +1131,12 @@ export function PostComposerModal({ open, onClose, onCreated }: Props) {
                     </>
                   ) : null}
 
-                  <div className="rounded-[24px] border border-[#eadfce] bg-white p-4">
+                  <div className="rounded-[24px] border border-[#eadfce] bg-[#0d1018] p-4">
                     <div className="mb-2 text-sm font-semibold text-ink-900">Attached Media</div>
                     <div className="space-y-2 text-sm text-ink-600">
                       <div>{selectedMediaIds.length} media selected</div>
                       <div>{caption.length} characters in caption</div>
+                      <div>{selectedAccountCount} account{selectedAccountCount === 1 ? "" : "s"} selected</div>
                       <div>{formatLocalSchedule(config.scheduledAt)}</div>
                       <div className={mediaStateByPlatform[activePlatform].valid ? "text-[#5f7f2e]" : "text-[#b25a4f]"}>
                         {mediaStateByPlatform[activePlatform].message}

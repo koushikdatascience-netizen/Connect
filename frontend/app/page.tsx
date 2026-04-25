@@ -1,1 +1,1 @@
-export { default } from "./dashboard-client";
+export { DashboardHome as default } from "@/components/dashboard-home";

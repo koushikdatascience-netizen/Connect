@@ -62,7 +62,7 @@ export function EditPostModal({ post, onClose, onSaved }: Props) {
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-[rgba(20,20,20,0.42)] p-4 backdrop-blur-sm">
-      <div className="w-full max-w-[640px] rounded-[30px] border border-white/70 bg-white p-6 shadow-[0_30px_80px_rgba(18,18,18,0.22)] sm:p-7">
+      <div className="w-full max-w-[640px] rounded-[30px] border border-[#1e2535] bg-[#0d1018] p-6 shadow-[0_30px_80px_rgba(18,18,18,0.22)] sm:p-7">
         <div className="mb-5 flex items-start justify-between gap-4">
           <div>
             <p className="mb-1 text-sm font-medium text-[#b3892d]">Edit Scheduled Post</p>

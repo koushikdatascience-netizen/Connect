@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { ReactNode, useEffect, useMemo, useState } from "react";
 
 import { ErrorNotice } from "@/components/error-notice";
 import { PostComposerModal } from "@/components/post-composer-modal-v2";
@@ -9,14 +9,14 @@ import { getReadableError } from "@/lib/error-utils";
 import { Account, AccountStatusResponse, PlatformName, Post } from "@/lib/types";
 
 const platformMeta: Array<{ key: PlatformName; label: string; hint: string; tone: string; gradient: string }> = [
-  { key: "facebook", label: "Facebook", hint: "Pages & Groups", tone: "bg-[#edf3ff] text-[#315ed2]", gradient: "from-[#1877f2]/10 to-[#4395fc]/5" },
-  { key: "instagram", label: "Instagram", hint: "Business / Creator", tone: "bg-[#fff0f7] text-[#c13982]", gradient: "from-[#e1306c]/10 to-[#f77737]/5" },
-  { key: "linkedin", label: "LinkedIn", hint: "Profiles & Pages", tone: "bg-[#eef7ff] text-[#0f6ab8]", gradient: "from-[#0a66c2]/10 to-[#0e76d0]/5" },
-  { key: "twitter", label: "X (Twitter)", hint: "Text first", tone: "bg-[#111111] text-white", gradient: "from-[#000000]/8 to-[#222222]/4" },
-  { key: "youtube", label: "YouTube", hint: "Video publishing", tone: "bg-[#fff1ef] text-[#d8342b]", gradient: "from-[#ff0000]/8 to-[#ff4e45]/4" },
-  { key: "blogger", label: "Blogger", hint: "Blog publishing", tone: "bg-[#fff2e8] text-[#ef6c00]", gradient: "from-[#ef6c00]/10 to-[#ffb74d]/5" },
-  { key: "google_business", label: "Google Business", hint: "Business updates", tone: "bg-[#eef5ff] text-[#1a73e8]", gradient: "from-[#1a73e8]/10 to-[#8ab4f8]/5" },
-  { key: "wordpress", label: "WordPress", hint: "Website blog", tone: "bg-[#f0f3f5] text-[#1f2933]", gradient: "from-[#334e68]/10 to-[#bcccdc]/5" },
+  { key: "facebook", label: "Facebook", hint: "Pages & Groups", tone: "bg-[#0e1830] text-[#6ea8fe]", gradient: "from-[#1877f2]/10 to-[#4395fc]/5" },
+  { key: "instagram", label: "Instagram", hint: "Business / Creator", tone: "bg-[#2a0f1e] text-[#f472b6]", gradient: "from-[#e1306c]/10 to-[#f77737]/5" },
+  { key: "linkedin", label: "LinkedIn", hint: "Profiles & Pages", tone: "bg-[#0c1e30] text-[#60a5fa]", gradient: "from-[#0a66c2]/10 to-[#0e76d0]/5" },
+  { key: "twitter", label: "X (Twitter)", hint: "Text first", tone: "bg-[#0d0d0d] text-white", gradient: "from-[#000000]/8 to-[#222222]/4" },
+  { key: "youtube", label: "YouTube", hint: "Video publishing", tone: "bg-[#2a0f0e] text-[#f87171]", gradient: "from-[#ff0000]/8 to-[#ff4e45]/4" },
+  { key: "blogger", label: "Blogger", hint: "Blog publishing", tone: "bg-[#2a1508] text-[#fb923c]", gradient: "from-[#ef6c00]/10 to-[#ffb74d]/5" },
+  { key: "google_business", label: "Google Business", hint: "Business updates", tone: "bg-[#0c1e30] text-[#60a5fa]", gradient: "from-[#1a73e8]/10 to-[#8ab4f8]/5" },
+  { key: "wordpress", label: "WordPress", hint: "Website blog", tone: "bg-[#141924] text-[#9aa4b2]", gradient: "from-[#334e68]/10 to-[#bcccdc]/5" },
 ];
 
 const emptyStatus: AccountStatusResponse = {
@@ -89,6 +89,65 @@ function PlatformLogo({ platform, className = "h-6 w-6" }: { platform: PlatformN
     default:
       return null;
   }
+}
+
+function StatIcon({ children, className }: { children: ReactNode; className: string }) {
+  return (
+    <span className={`inline-flex h-11 w-11 items-center justify-center rounded-2xl shadow-[inset_0_1px_0_rgba(255,255,255,0.65)] ${className}`}>
+      {children}
+    </span>
+  );
+}
+
+function AccountsIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M15.5 19v-1.2a3.3 3.3 0 0 0-3.3-3.3H7.8a3.3 3.3 0 0 0-3.3 3.3V19" />
+      <circle cx="10" cy="8.5" r="3.2" />
+      <path d="M17 11.2a2.8 2.8 0 0 1 0 5.6" />
+      <path d="M19.3 19v-.9a2.7 2.7 0 0 0-2.1-2.6" />
+    </svg>
+  );
+}
+
+function ChainIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10.5 13.5 8.3 15.7a3.1 3.1 0 1 1-4.4-4.4l2.2-2.2a3.1 3.1 0 0 1 4.4 0" />
+      <path d="m13.5 10.5 2.2-2.2a3.1 3.1 0 1 1 4.4 4.4l-2.2 2.2a3.1 3.1 0 0 1-4.4 0" />
+      <path d="m9 15 6-6" />
+    </svg>
+  );
+}
+
+function QueueIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 6v6l3.5 2" />
+      <circle cx="12" cy="12" r="8" />
+    </svg>
+  );
+}
+
+function CheckBadgeIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="m7.5 12.5 3 3 6-7" />
+      <circle cx="12" cy="12" r="8" />
+    </svg>
+  );
+}
+
+function EmptyPostsIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 7.5h16" />
+      <path d="M7.5 4v7" />
+      <rect x="4" y="4" width="16" height="16" rx="3" />
+      <path d="M8 12h8" />
+      <path d="M8 16h5" />
+    </svg>
+  );
 }
 
 function formatDate(value?: string | null) {
@@ -205,11 +264,51 @@ export default function DashboardClient() {
     .sort((a, b) => new Date(b.scheduled_at ?? b.created_at ?? 0).getTime() - new Date(a.scheduled_at ?? a.created_at ?? 0).getTime())
     .slice(0, 6);
 
-  const statItems = [
-    { label: "Active Accounts", value: stats.totalAccounts, note: "Connected & active", icon: "👤", color: "from-[#fff9e8] to-[#fff3ce]" },
-    { label: "Live Platforms", value: stats.connectedPlatforms, note: "Ready to publish", icon: "🔗", color: "from-[#eef7ff] to-[#daeeff]" },
-    { label: "In Queue", value: stats.queuedPosts, note: "Scheduled or processing", icon: "⏳", color: "from-[#fff5e8] to-[#ffe9cc]" },
-    { label: "Published", value: stats.posted, note: "Successfully delivered", icon: "✅", color: "from-[#f0fbea] to-[#ddf4cc]" },
+  const statItems: Array<{
+    label: string;
+    value: number;
+    note: string;
+    pill: string;
+    pillClass: string;
+    iconWrapClass: string;
+    icon: ReactNode;
+  }> = [
+    {
+      label: "Active Accounts",
+      value: stats.totalAccounts,
+      note: "Connected and ready to publish",
+      pill: `+${stats.totalAccounts} total`,
+      pillClass: "bg-[#eef8d8] text-[#4a6d16]",
+      iconWrapClass: "bg-[#0e1830] text-[#6ea8fe]",
+      icon: <AccountsIcon />,
+    },
+    {
+      label: "Live Platforms",
+      value: stats.connectedPlatforms,
+      note: "Distribution channels available",
+      pill: `${stats.connectedPlatforms} live`,
+      pillClass: "bg-[#fff5d9] text-[#9c7620]",
+      iconWrapClass: "bg-[#eef8d8] text-[#4a6d16]",
+      icon: <ChainIcon />,
+    },
+    {
+      label: "In Queue",
+      value: stats.queuedPosts,
+      note: "Scheduled or processing posts",
+      pill: stats.queuedPosts === 0 ? "idle" : `${stats.queuedPosts} pending`,
+      pillClass: stats.queuedPosts === 0 ? "bg-[#f0f0f0] text-[#666]" : "bg-[#fff5e0] text-[#ad5e00]",
+      iconWrapClass: "bg-[#fff5e0] text-[#ad5e00]",
+      icon: <QueueIcon />,
+    },
+    {
+      label: "Published",
+      value: stats.posted,
+      note: "Successful deliveries so far",
+      pill: stats.posted === 0 ? "all clear" : `${stats.posted} posted`,
+      pillClass: "bg-[#eef8d8] text-[#4a6d16]",
+      iconWrapClass: "bg-[#eef8d8] text-[#4a6d16]",
+      icon: <CheckBadgeIcon />,
+    },
   ];
 
   return (
@@ -221,7 +320,7 @@ export default function DashboardClient() {
           <section className="fade-up rounded-[28px] border border-[#efe7d8] bg-[linear-gradient(135deg,#fffef9_0%,#fff9e8_50%,#fff5d5_100%)] p-6 shadow-[0_12px_40px_rgba(24,24,24,0.05)] sm:p-8">
             <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-[#b38d35]">Social Publishing Dashboard</p>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-[#ffd52a]">Social Publishing Dashboard</p>
                 <h1 className="font-display text-3xl font-semibold tracking-[-0.05em] text-ink-900 sm:text-4xl">
                   Welcome back 👋
                 </h1>
@@ -241,19 +340,24 @@ export default function DashboardClient() {
 
             {error ? <div className="mb-4"><ErrorNotice error={error} fallback="We couldn't load the dashboard right now." /></div> : null}
             {oauthBanner ? (
-              <div className={`mb-4 rounded-2xl border px-4 py-3 text-sm ${oauthBanner.tone === "success" ? "border-[#d7e9c0] bg-[#f7fbef] text-[#53722c]" : "border-[#f1d3d0] bg-[#fff4f3] text-[#a54848]"}`}>{oauthBanner.text}</div>
+              <div className={`mb-4 rounded-2xl border px-4 py-3 text-sm ${oauthBanner.tone === "success" ? "border-[#d7e9c0] bg-[#f7fbef] text-[#53722c]" : "border-[#3a1515] bg-[#2a100e] text-[#f07070]"}`}>{oauthBanner.text}</div>
             ) : null}
 
             {/* Stats row */}
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               {statItems.map((item, i) => (
-                <div key={item.label} className={`stat-card fade-up fade-up-${i + 1} rounded-[22px] border border-[#ece2d2] bg-gradient-to-br ${item.color} p-5`}>
-                  <div className="flex items-start justify-between">
-                    <div className="text-xs font-semibold uppercase tracking-[0.12em] text-[#b38d35]">{item.label}</div>
-                    <span className="text-lg">{item.icon}</span>
+                <div key={item.label} className={`stat-card fade-up fade-up-${i + 1} rounded-[22px] border border-[#252030] bg-[#0d1018] p-5`}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="text-xs font-semibold uppercase tracking-[0.12em] text-[#ffd52a]">{item.label}</div>
+                      <p className="mt-2 text-xs text-ink-500">{item.note}</p>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${item.pillClass}`}>{item.pill}</span>
+                      <StatIcon className={item.iconWrapClass}>{item.icon}</StatIcon>
+                    </div>
                   </div>
-                  <div className="mt-3 font-display text-4xl font-semibold tracking-[-0.06em] text-ink-900">{item.value}</div>
-                  <p className="mt-1.5 text-xs text-ink-500">{item.note}</p>
+                  <div className="mt-3 font-display text-5xl font-semibold tracking-[-0.06em] text-ink-900">{item.value}</div>
                 </div>
               ))}
             </div>
@@ -267,7 +371,7 @@ export default function DashboardClient() {
                   <h2 className="font-display text-2xl font-semibold tracking-[-0.05em]">Connected Channels</h2>
                   <p className="mt-1 text-sm text-ink-600">Click a platform to connect or manage your account.</p>
                 </div>
-                <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-[#ab8b3b]">
+                <span className="rounded-full bg-[#141924] px-3 py-1 text-xs font-semibold text-[#ab8b3b]">
                   {stats.connectedPlatforms} live
                 </span>
               </div>
@@ -280,34 +384,77 @@ export default function DashboardClient() {
                       key={platform.key}
                       type="button"
                       onClick={() => void handleOAuthConnect(platform.key, platformAccounts.length > 0)}
-                      style={{ animationDelay: `${0.05 + i * 0.06}s` }}
-                      className={`platform-card fade-up group rounded-[24px] border p-5 ${
+                      style={{
+                        animationDelay: `${0.05 + i * 0.06}s`,
+                        ...(connected
+                          ? {
+                              borderLeftWidth: "3px",
+                              borderLeftColor:
+                                platform.key === "facebook"
+                                  ? "#1877f2"
+                                  : platform.key === "instagram"
+                                    ? "#e1306c"
+                                    : platform.key === "linkedin"
+                                      ? "#0a66c2"
+                                      : platform.key === "twitter"
+                                        ? "#111111"
+                                        : platform.key === "youtube"
+                                          ? "#ff0000"
+                                          : platform.key === "blogger"
+                                            ? "#ef6c00"
+                                            : platform.key === "google_business"
+                                              ? "#1a73e8"
+                                              : "#334e68",
+                            }
+                          : {}),
+                      }}
+                      className={`platform-card fade-up group rounded-[24px] border p-5 text-left ${
                         connected
-                          ? "border-[#e8dece] bg-gradient-to-br " + platform.gradient
-                          : "border-dashed border-[#e6dcc8] bg-[#faf6ef]"
+                          ? "border-[#eadfcd] bg-[#0d1018] shadow-[0_14px_30px_rgba(24,24,24,0.05)]"
+                          : "border-dashed border-[#e6dcc8] bg-[#141924]"
                       }`}
                     >
                       <div className="flex items-start justify-between gap-3">
-                        <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${platform.tone} transition-transform group-hover:scale-110`}>
+                        <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${platform.tone} transition-transform group-hover:scale-110 ${connected ? "" : "opacity-50"}`}>
                           <PlatformLogo platform={platform.key} className="h-6 w-6" />
                         </div>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className={`pulse-dot h-2 w-2 rounded-full ${connected ? "bg-[#8dc63f]" : "bg-[#d7cdbd]"}`} />
-                          <span className="text-xs text-ink-500">{connected ? "Live" : "Off"}</span>
+                        <div className={`mt-0.5 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                          connected ? "bg-[#eef8d8] text-[#527227]" : "bg-[#f1ebe0] text-[#8b7d68]"
+                        }`}>
+                          <span className={`pulse-dot rounded-full ${connected ? "h-2.5 w-2.5 bg-[#8dc63f]" : "h-2 w-2 bg-[#c7bca9]"}`} />
+                          <span>{connected ? "Live" : "Not connected"}</span>
                         </div>
                       </div>
                       <div className="mt-4">
-                        <h3 className="text-base font-semibold text-ink-900">{platform.label}</h3>
-                        <p className="mt-0.5 text-xs text-ink-500">
+                        <div className="flex items-center justify-between gap-3">
+                          <h3 className="text-base font-semibold text-ink-900">{platform.label}</h3>
+                          {connected ? (
+                            <span className="rounded-full bg-[#0d1018]/85 px-2.5 py-1 text-[11px] font-semibold text-[#6d5a22] shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]">
+                              Ready
+                            </span>
+                          ) : null}
+                        </div>
+                        <p className={`mt-0.5 text-xs ${connected ? "text-ink-600" : "text-ink-500"}`}>
                           {platformAccounts.length
                             ? platformAccounts.slice(0, 2).map((account) => account.account_name).join(", ")
                             : platform.hint}
                         </p>
+                        {!connected ? (
+                          <p className="mt-3 text-xs leading-5 text-ink-500">
+                            Connect this channel to unlock publishing, scheduling, and account-specific settings.
+                          </p>
+                        ) : null}
                       </div>
                       <div className="mt-4 flex items-end justify-between gap-3">
-                        <span className="text-xs text-ink-500">{platformAccounts.length} account(s)</span>
-                        <span className="rounded-full border border-[#e8decd] bg-white px-3 py-1.5 text-xs font-medium text-ink-700 transition-colors group-hover:border-brand-300 group-hover:bg-brand-50">
-                          {connected && platformAccounts.length ? "Add / Manage" : "Connect"}
+                        <span className={`text-xs font-medium ${connected ? "text-ink-600" : "text-ink-500"}`}>
+                          {platformAccounts.length} account{platformAccounts.length === 1 ? "" : "s"}
+                        </span>
+                        <span className={`rounded-full px-3 py-1.5 text-xs transition-colors ${
+                          connected
+                            ? "bg-brand-300 text-ink-900 font-semibold"
+                            : "border border-dashed border-[#e6dcc8] bg-transparent text-ink-500"
+                        }`}>
+                          {connected ? "Manage →" : "+ Connect"}
                         </span>
                       </div>
                     </button>
@@ -340,7 +487,10 @@ export default function DashboardClient() {
                   <span className="text-xs text-ink-500">Connect a platform to start posting</span>
                 )}
               </div>
-              <div className="mt-auto rounded-[20px] border border-[#ece2d2] bg-gradient-to-br from-[#fffaf0] to-[#fff6de] p-4">
+              <p className="text-[11px] text-ink-400 mt-1">
+                Twitter 280 · LinkedIn 3,000 · Facebook no limit
+              </p>
+              <div className="mt-auto rounded-[20px] border border-[#252030] bg-gradient-to-br from-[#0d0b14] to-[#100e1a] p-4">
                 <p className="text-sm leading-6 text-ink-700 font-medium">
                   {stats.queuedPosts > 0
                     ? `${stats.queuedPosts} post${stats.queuedPosts > 1 ? "s" : ""} queued for delivery`
@@ -376,7 +526,7 @@ export default function DashboardClient() {
                     style={{ animationDelay: `${0.05 + i * 0.05}s` }}
                   >
                     <div className="mb-3 flex items-center justify-between gap-2">
-                      <span className="text-xs font-semibold uppercase tracking-[0.1em] text-[#b38d35]">
+                      <span className="text-xs font-semibold uppercase tracking-[0.1em] text-[#ffd52a]">
                         {formatDate(post.scheduled_at ?? post.created_at)}
                       </span>
                       <StatusBadge status={post.status} />
@@ -390,9 +540,19 @@ export default function DashboardClient() {
                 ))}
               </div>
             ) : (
-              <div className="rounded-[22px] border border-dashed border-[#e5dbc8] bg-[#faf6ef] px-4 py-12 text-center">
-                <div className="text-3xl mb-3">📭</div>
-                <p className="text-sm text-ink-500">No posts yet. Create one from the composer above.</p>
+              <div className="rounded-[22px] border border-[#ede7dc] bg-[#0b0d14] px-4 py-10 text-center">
+                <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-[12px] bg-gradient-to-br from-[#fff3cc] to-[#ffe896] text-xl">
+                  ✍️
+                </div>
+                <p className="text-sm font-semibold text-ink-900">No posts yet</p>
+                <p className="mt-1 text-xs text-ink-500">Schedule your first post across Facebook, LinkedIn, and more.</p>
+                <button
+                  type="button"
+                  onClick={() => setComposerOpen(true)}
+                  className="primary-button mt-4 px-6 py-2.5 text-sm"
+                >
+                  + Create first post
+                </button>
               </div>
             )}
           </section>
@@ -412,9 +572,9 @@ export default function DashboardClient() {
                       <span>{item.label}</span>
                       <span>{item.value}%</span>
                     </div>
-                    <div className="h-2 rounded-full bg-[#efe6d7] overflow-hidden">
+                    <div className="progress-bar-track">
                       <div
-                        className={`h-2 rounded-full ${item.color} transition-all duration-700`}
+                        className={`progress-bar-fill ${item.color}`}
                         style={{ width: `${item.value}%` }}
                       />
                     </div>
@@ -428,7 +588,7 @@ export default function DashboardClient() {
               <p className="mt-1 text-sm text-ink-600">Recent post outcomes across your workspace.</p>
               <div className="mt-5 space-y-2.5">
                 {recentPosts.slice(0, 4).map((post) => (
-                  <div key={post.id} className="flex items-start gap-3 rounded-2xl border border-[#eee4d6] bg-[#fcfaf5] p-3.5 transition-colors hover:bg-[#faf6ef]">
+                  <div key={post.id} className="flex items-start gap-3 rounded-2xl border border-[#eee4d6] bg-[#0d0b14] p-3.5 transition-colors hover:bg-[#141924]">
                     <div className={`mt-1 h-2 w-2 shrink-0 rounded-full ${post.status === "posted" ? "bg-[#8dc63f]" : post.status === "failed" ? "bg-[#d86b60]" : "bg-[#f4b400]"}`} />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">

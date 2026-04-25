@@ -91,8 +91,8 @@ function MetricsRow({ metrics }: { metrics: NormalizedPostMetrics }) {
   return (
     <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
       {cards.map((item) => (
-        <div key={item.label} className="rounded-xl border border-[#e9dfcf] bg-[#fcfaf5] px-3 py-2">
-          <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#b38d35]">{item.label}</div>
+        <div key={item.label} className="rounded-xl border border-[#e9dfcf] bg-[#0d0b14] px-3 py-2">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#ffd52a]">{item.label}</div>
           <div className="mt-1 text-sm font-semibold text-ink-900">{item.value}</div>
         </div>
       ))}
@@ -102,17 +102,17 @@ function MetricsRow({ metrics }: { metrics: NormalizedPostMetrics }) {
 
 function PlatformBadge({ platform }: { platform: string }) {
   const colors: Record<string, string> = {
-    facebook: "bg-[#edf3ff] text-[#315ed2]",
-    instagram: "bg-[#fff0f7] text-[#c13982]",
-    linkedin: "bg-[#eef7ff] text-[#0f6ab8]",
+    facebook: "bg-[#0e1830] text-[#6ea8fe]",
+    instagram: "bg-[#2a0f1e] text-[#f472b6]",
+    linkedin: "bg-[#0c1e30] text-[#60a5fa]",
     twitter: "bg-[#111] text-white",
-    youtube: "bg-[#fff1ef] text-[#d8342b]",
-    blogger: "bg-[#fff2e8] text-[#ef6c00]",
-    google_business: "bg-[#eef5ff] text-[#1a73e8]",
-    wordpress: "bg-[#f0f3f5] text-[#1f2933]",
+    youtube: "bg-[#2a0f0e] text-[#f87171]",
+    blogger: "bg-[#2a1508] text-[#fb923c]",
+    google_business: "bg-[#0c1e30] text-[#60a5fa]",
+    wordpress: "bg-[#141924] text-[#9aa4b2]",
   };
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${colors[platform] ?? "bg-gray-100 text-gray-600"}`}>
+    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${colors[platform] ?? "bg-[#111824] text-ink-600"}`}>
       {platform}
     </span>
   );
@@ -123,7 +123,7 @@ function StatusBadge({ status }: { status: string }) {
     posted:     { bg: "bg-[#eef8d8] text-[#4a6d16]", dot: "bg-[#8dc63f]" },
     failed:     { bg: "bg-[#fff1ef] text-[#b64e48]", dot: "bg-[#d86b60]" },
     cancelled:  { bg: "bg-[#f2f2f2] text-[#666]",    dot: "bg-[#bbb]" },
-    processing: { bg: "bg-[#edf3ff] text-[#315ed2]", dot: "bg-[#315ed2]" },
+    processing: { bg: "bg-[#0e1830] text-[#6ea8fe]", dot: "bg-[#315ed2]" },
   };
   const s = map[status] ?? { bg: "bg-[#fff5d9] text-[#9c7620]", dot: "bg-[#efc84f]" };
   return (
@@ -283,7 +283,7 @@ export default function PostsClient() {
     <>
       <main className="flex min-h-[calc(100vh-2.5rem)] flex-col">
         {/* Top bar */}
-        <header className="sticky top-0 z-10 border-b border-[#f0e7d7] bg-white/90 backdrop-blur px-5 py-4 sm:px-8">
+        <header className="sticky top-0 z-10 border-b border-[#f0e7d7] bg-[#0d1018]/90 backdrop-blur px-5 py-4 sm:px-8">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="relative">
               <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-500 text-sm">⌕</span>
@@ -336,7 +336,7 @@ export default function PostsClient() {
               { label: "Failed", value: summary.failed, color: "text-[#b64e48]" },
             ].map(s => (
               <div key={s.label} className="soft-panel p-4">
-                <div className="text-xs font-semibold uppercase tracking-[0.12em] text-[#b38d35]">{s.label}</div>
+                <div className="text-xs font-semibold uppercase tracking-[0.12em] text-[#ffd52a]">{s.label}</div>
                 <div className={`mt-2 font-display text-3xl font-semibold tracking-[-0.05em] ${s.color}`}>{s.value}</div>
               </div>
             ))}
@@ -354,12 +354,12 @@ export default function PostsClient() {
                 className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition ${
                   filterStatus === opt.value
                     ? "bg-brand-300 text-ink-900 shadow-sm"
-                    : "border border-[#e8dfce] bg-white text-ink-600 hover:border-brand-200 hover:bg-brand-50"
+                    : "border border-[#e8dfce] bg-[#0d1018] text-ink-600 hover:border-brand-200 hover:bg-[#141924]"
                 }`}
               >
                 {opt.label}
                 <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-xs ${
-                  filterStatus === opt.value ? "bg-white/40 text-ink-900" : "bg-[#f0e8d8] text-ink-600"
+                  filterStatus === opt.value ? "bg-[#0d1018]/40 text-ink-900" : "bg-[#f0e8d8] text-ink-600"
                 }`}>
                   {opt.count}
                 </span>
@@ -445,7 +445,7 @@ export default function PostsClient() {
                                     href={livePostUrl}
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="inline-flex items-center gap-1 rounded-full border border-[#e4d9c7] bg-white px-3 py-1 font-medium text-[#8f6f1f] transition hover:border-[#d6c297] hover:bg-[#fff8e6]"
+                                    className="inline-flex items-center gap-1 rounded-full border border-[#e4d9c7] bg-[#0d1018] px-3 py-1 font-medium text-[#8f6f1f] transition hover:border-[#d6c297] hover:bg-[#fff8e6]"
                                   >
                                     View Live
                                   </a>
@@ -455,13 +455,13 @@ export default function PostsClient() {
 
                             {post.status === "posted" && post.platform_post_id ? (
                               metricsLoadingIds[post.id] ? (
-                                <div className="mt-3 rounded-xl border border-[#ece2d2] bg-[#faf6ef] px-3 py-2 text-xs text-ink-500">
+                                <div className="mt-3 rounded-xl border border-[#252030] bg-[#141924] px-3 py-2 text-xs text-ink-500">
                                   Loading engagement metrics...
                                 </div>
                               ) : showMetrics ? (
                                 <MetricsRow metrics={normalizedMetrics} />
                               ) : liveMetrics?.message ? (
-                                <div className="mt-3 rounded-xl border border-[#ece2d2] bg-[#faf6ef] px-3 py-2 text-xs text-ink-500">
+                                <div className="mt-3 rounded-xl border border-[#252030] bg-[#141924] px-3 py-2 text-xs text-ink-500">
                                   Metrics unavailable: {liveMetrics.message}
                                 </div>
                               ) : null
@@ -495,7 +495,7 @@ export default function PostsClient() {
                               type="button"
                               onClick={() => void handleCancel(post.id)}
                               disabled={busy || !canCancel}
-                              className="secondary-button flex-1 sm:flex-none px-4 py-2 text-xs text-[#b64e48] hover:border-[#f1d3d0] hover:bg-[#fff4f3]"
+                              className="secondary-button flex-1 sm:flex-none px-4 py-2 text-xs text-[#b64e48] hover:border-[#3a1515] hover:bg-[#2a100e]"
                             >
                               ✕ Cancel
                             </button>
@@ -507,7 +507,7 @@ export default function PostsClient() {
                 </div>
               </div>
             )) : (
-              <div className="rounded-[24px] border border-dashed border-[#e5dbc8] bg-[#faf6ef] py-16 text-center">
+              <div className="rounded-[24px] border border-dashed border-[#e5dbc8] bg-[#141924] py-16 text-center">
                 <div className="text-4xl mb-4">📭</div>
                 <h3 className="text-base font-semibold text-ink-900">No posts found</h3>
                 <p className="mt-1 text-sm text-ink-500">

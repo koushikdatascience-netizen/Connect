@@ -8,14 +8,14 @@ import { ErrorNotice } from "@/components/error-notice";
 import { Account, AccountStatusResponse, PlatformName } from "@/lib/types";
 
 const platforms: Array<{ key: PlatformName; label: string; tone: string; icon: string }> = [
-  { key: "facebook", label: "Facebook", tone: "bg-[#edf3ff] text-[#315ed2]", icon: "f" },
-  { key: "instagram", label: "Instagram", tone: "bg-[#fff0f7] text-[#c13982]", icon: "ig" },
-  { key: "linkedin", label: "LinkedIn", tone: "bg-[#eef7ff] text-[#0f6ab8]", icon: "in" },
-  { key: "twitter", label: "X (Twitter)", tone: "bg-[#111111] text-white", icon: "𝕏" },
-  { key: "youtube", label: "YouTube", tone: "bg-[#fff1ef] text-[#d8342b]", icon: "▶" },
-  { key: "blogger", label: "Blogger", tone: "bg-[#fff2e8] text-[#ef6c00]", icon: "B" },
-  { key: "google_business", label: "Google Business", tone: "bg-[#eef5ff] text-[#1a73e8]", icon: "G" },
-  { key: "wordpress", label: "WordPress", tone: "bg-[#f0f3f5] text-[#1f2933]", icon: "W" },
+  { key: "facebook", label: "Facebook", tone: "bg-[#0e1830] text-[#6ea8fe]", icon: "f" },
+  { key: "instagram", label: "Instagram", tone: "bg-[#2a0f1e] text-[#f472b6]", icon: "ig" },
+  { key: "linkedin", label: "LinkedIn", tone: "bg-[#0c1e30] text-[#60a5fa]", icon: "in" },
+  { key: "twitter", label: "X (Twitter)", tone: "bg-[#0d0d0d] text-white", icon: "𝕏" },
+  { key: "youtube", label: "YouTube", tone: "bg-[#2a0f0e] text-[#f87171]", icon: "▶" },
+  { key: "blogger", label: "Blogger", tone: "bg-[#2a1508] text-[#fb923c]", icon: "B" },
+  { key: "google_business", label: "Google Business", tone: "bg-[#0c1e30] text-[#60a5fa]", icon: "G" },
+  { key: "wordpress", label: "WordPress", tone: "bg-[#141924] text-[#9aa4b2]", icon: "W" },
 ];
 
 const emptyStatus: AccountStatusResponse = {
@@ -137,9 +137,9 @@ export default function SettingsClient() {
                 { label: "Tenant ID", value: getTenantId(), field: "tenant" },
                 { label: "API Runtime", value: getApiBaseUrl(), field: "api" },
               ].map(item => (
-                <div key={item.label} className="group rounded-2xl border border-[#ece2d2] bg-[#fffdf9] p-3.5">
+                <div key={item.label} className="group rounded-2xl border border-[#252030] bg-[#fffdf9] p-3.5">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-semibold uppercase tracking-[0.1em] text-[#b38d35]">{item.label}</span>
+                    <span className="text-xs font-semibold uppercase tracking-[0.1em] text-[#ffd52a]">{item.label}</span>
                     <button
                       type="button"
                       onClick={() => copyToClipboard(item.value, item.field)}
@@ -151,8 +151,8 @@ export default function SettingsClient() {
                   <div className="mt-1.5 text-sm font-medium text-ink-900 break-all leading-5">{item.value}</div>
                 </div>
               ))}
-              <div className="rounded-2xl border border-[#ece2d2] bg-[#fffdf9] p-3.5">
-                <span className="text-xs font-semibold uppercase tracking-[0.1em] text-[#b38d35]">Active Accounts</span>
+              <div className="rounded-2xl border border-[#252030] bg-[#fffdf9] p-3.5">
+                <span className="text-xs font-semibold uppercase tracking-[0.1em] text-[#ffd52a]">Active Accounts</span>
                 <div className="mt-1.5 flex items-baseline gap-2">
                   <span className="font-display text-3xl font-semibold tracking-[-0.05em] text-ink-900">{activeAccounts.length}</span>
                   <span className="text-sm text-ink-500">accounts connected</span>
@@ -167,7 +167,7 @@ export default function SettingsClient() {
             <div className="space-y-3">
               <div className="flex items-center justify-between rounded-2xl bg-[#f7f2ea] p-4">
                 <div>
-                  <div className="text-xs font-semibold uppercase tracking-[0.1em] text-[#b38d35]">Platforms Live</div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.1em] text-[#ffd52a]">Platforms Live</div>
                   <div className="mt-1 font-display text-3xl font-semibold tracking-[-0.05em] text-ink-900">{connectedCount}</div>
                 </div>
                 <div className="flex gap-1 flex-wrap justify-end max-w-[100px]">
@@ -186,7 +186,7 @@ export default function SettingsClient() {
               </div>
               <div className="space-y-2">
                 {platforms.map(p => (
-                  <div key={p.key} className="flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-[#faf6ef] transition-colors">
+                  <div key={p.key} className="flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-[#141924] transition-colors">
                     <span className={`h-2 w-2 rounded-full flex-shrink-0 ${status[p.key].connected ? "bg-[#8dc63f]" : "bg-[#d7cdbd]"}`} />
                     <span className="flex-1 text-sm text-ink-700">{p.label}</span>
                     <span className="text-xs text-ink-500">
@@ -212,7 +212,7 @@ export default function SettingsClient() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="group flex items-start gap-3 rounded-2xl border border-[#ece2d2] bg-[#fffdf9] p-4 transition hover:border-brand-300 hover:bg-brand-50"
+                  className="group flex items-start gap-3 rounded-2xl border border-[#252030] bg-[#fffdf9] p-4 transition hover:border-brand-300 hover:bg-[#141924]"
                 >
                   <span className="text-xl">{link.icon}</span>
                   <div className="flex-1 min-w-0">
@@ -225,8 +225,8 @@ export default function SettingsClient() {
             </div>
 
             {/* Quick actions */}
-            <div className="mt-5 rounded-[20px] border border-[#ece2d2] bg-gradient-to-br from-[#fffaf0] to-[#fff6de] p-4">
-              <div className="text-xs font-semibold uppercase tracking-[0.1em] text-[#b38d35] mb-2">Quick Actions</div>
+            <div className="mt-5 rounded-[20px] border border-[#252030] bg-gradient-to-br from-[#0d0b14] to-[#100e1a] p-4">
+              <div className="text-xs font-semibold uppercase tracking-[0.1em] text-[#ffd52a] mb-2">Quick Actions</div>
               <div className="space-y-2">
                 <a href="/posts" className="secondary-button w-full text-xs py-2 justify-start gap-2">
                   📋 Manage Posts Queue
@@ -248,7 +248,7 @@ export default function SettingsClient() {
                   Connect multiple pages, profiles, channels, and business accounts for each platform.
                 </p>
               </div>
-              <span className="rounded-full bg-brand-50 px-3 py-1.5 text-xs font-semibold text-[#ab8b3b]">
+              <span className="rounded-full bg-[#141924] px-3 py-1.5 text-xs font-semibold text-[#ab8b3b]">
                 {activeAccounts.length} active
               </span>
             </div>
@@ -266,7 +266,7 @@ export default function SettingsClient() {
                   className={`platform-card fade-up rounded-[24px] border p-5 transition-all duration-300 ${
                     connected
                       ? "border-[#ebe3d4] bg-[linear-gradient(145deg,#fffdf9_0%,#fff7ea_100%)]"
-                      : "border-dashed border-[#e6dcc8] bg-[#faf6ef]"
+                      : "border-dashed border-[#e6dcc8] bg-[#141924]"
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -286,7 +286,7 @@ export default function SettingsClient() {
                             <span className={`h-2 w-2 rounded-full ${connected ? "bg-[#8dc63f]" : "bg-[#bfb4a2]"}`} />
                             {connected ? "Connected" : "Not connected"}
                           </span>
-                          <span className="inline-flex items-center rounded-full bg-white px-2.5 py-1 font-medium text-ink-600 border border-[#e8decd]">
+                          <span className="inline-flex items-center rounded-full bg-[#0d1018] px-2.5 py-1 font-medium text-ink-600 border border-[#e8decd]">
                             {activeCount} active
                           </span>
                         </div>
@@ -302,9 +302,9 @@ export default function SettingsClient() {
                     </button>
                   </div>
 
-                  <div className="mt-4 rounded-[20px] border border-[#ece2d2] bg-white/80 p-3">
+                  <div className="mt-4 rounded-[20px] border border-[#252030] bg-[#0d1018]/80 p-3">
                     <div className="mb-2 flex items-center justify-between">
-                      <span className="text-xs font-semibold uppercase tracking-[0.1em] text-[#b38d35]">Connected accounts</span>
+                      <span className="text-xs font-semibold uppercase tracking-[0.1em] text-[#ffd52a]">Connected accounts</span>
                       {platformAccounts.length ? (
                         <span className="text-[11px] text-ink-500">Choose the target account later while posting</span>
                       ) : null}
@@ -315,7 +315,7 @@ export default function SettingsClient() {
                         {platformAccounts.map((account) => (
                           <div
                             key={account.id}
-                            className="flex items-start gap-3 rounded-2xl border border-[#ece2d2] bg-[#fffdf9] px-3.5 py-3"
+                            className="flex items-start gap-3 rounded-2xl border border-[#252030] bg-[#fffdf9] px-3.5 py-3"
                           >
                             <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-bold ${platform.tone}`}>
                               {platform.icon.slice(0, 1).toUpperCase()}
@@ -338,7 +338,7 @@ export default function SettingsClient() {
                         ))}
                       </div>
                     ) : (
-                      <div className="rounded-2xl border border-dashed border-[#e5dbc8] bg-[#fcfaf5] px-4 py-6 text-center">
+                      <div className="rounded-2xl border border-dashed border-[#e5dbc8] bg-[#0d0b14] px-4 py-6 text-center">
                         <div className="text-sm font-medium text-ink-700">No {platform.label} accounts connected</div>
                         <div className="mt-1 text-xs text-ink-500">
                           Connect one account now, then use the same button to add more pages or profiles later.

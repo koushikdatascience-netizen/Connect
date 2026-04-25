@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { DM_Sans, Space_Grotesk } from "next/font/google";
 
-import { AppShell } from "@/components/app-shell";
+import { AppShellUx } from "@/components/app-shell-ux";
 import { AuthGate } from "@/components/auth-gate";
 
 import "./globals.css";
@@ -30,7 +30,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${bodyFont.variable} ${displayFont.variable}`}>
         <AuthGate>
-          <AppShell>{children}</AppShell>
+          <AppShellUx>{children}</AppShellUx>
         </AuthGate>
       </body>
     </html>

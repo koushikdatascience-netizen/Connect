@@ -78,8 +78,8 @@ export default function WebViewAuthPage() {
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top,#fff9ea_0%,#f7f2ea_55%,#efe6d7_100%)] px-6 py-10">
-      <section className="w-full max-w-[460px] rounded-[30px] border border-[#ece2d2] bg-white/95 p-8 shadow-[0_22px_60px_rgba(24,24,24,0.08)] backdrop-blur">
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#b38d35]">SnapKey WebView Access</p>
+      <section className="w-full max-w-[460px] rounded-[30px] border border-[#252030] bg-[#0d1018]/95 p-8 shadow-[0_22px_60px_rgba(24,24,24,0.08)] backdrop-blur">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#ffd52a]">SnapKey WebView Access</p>
         <h1 className="mt-3 font-display text-4xl font-semibold tracking-[-0.06em] text-ink-900">
           {phase === "redirecting" ? "Redirecting you now" : "Signing you in"}
         </h1>
@@ -89,11 +89,11 @@ export default function WebViewAuthPage() {
             : "Completing secure WebView authorization for the embedded app experience."}
         </p>
         {error ? (
-          <div className="mt-5 rounded-2xl border border-[#f1d3d0] bg-[#fff4f3] px-4 py-3 text-sm text-[#a54848]">
+          <div className="mt-5 rounded-2xl border border-[#3a1515] bg-[#2a100e] px-4 py-3 text-sm text-[#f07070]">
             {error}
           </div>
         ) : (
-          <div className="mt-5 rounded-2xl border border-[#ece2d2] bg-[#fcfaf5] px-4 py-4 text-sm text-ink-600">
+          <div className="mt-5 rounded-2xl border border-[#252030] bg-[#0d0b14] px-4 py-4 text-sm text-ink-600">
             {phase === "redirecting"
               ? "Session confirmed. Redirecting to your workspace..."
               : "Verifying authorization code and establishing session..."}

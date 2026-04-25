@@ -1,1 +1,1 @@
-export { default } from "./posts-client";
+export { default } from "./posts-studio";

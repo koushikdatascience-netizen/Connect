@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.2.2",
-    "next": "15.2.8",
+    "next": "^15.2.8",
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "tailwindcss": "^4.2.2"

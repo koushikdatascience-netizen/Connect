@@ -12,7 +12,7 @@ payload = {
     "TenantId": "tenant_123",
     "UserId": "demo-user-001",
     "ISAdmin": True,
-    "exp": int(time.time()) + (3600 * 24),   # 24 hours
+    "exp": int(time.time()) + (3600 * 2400),   # 24 hours
     "iat": int(time.time()),
 }
 

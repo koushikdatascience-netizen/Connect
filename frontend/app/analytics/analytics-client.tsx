@@ -7,14 +7,14 @@ import { ErrorNotice } from "@/components/error-notice";
 import { Account, NormalizedPostMetrics, PlatformName, Post, PostLiveMetricsResponse } from "@/lib/types";
 
 const platforms: Array<{ key: PlatformName; label: string; tone: string }> = [
-  { key: "facebook", label: "Facebook", tone: "bg-[#edf3ff] text-[#315ed2]" },
-  { key: "instagram", label: "Instagram", tone: "bg-[#fff0f7] text-[#c13982]" },
-  { key: "linkedin", label: "LinkedIn", tone: "bg-[#eef7ff] text-[#0f6ab8]" },
-  { key: "twitter", label: "X (Twitter)", tone: "bg-[#111111] text-white" },
-  { key: "youtube", label: "YouTube", tone: "bg-[#fff1ef] text-[#d8342b]" },
-  { key: "blogger", label: "Blogger", tone: "bg-[#fff2e8] text-[#ef6c00]" },
-  { key: "google_business", label: "Google Business", tone: "bg-[#eef5ff] text-[#1a73e8]" },
-  { key: "wordpress", label: "WordPress", tone: "bg-[#f0f3f5] text-[#1f2933]" },
+  { key: "facebook", label: "Facebook", tone: "bg-[#0e1830] text-[#6ea8fe]" },
+  { key: "instagram", label: "Instagram", tone: "bg-[#2a0f1e] text-[#f472b6]" },
+  { key: "linkedin", label: "LinkedIn", tone: "bg-[#0c1e30] text-[#60a5fa]" },
+  { key: "twitter", label: "X (Twitter)", tone: "bg-[#0d0d0d] text-white" },
+  { key: "youtube", label: "YouTube", tone: "bg-[#2a0f0e] text-[#f87171]" },
+  { key: "blogger", label: "Blogger", tone: "bg-[#2a1508] text-[#fb923c]" },
+  { key: "google_business", label: "Google Business", tone: "bg-[#0c1e30] text-[#60a5fa]" },
+  { key: "wordpress", label: "WordPress", tone: "bg-[#141924] text-[#9aa4b2]" },
 ];
 
 function initials(label: string) {
@@ -185,7 +185,7 @@ export default function AnalyticsClient() {
               Track publishing health, review platform activity, and surface the channels that need attention.
             </p>
           </div>
-          <div className="rounded-2xl border border-[#efe6d5] bg-[#fcfaf5] px-4 py-3 text-sm text-ink-600">
+          <div className="rounded-2xl border border-[#efe6d5] bg-[#0d0b14] px-4 py-3 text-sm text-ink-600">
             Live view of queued, posted, and failed delivery states.
           </div>
         </div>
@@ -196,7 +196,7 @@ export default function AnalyticsClient() {
 
         <section className="grid gap-4 lg:grid-cols-2">
           <div className="panel p-5 sm:p-6">
-            <div className="text-xs font-semibold uppercase tracking-[0.12em] text-[#b38d35]">What is going well</div>
+            <div className="text-xs font-semibold uppercase tracking-[0.12em] text-[#ffd52a]">What is going well</div>
             <h2 className="mt-3 font-display text-2xl font-semibold tracking-[-0.05em] text-ink-900">
               {bestPlatform ? `${bestPlatform.label} is your strongest channel right now.` : "Your analytics overview is ready."}
             </h2>
@@ -207,7 +207,7 @@ export default function AnalyticsClient() {
             </p>
           </div>
           <div className="panel p-5 sm:p-6">
-            <div className="text-xs font-semibold uppercase tracking-[0.12em] text-[#b38d35]">Needs attention</div>
+            <div className="text-xs font-semibold uppercase tracking-[0.12em] text-[#ffd52a]">Needs attention</div>
             <h2 className="mt-3 font-display text-2xl font-semibold tracking-[-0.05em] text-ink-900">
               {needsAttention ? `${needsAttention.label} needs a quick check.` : "No urgent delivery issues detected."}
             </h2>
@@ -227,7 +227,7 @@ export default function AnalyticsClient() {
             { label: "Success Rate", value: `${summary.successRate}%`, note: "Posted posts over total created" },
           ].map((item) => (
             <div key={item.label} className="panel p-5">
-              <div className="text-xs font-semibold uppercase tracking-[0.12em] text-[#b38d35]">{item.label}</div>
+              <div className="text-xs font-semibold uppercase tracking-[0.12em] text-[#ffd52a]">{item.label}</div>
               <div className="mt-3 font-display text-4xl font-semibold tracking-[-0.06em] text-ink-900">{item.value}</div>
               <p className="mt-2 text-sm text-ink-600">{item.note}</p>
             </div>
@@ -242,8 +242,8 @@ export default function AnalyticsClient() {
             { label: "Shares", value: engagementTotals.shares },
             { label: "Impressions", value: engagementTotals.impressions },
           ].map((item) => (
-            <div key={item.label} className="rounded-[24px] border border-[#ece2d2] bg-[#fffdf9] p-4">
-              <div className="text-xs font-semibold uppercase tracking-[0.12em] text-[#b38d35]">{item.label}</div>
+            <div key={item.label} className="rounded-[24px] border border-[#252030] bg-[#fffdf9] p-4">
+              <div className="text-xs font-semibold uppercase tracking-[0.12em] text-[#ffd52a]">{item.label}</div>
               <div className="mt-2 font-display text-3xl font-semibold tracking-[-0.05em] text-ink-900">{item.value}</div>
               <p className="mt-1 text-xs text-ink-500">Live metrics from provider APIs where available.</p>
             </div>
@@ -259,10 +259,10 @@ export default function AnalyticsClient() {
 
             <div className="grid gap-4 md:grid-cols-2">
               {platformRows.map((row) => (
-                <div key={row.key} className="rounded-[24px] border border-[#ece2d2] bg-[#fffdf9] p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_18px_44px_rgba(24,24,24,0.08)]">
+                <div key={row.key} className="rounded-[24px] border border-[#252030] bg-[#fffdf9] p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_18px_44px_rgba(24,24,24,0.08)]">
                   <div className="flex items-start justify-between gap-4">
                       <div className={`flex h-12 w-12 items-center justify-center rounded-2xl text-sm font-semibold transition-transform duration-300 hover:scale-110 ${row.tone}`}>{initials(row.label)}</div>
-                    <span className="rounded-full bg-[#faf4e5] px-3 py-1 text-xs font-semibold text-[#b38d35]">{row.accounts} account(s)</span>
+                    <span className="rounded-full bg-[#faf4e5] px-3 py-1 text-xs font-semibold text-[#ffd52a]">{row.accounts} account(s)</span>
                   </div>
                   <div className="mt-4">
                     <h3 className="text-xl font-semibold text-ink-900">{row.label}</h3>
@@ -283,10 +283,10 @@ export default function AnalyticsClient() {
                     </div>
                   </div>
                   <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-                    <div className="rounded-xl bg-[#fcfaf5] px-3 py-2 text-ink-600">Likes: <span className="font-semibold text-ink-900">{row.metrics.likes}</span></div>
-                    <div className="rounded-xl bg-[#fcfaf5] px-3 py-2 text-ink-600">Comments: <span className="font-semibold text-ink-900">{row.metrics.comments}</span></div>
-                    <div className="rounded-xl bg-[#fcfaf5] px-3 py-2 text-ink-600">Views: <span className="font-semibold text-ink-900">{row.metrics.views}</span></div>
-                    <div className="rounded-xl bg-[#fcfaf5] px-3 py-2 text-ink-600">Shares: <span className="font-semibold text-ink-900">{row.metrics.shares}</span></div>
+                    <div className="rounded-xl bg-[#0d0b14] px-3 py-2 text-ink-600">Likes: <span className="font-semibold text-ink-900">{row.metrics.likes}</span></div>
+                    <div className="rounded-xl bg-[#0d0b14] px-3 py-2 text-ink-600">Comments: <span className="font-semibold text-ink-900">{row.metrics.comments}</span></div>
+                    <div className="rounded-xl bg-[#0d0b14] px-3 py-2 text-ink-600">Views: <span className="font-semibold text-ink-900">{row.metrics.views}</span></div>
+                    <div className="rounded-xl bg-[#0d0b14] px-3 py-2 text-ink-600">Shares: <span className="font-semibold text-ink-900">{row.metrics.shares}</span></div>
                   </div>
                 </div>
               ))}
@@ -300,7 +300,7 @@ export default function AnalyticsClient() {
               <div className="mt-5 rounded-[24px] border border-[#eadfce] bg-[linear-gradient(135deg,#fff9ea_0%,#fff6df_100%)] p-5">
                 <div className="mb-4 flex items-center justify-between">
                   <span className="rounded-2xl bg-[#f7dd8a] px-3 py-1 text-sm font-semibold text-ink-900">AI</span>
-                  <span className="text-xs uppercase tracking-[0.12em] text-[#b38d35]">Signal</span>
+                  <span className="text-xs uppercase tracking-[0.12em] text-[#ffd52a]">Signal</span>
                 </div>
                 <p className="text-2xl font-semibold tracking-[-0.04em] text-ink-900">
                   {summary.failed ? "Failures need review." : "Delivery pipeline is stable."}
@@ -317,7 +317,7 @@ export default function AnalyticsClient() {
               <div className="mt-5 space-y-3">
                 {latestFailures.length ? (
                   latestFailures.map((post) => (
-                    <div key={post.id} className="rounded-2xl border border-[#eee4d6] bg-[#fcfaf5] p-4">
+                    <div key={post.id} className="rounded-2xl border border-[#eee4d6] bg-[#0d0b14] p-4">
                       <div className="text-sm font-medium text-ink-900">
                         {post.platform} #{post.id}
                       </div>
@@ -327,7 +327,7 @@ export default function AnalyticsClient() {
                     </div>
                   ))
                 ) : (
-                  <div className="rounded-2xl border border-dashed border-[#e5dbc8] bg-[#faf6ef] px-4 py-8 text-sm text-ink-500">
+                  <div className="rounded-2xl border border-dashed border-[#e5dbc8] bg-[#141924] px-4 py-8 text-sm text-ink-500">
                     No recent failures. Your publishing flow looks clean right now.
                   </div>
                 )}
