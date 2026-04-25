@@ -8,6 +8,7 @@ import { PostComposerModal } from "@/components/post-composer-modal-v2";
 import { clearStoredAuthToken, logoutSession } from "@/lib/api";
 
 const navigation = [
+  { href: "/create-post", label: "Compose Post", icon: "compose" },
   { href: "/posts", label: "Scheduled Posts", icon: "clock" },
   { href: "/connections", label: "Social Accounts", icon: "spark" },
 ] as const;
@@ -26,6 +27,7 @@ function LogoMark() {
 
 function NavIcon({ icon }: { icon: (typeof navigation)[number]["icon"] }) {
   const shared = { viewBox: "0 0 24 24", className: "h-5 w-5", "aria-hidden": true, fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  if (icon === "compose") return <svg {...shared}><path d="M4.5 19.5h4l10-10a2.1 2.1 0 0 0-4-4l-10 10v4Z" /><path d="m13.5 6.5 4 4" /></svg>;
   if (icon === "spark") return <svg {...shared}><path d="M12 3v4M12 17v4M3 12h4M17 12h4" /><path d="m6 6 2 2M16 16l2 2M18 6l-2 2M8 16l-2 2" /></svg>;
   if (icon === "clock") return <svg {...shared}><circle cx="12" cy="12" r="8" /><path d="M12 8v5l3 2" /></svg>;
   return <svg {...shared}><circle cx="12" cy="12" r="3" /><path d="M12 4.5v2.1M12 17.4v2.1M19.5 12h-2.1M6.6 12H4.5M17.3 6.7l-1.5 1.5M8.2 15.8l-1.5 1.5M17.3 17.3l-1.5-1.5M8.2 8.2 6.7 6.7" /></svg>;
