@@ -69,11 +69,20 @@ function getLivePostUrl(post: Post, metrics?: PostLiveMetricsResponse | null) {
     case "youtube":
       return `https://www.youtube.com/watch?v=${encodeURIComponent(post.platform_post_id)}`;
     case "twitter":
+    case "x":
       return `https://x.com/i/web/status/${encodeURIComponent(post.platform_post_id)}`;
     case "linkedin":
       return `https://www.linkedin.com/feed/update/${encodeURIComponent(post.platform_post_id)}/`;
     case "facebook":
+    case "instagram":
       return `https://www.facebook.com/${encodeURIComponent(post.platform_post_id)}`;
+    case "blogger":
+    case "wordpress":
+      // For blog platforms, try to construct URL if we have the ID
+      if (post.platform_post_id.includes("http")) {
+        return post.platform_post_id;
+      }
+      return null;
     default:
       return null;
   }
