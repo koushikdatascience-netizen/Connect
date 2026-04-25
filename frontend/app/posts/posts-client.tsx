@@ -160,11 +160,6 @@ export default function PostsClient() {
   async function load() {
     try {
       const [postData, accountData] = await Promise.all([fetchPosts(), fetchAccounts()]);
-      console.log('Loaded posts:', postData.length, 'posts');
-      if (postData.length > 0) {
-        console.log('First post:', postData[0]);
-        console.log('First post platform_post_id:', postData[0].platform_post_id);
-      }
       setPosts(postData);
       setAccounts(accountData);
       setError(null);
@@ -215,11 +210,9 @@ export default function PostsClient() {
     });
   }
 
-  // Auto-refresh every 30 seconds for real-time status updates
+  // Load posts on mount only (no auto-refresh to avoid performance issues)
   useEffect(() => {
     void load();
-    const interval = setInterval(load, 30000); // 30 seconds
-    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -444,11 +437,6 @@ export default function PostsClient() {
 
                     return (
                       <div key={post.id} className="post-card rounded-[22px] border border-[#ece3d3] bg-[#fffcf7] p-4 sm:p-5">
-                        {/* DEBUG INFO */}
-                        <div className="mb-2 text-[10px] text-ink-400 font-mono">
-                          ID: {post.id} | Status: {post.status} | Platform Post ID: {post.platform_post_id || "NULL"}
-                        </div>
-                        
                         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                           {/* Content area */}
                           <div className="min-w-0 flex-1">
@@ -509,11 +497,7 @@ export default function PostsClient() {
                                   >
                                     🔗 View Live Post
                                   </a>
-                                ) : (
-                                  <span className="text-xs text-ink-400">
-                                    (status: {post.status}, hasUrl: {livePostUrl ? "yes" : "no"})
-                                  </span>
-                                )}
+                                ) : null}
                               </div>
                             )}
 
