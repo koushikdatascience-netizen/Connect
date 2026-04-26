@@ -37,8 +37,6 @@ def _build_state(tenant_id: str, user_id: str):
 
     encoded = base64.urlsafe_b64encode(json.dumps(payload).encode()).decode()
 
-    # Store nonce in Redis (anti-replay). If Redis is unavailable, surface a
-    # service-level error instead of a generic 500.
     try:
         redis_client.setex(f"oauth_state:{payload['nonce']}", 600, "1")
     except Exception:
@@ -60,11 +58,9 @@ def _validate_and_extract_state(state: str):
         nonce = decoded["nonce"]
         exp = decoded["exp"]
 
-        # expiry check
         if time.time() > exp:
             raise HTTPException(status_code=400, detail="State expired")
 
-        # Nonce check (anti-replay).
         try:
             nonce_exists = redis_client.get(f"oauth_state:{nonce}")
         except Exception:
@@ -364,9 +360,6 @@ def _linkedin_authorization_url(tenant_id: str, user_id: str, add_another: bool 
         "client_id": settings.LINKEDIN_CLIENT_ID,
         "redirect_uri": settings.linkedin_redirect_uri,
         "state": state,
-        # Keep baseline scopes stable for all LinkedIn apps.
-        # Organization scopes require additional LinkedIn product approvals
-        # and can raise unauthorized_scope_error for many apps.
         "scope": "openid profile email w_member_social",
     }
     if add_another:
@@ -551,16 +544,10 @@ def facebook_authorize(
 @router.get("/facebook/login")
 def facebook_login(
     request: Request,
-    user=Depends(get_current_user)   # ✅ ADD THIS
+    user=Depends(get_current_user)
 ):
     tenant_id, user_id = _get_tenant_and_user(request)
-
-    logger.info(
-        "oauth.login.start tenant=%s user=%s provider=facebook",
-        tenant_id,
-        user_id
-    )
-
+    logger.info("oauth.login.start tenant=%s user=%s provider=facebook", tenant_id, user_id)
     return RedirectResponse(
         _facebook_authorization_url(tenant_id, user_id, add_another=_is_add_another(request))
     )
@@ -603,6 +590,19 @@ def facebook_callback(
         saved_accounts = []
 
         for page in _page_accounts(access_token):
+            # FIX 1: Fetch Facebook page profile picture
+            pic_url = None
+            try:
+                pic_response = requests.get(
+                    f"https://graph.facebook.com/v18.0/{page['id']}/picture",
+                    params={"type": "large", "redirect": "false", "access_token": page["access_token"]},
+                    timeout=10,
+                )
+                if pic_response.ok:
+                    pic_url = pic_response.json().get("data", {}).get("url")
+            except Exception:
+                logger.warning("oauth.facebook.picture_fetch_failed page_id=%s", page["id"])
+
             account = save_social_account(
                 tenant_id=tenant_id,
                 platform="facebook",
@@ -610,6 +610,7 @@ def facebook_callback(
                 account_name=page["name"],
                 access_token=page["access_token"],
                 account_type="page",
+                profile_picture_url=pic_url,
             )
             saved_accounts.append(account)
 
@@ -646,16 +647,10 @@ def instagram_authorize(
 @router.get("/instagram/login")
 def instagram_login(
     request: Request,
-    user=Depends(get_current_user)   # ✅ ADD THIS
+    user=Depends(get_current_user)
 ):
     tenant_id, user_id = _get_tenant_and_user(request)
-
-    logger.info(
-        "oauth.login.start tenant=%s user=%s provider=instagram",
-        tenant_id,
-        user_id
-    )
-
+    logger.info("oauth.login.start tenant=%s user=%s provider=instagram", tenant_id, user_id)
     return RedirectResponse(
         _instagram_authorization_url(tenant_id, user_id, add_another=_is_add_another(request))
     )
@@ -752,10 +747,6 @@ def instagram_callback(
 
 # ── LinkedIn ────────────────────────────────────────────────────────────
 
-
-from fastapi import Depends
-from app.utils.deps import get_current_user
-
 @router.get("/linkedin/authorize")
 def linkedin_authorize(
     request: Request,
@@ -771,16 +762,10 @@ def linkedin_authorize(
 @router.get("/linkedin/login")
 def linkedin_login(
     request: Request,
-    user=Depends(get_current_user)   # ✅ ADD THIS
+    user=Depends(get_current_user)
 ):
     tenant_id, user_id = _get_tenant_and_user(request)
-
-    logger.info(
-        "oauth.login.start tenant=%s user=%s provider=linkedin",
-        tenant_id,
-        user_id
-    )
-
+    logger.info("oauth.login.start tenant=%s user=%s provider=linkedin", tenant_id, user_id)
     return RedirectResponse(
         _linkedin_authorization_url(tenant_id, user_id, add_another=_is_add_another(request))
     )
@@ -824,7 +809,6 @@ def linkedin_callback(
         token_data = token_response.json()
         access_token = token_data["access_token"]
 
-        # switched from /v2/me to /v2/userinfo (OpenID Connect endpoint)
         profile_response = requests.get(
             "https://api.linkedin.com/v2/userinfo",
             headers={"Authorization": "Bearer {0}".format(access_token)},
@@ -834,9 +818,9 @@ def linkedin_callback(
             _raise_provider_error("linkedin", profile_response)
 
         profile = profile_response.json()
-        # /v2/userinfo returns "sub" instead of "id"
         saved_accounts = []
 
+        # FIX 2: Pass profile picture from /v2/userinfo ("picture" field)
         personal_account = save_social_account(
             tenant_id=tenant_id,
             platform="linkedin",
@@ -844,6 +828,7 @@ def linkedin_callback(
             account_name=profile.get("name", "LinkedIn Profile"),
             access_token=access_token,
             account_type="personal_profile",
+            profile_picture_url=profile.get("picture"),
         )
         saved_accounts.append(personal_account)
 
@@ -898,16 +883,10 @@ def google_authorize(
 @router.get("/google/login")
 def google_login(
     request: Request,
-    user=Depends(get_current_user)   # ✅ ADD THIS
+    user=Depends(get_current_user)
 ):
     tenant_id, user_id = _get_tenant_and_user(request)
-
-    logger.info(
-        "oauth.login.start tenant=%s user=%s provider=youtube",
-        tenant_id,
-        user_id
-    )
-
+    logger.info("oauth.login.start tenant=%s user=%s provider=youtube", tenant_id, user_id)
     return RedirectResponse(
         _google_authorization_url(tenant_id, user_id, add_another=_is_add_another(request))
     )
@@ -1016,6 +995,21 @@ def blogger_callback(
 
     try:
         tokens = _exchange_google_code(code, settings.blogger_redirect_uri)
+
+        # FIX 3: Fetch Google account avatar for Blogger profile picture
+        # (blogs have no profile pic of their own; use the connected Google account's avatar)
+        google_avatar = None
+        try:
+            userinfo_response = requests.get(
+                "https://www.googleapis.com/oauth2/v3/userinfo",
+                headers=_google_headers(tokens["access_token"]),
+                timeout=10,
+            )
+            if userinfo_response.ok:
+                google_avatar = userinfo_response.json().get("picture")
+        except Exception:
+            logger.warning("oauth.blogger.userinfo_fetch_failed")
+
         saved_accounts = []
         for blog in _list_blogger_blogs(tokens["access_token"]):
             account = save_social_account(
@@ -1027,7 +1021,7 @@ def blogger_callback(
                 refresh_token=tokens.get("refresh_token"),
                 expires_in=tokens.get("expires_in"),
                 account_type="blog",
-                profile_picture_url=(blog.get("posts") or {}).get("selfLink"),
+                profile_picture_url=google_avatar,  # was wrongly set to posts selfLink before
             )
             saved_accounts.append(account)
 
@@ -1146,16 +1140,10 @@ def twitter_authorize(
 @router.get("/twitter/login")
 def twitter_login(
     request: Request,
-    user=Depends(get_current_user)   # ✅ ADD THIS LINE
+    user=Depends(get_current_user)
 ):
     tenant_id, user_id = _get_tenant_and_user(request)
-
-    logger.info(
-        "oauth.login.start tenant=%s user=%s provider=twitter",
-        tenant_id,
-        user_id
-    )
-
+    logger.info("oauth.login.start tenant=%s user=%s provider=twitter", tenant_id, user_id)
     return RedirectResponse(
         _twitter_authorization_url(tenant_id, user_id, add_another=_is_add_another(request))
     )
@@ -1174,7 +1162,6 @@ def twitter_callback(
         return _dashboard_redirect("twitter", "error", "Missing OAuth state from X callback.")
     tenant_id, user_id = _validate_and_extract_state(state)
 
-    # decode nonce after validation (safe version)
     decoded = json.loads(base64.urlsafe_b64decode(state.encode()).decode())
     nonce = decoded["nonce"]
     if not code:
@@ -1209,15 +1196,19 @@ def twitter_callback(
         token_data = token_response.json()
         access_token = token_data["access_token"]
 
+        # FIX 4: Request profile_image_url field; strip _normal suffix for full-size image
         user_response = requests.get(
             "https://api.x.com/2/users/me",
             headers={"Authorization": "Bearer {0}".format(access_token)},
+            params={"user.fields": "profile_image_url"},
             timeout=30,
         )
         if not user_response.ok:
             _raise_provider_error("twitter", user_response)
 
         user_data = user_response.json().get("data", {})
+        raw_pic = user_data.get("profile_image_url", "")
+        profile_pic = raw_pic.replace("_normal", "") if raw_pic else None
 
         save_social_account(
             tenant_id=tenant_id,
@@ -1228,6 +1219,7 @@ def twitter_callback(
             refresh_token=token_data.get("refresh_token"),
             expires_in=token_data.get("expires_in"),
             account_type="personal_or_brand",
+            profile_picture_url=profile_pic,
         )
 
         logger.info(
