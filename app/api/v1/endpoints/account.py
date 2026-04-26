@@ -1,4 +1,5 @@
 import time
+from typing import Dict, Optional, Tuple
 from urllib.parse import urlparse
 
 import requests
@@ -33,11 +34,11 @@ router = APIRouter()
 # key   → profile_picture_url string
 # value → (raw bytes, content-type, fetched_at timestamp)
 # ---------------------------------------------------------------------------
-_AVATAR_CACHE: dict[str, tuple[bytes, str, float]] = {}
+_AVATAR_CACHE: Dict[str, Tuple[bytes, str, float]] = {}
 _AVATAR_TTL = 3600  # 1 hour
 
 
-def _get_cached_avatar(url: str) -> tuple[bytes, str] | None:
+def _get_cached_avatar(url: str) -> Optional[Tuple[bytes, str]]:
     entry = _AVATAR_CACHE.get(url)
     if entry and (time.time() - entry[2]) < _AVATAR_TTL:
         return entry[0], entry[1]
