@@ -36,6 +36,38 @@ function platformTone(platform: string) {
   return "bg-[#fff3d7] text-[#8a6a18]";
 }
 
+// FIX: construct the correct public URL for a posted post based on platform + ID.
+function getLivePostUrl(post: Post): string | null {
+  if (!post.platform_post_id) return null;
+
+  // If the stored ID is already a full URL, use it directly
+  if (/^https?:\/\//i.test(post.platform_post_id)) {
+    return post.platform_post_id;
+  }
+
+  switch (post.platform) {
+    case "youtube":
+      return `https://www.youtube.com/watch?v=${encodeURIComponent(post.platform_post_id)}`;
+    case "twitter":
+    case "x":
+      return `https://x.com/i/web/status/${encodeURIComponent(post.platform_post_id)}`;
+    case "linkedin":
+      return `https://www.linkedin.com/feed/update/${encodeURIComponent(post.platform_post_id)}/`;
+    case "facebook":
+      return `https://www.facebook.com/${encodeURIComponent(post.platform_post_id)}`;
+    case "instagram":
+      return `https://www.instagram.com/p/${encodeURIComponent(post.platform_post_id)}/`;
+    case "blogger":
+    case "wordpress":
+      if (post.platform_post_id.includes("http")) return post.platform_post_id;
+      return null;
+    case "google_business":
+      return null;
+    default:
+      return null;
+  }
+}
+
 export default function PostsStudio() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -134,38 +166,57 @@ export default function PostsStudio() {
               <div className="rounded-[26px] border border-[#eadfcd] bg-[#fff8e8] p-4 shadow-[0_10px_24px_rgba(180,144,34,0.08)]">
                 {viewMode === "list" ? (
                   <div className="space-y-3">
-                    {filteredPosts.map((post) => (
-                      <button key={post.id} type="button" onClick={() => setSelectedPostId(post.id)} className={`flex w-full items-center gap-3 rounded-[20px] border p-3 text-left transition ${selectedPostId === post.id ? "border-[#e1ca8b] bg-[#fff9e9]" : "border-[#eee4d6] bg-[#fffef9] hover:border-[#e2d4b1]"}`}>
-                        <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${platformTone(post.platform)}`}>
-                          <span className="text-xs font-semibold capitalize">{post.platform.slice(0, 2)}</span>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="truncate text-sm font-semibold text-ink-900">{post.content || "Thumbnail + short caption"}</div>
-                          <div className="mt-1 flex flex-wrap gap-3 text-xs text-ink-500">
-                            <span className="capitalize">{post.platform}</span>
-                            <span>{formatDate(post.scheduled_at ?? post.created_at)}</span>
+                    {filteredPosts.map((post) => {
+                      const liveUrl = getLivePostUrl(post);
+                      return (
+                        <button key={post.id} type="button" onClick={() => setSelectedPostId(post.id)} className={`flex w-full items-center gap-3 rounded-[20px] border p-3 text-left transition ${selectedPostId === post.id ? "border-[#e1ca8b] bg-[#fff9e9]" : "border-[#eee4d6] bg-[#fffef9] hover:border-[#e2d4b1]"}`}>
+                          <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${platformTone(post.platform)}`}>
+                            <span className="text-xs font-semibold capitalize">{post.platform.slice(0, 2)}</span>
                           </div>
-                        </div>
-                        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusTone(post.status)}`}>{post.status}</span>
-                        <div className="flex gap-2">
-                          <span className="secondary-button px-3 py-2 text-xs">Edit</span>
-                          <span className="secondary-button px-3 py-2 text-xs">Reschedule</span>
-                          <span className="secondary-button px-3 py-2 text-xs">Delete</span>
-                          {post.status === "posted" && (
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setViewingMetricsPostId(post.id);
-                              }}
-                              className="secondary-button px-3 py-2 text-xs"
-                            >
-                              Live View
-                            </button>
-                          )}
-                        </div>
-                      </button>
-                    ))}
+                          <div className="min-w-0 flex-1">
+                            <div className="truncate text-sm font-semibold text-ink-900">{post.content || "Thumbnail + short caption"}</div>
+                            <div className="mt-1 flex flex-wrap gap-3 text-xs text-ink-500">
+                              <span className="capitalize">{post.platform}</span>
+                              <span>{formatDate(post.scheduled_at ?? post.created_at)}</span>
+                            </div>
+                          </div>
+                          <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusTone(post.status)}`}>{post.status}</span>
+                          <div className="flex gap-2">
+                            <span className="secondary-button px-3 py-2 text-xs">Edit</span>
+                            <span className="secondary-button px-3 py-2 text-xs">Reschedule</span>
+                            <span className="secondary-button px-3 py-2 text-xs">Delete</span>
+                            {post.status === "posted" && (
+                              <>
+                                {/* FIX: "Live View" now opens the actual post in a new tab.
+                                    Metrics are still accessible via the details panel on the right. */}
+                                {liveUrl ? (
+                                  <a
+                                    href={liveUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="secondary-button px-3 py-2 text-xs inline-flex items-center gap-1"
+                                  >
+                                    🔗 Live View
+                                  </a>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setViewingMetricsPostId(post.id);
+                                    }}
+                                    className="secondary-button px-3 py-2 text-xs"
+                                  >
+                                    📊 Metrics
+                                  </button>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
                     {!filteredPosts.length ? <div className="rounded-[20px] border border-dashed border-[#e5dbc8] bg-[#fff8e8] px-4 py-10 text-center text-sm text-ink-500">No posts matched your filters.</div> : null}
                   </div>
                 ) : (
@@ -213,15 +264,29 @@ export default function PostsStudio() {
                     <button type="button" onClick={() => setEditingPost(selectedPost)} className="primary-button w-full justify-center py-3">Edit Post</button>
                     <button type="button" onClick={() => setEditingPost(selectedPost)} className="secondary-button w-full justify-center py-3">Reschedule</button>
                     <button type="button" onClick={() => void handleDelete(selectedPost.id)} className="secondary-button w-full justify-center py-3">Delete</button>
-                    {selectedPost.status === "posted" && (
-                      <button
-                        type="button"
-                        onClick={() => setViewingMetricsPostId(selectedPost.id)}
-                        className="secondary-button w-full justify-center py-3"
-                      >
-                        Live View
-                      </button>
-                    )}
+                    {selectedPost.status === "posted" && (() => {
+                      const liveUrl = getLivePostUrl(selectedPost);
+                      return liveUrl ? (
+                        // FIX: opens the actual live post in a new tab
+                        <a
+                          href={liveUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="secondary-button w-full justify-center py-3 inline-flex items-center gap-2"
+                        >
+                          🔗 View Live Post
+                        </a>
+                      ) : (
+                        // Fallback: show metrics modal when no URL can be constructed
+                        <button
+                          type="button"
+                          onClick={() => setViewingMetricsPostId(selectedPost.id)}
+                          className="secondary-button w-full justify-center py-3"
+                        >
+                          📊 View Metrics
+                        </button>
+                      );
+                    })()}
                   </div>
                 </>
               ) : <div className="rounded-[20px] border border-dashed border-[#e5dbc8] bg-[#fff8e8] px-4 py-10 text-sm text-ink-500">Select a post to inspect details here.</div>}

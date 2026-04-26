@@ -21,6 +21,26 @@ function getEntityLabel(accountType?: string | null) {
   return accountType?.toLowerCase().includes("page") ? "Page" : "Account";
 }
 
+function AccountAvatar({ src, name }: { src?: string | null; name: string }) {
+  const [imgError, setImgError] = useState(false);
+  const showImage = !!src && !imgError;
+
+  return showImage ? (
+    <img
+      src={src}
+      alt={name}
+      // FIX: reduced from h-10 w-10 → h-8 w-8 to free up space for the name column
+      className="h-8 w-8 shrink-0 rounded-full border border-[#f0e2b2] object-cover"
+      onError={() => setImgError(true)}
+    />
+  ) : (
+    // FIX: reduced from h-10 w-10 → h-8 w-8 to free up space for the name column
+    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#f0e2b2] bg-[#fff7d1] text-[13px] font-semibold text-[#8c6f00]">
+      {name.charAt(0).toUpperCase()}
+    </div>
+  );
+}
+
 export function PlatformSelector({
   platform,
   onPlatformToggle,
@@ -138,7 +158,11 @@ export function PlatformSelector({
                   return (
                     <label
                       key={account.id}
-                      className={`flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-3 transition-all duration-200 ${
+                      // FIX 1: added `min-w-0` so this flex container can shrink below its
+                      // natural content width — without it, children can't truncate properly.
+                      // FIX 2: reduced gap-3 → gap-2 and px-3 py-3 → px-2 py-2 to reclaim
+                      // horizontal space for the name column in narrow sidebars.
+                      className={`flex min-w-0 cursor-pointer items-center gap-2 rounded-xl border px-2 py-2 transition-all duration-200 ${
                         checked
                           ? "border-[#efcf59] bg-[#fff2b8]"
                           : "border-[#f0e2b2] bg-[#fffef9] hover:bg-[#fff9df]"
@@ -148,50 +172,33 @@ export function PlatformSelector({
                         type="checkbox"
                         checked={checked}
                         onChange={(event) => onAccountToggle(account.id, event.target.checked)}
-                        className="mt-1 h-4 w-4 rounded-[4px] border-[1.5px] border-[#d8c36e] bg-white text-[#F5C800] focus:ring-0"
+                        className="h-4 w-4 shrink-0 rounded-[4px] border-[1.5px] border-[#d8c36e] bg-white text-[#F5C800] focus:ring-0"
                       />
 
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-start gap-3">
-                          {/* Profile Picture */}
-                          {account.profile_picture_url ? (
-                            <img
-                              src={account.profile_picture_url}
-                              alt={account.account_name}
-                              className="h-10 w-10 shrink-0 rounded-full border border-[#f0e2b2] object-cover"
-                              onError={(e) => {
-                                // Hide broken image and show fallback instead
-                                const target = e.target as HTMLImageElement;
-                                target.style.display = 'none';
-                                const fallback = target.nextElementSibling as HTMLElement;
-                                if (fallback) {
-                                  fallback.style.display = 'flex';
-                                }
-                              }}
-                            />
-                          ) : null}
-                          <div 
-                            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#f0e2b2] bg-[#fff7d1] text-[14px] font-semibold text-[#8c6f00] ${account.profile_picture_url ? 'hidden' : ''}`}
-                          >
-                            {account.account_name.charAt(0).toUpperCase()}
-                          </div>
+                      <AccountAvatar
+                        src={account.profile_picture_url}
+                        name={account.account_name}
+                      />
 
-                          <div className="min-w-0 flex-1">
-                            <div className="text-[10px] text-[#8c6f00]">
-                              {getEntityLabel(account.account_type)}
-                            </div>
-                            <div className="truncate text-[12px] font-semibold text-[#111111]" title={account.account_name}>
-                              {account.account_name}
-                            </div>
-                            <div className="mt-1 text-[10px] text-[#344054]">
-                              {formatAccountType(account.account_type)}
-                            </div>
-                          </div>
+                      {/* FIX 3: min-w-0 + flex-1 lets this column take remaining space and
+                          actually shrink so `truncate` has room to apply the ellipsis. */}
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[10px] text-[#8c6f00]">
+                          {getEntityLabel(account.account_type)}
+                        </div>
+                        <div
+                          className="truncate text-[12px] font-semibold text-[#111111]"
+                          title={account.account_name}
+                        >
+                          {account.account_name}
+                        </div>
+                        <div className="mt-0.5 truncate text-[10px] text-[#344054]">
+                          {formatAccountType(account.account_type)}
                         </div>
                       </div>
 
                       <span
-                        className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
+                        className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
                           checked
                             ? "bg-[#16a34a] text-white"
                             : "border border-[#eadba6] bg-white text-transparent"
