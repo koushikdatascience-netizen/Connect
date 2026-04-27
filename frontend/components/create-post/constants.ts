@@ -77,19 +77,89 @@ export const PLATFORM_LABELS = Object.fromEntries(
 
 export function createDefaultPlatformConfig(): PlatformConfig {
   return {
+    // Shared
     schedule: "",
+
+    // Facebook
     facebookPageId: "default",
-    facebookVisibility: "public",
-    facebookCta: "none",
+    facebookVisibility: "EVERYONE",
+    facebookCta: "NO_BUTTON",
+    facebookTargetingEnabled: false,
+    facebookTargetAge: "",
+    facebookTargetCountries: "",
+
+    // Instagram
     instagramCaptionStyle: "balanced",
     instagramHashtags: "",
     instagramFirstCommentEnabled: false,
     instagramFirstComment: "",
     instagramPostType: "post",
+    instagramLocationId: "",
+    instagramUserTags: "",
+    instagramShareToFacebook: false,
+
+    // LinkedIn
     linkedinAudience: "PUBLIC",
     linkedinHashtags: "",
     linkedinEntityType: "profile",
+    linkedinLifecycleState: "PUBLISHED",
+    linkedinContentTopics: "",
+    linkedinMultiImageEnabled: false,
+
+    // Twitter / X
     twitterReplySettings: "everyone",
     twitterThreadMode: false,
+    twitterSensitive: false,
+    twitterCardEnabled: true,
+    twitterForSuperFollowers: false,
+
+    // YouTube
+    youtubeTitle: "",
+    youtubePrivacy: "public",
+    youtubeCategoryId: "22",
+    youtubeTags: "",
+    youtubeNotifySubscribers: true,
+    youtubeEmbeddable: true,
+    youtubeLicense: "youtube",
+    youtubeMadeForKids: false,
+    youtubeLanguage: "en",
+    youtubeDefaultAudioLanguage: "en",
+    youtubePublishAt: "",
+
+    // Blogger
+    bloggerTitle: "",
+    bloggerLabels: "",
+    bloggerIsDraft: false,
+    bloggerReaderComments: "ALLOW",
+    bloggerCustomMetaRobotsTags: "",
+    bloggerLocation: "",
+
+    // Google Business
+    googleBusinessPostType: "STANDARD",
+    googleBusinessCta: "NONE",
+    googleBusinessCtaUrl: "",
+    googleBusinessEventTitle: "",
+    googleBusinessEventStartDate: "",
+    googleBusinessEventEndDate: "",
+    googleBusinessOfferCode: "",
+    googleBusinessOfferRedeemUrl: "",
+    googleBusinessOfferTerms: "",
+    googleBusinessAlertType: "",
+    googleBusinessTopicType: "STANDARD",
+
+    // WordPress
+    wordpressTitle: "",
+    wordpressStatus: "publish",
+    wordpressCategories: "",
+    wordpressTags: "",
+    wordpressSlug: "",
+    wordpressExcerpt: "",
+    wordpressCommentStatus: "open",
+    wordpressPingStatus: "open",
+    wordpressFeaturedMediaEnabled: true,
+    wordpressFormat: "standard",
+    wordpressSticky: false,
+    wordpressAuthorId: "",
+    wordpressPassword: "",
   };
 }

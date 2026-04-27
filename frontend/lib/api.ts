@@ -272,3 +272,11 @@ export function processOverduePosts() {
     },
   );
 }
+
+
+export function deactivateAccount(accountId: number) {
+  return apiFetch<{ id: number; is_active: boolean }>(
+    `/api/v1/accounts/${accountId}/deactivate`,
+    { method: "POST" },
+  );
+}

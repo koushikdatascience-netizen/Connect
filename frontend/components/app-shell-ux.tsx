@@ -4,12 +4,12 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ReactNode, useState } from "react";
 
+import { PostComposerModal } from "@/components/post-composer-modal-v2";
 import { clearStoredAuthToken, logoutSession } from "@/lib/api";
 
 const navigation = [
   { href: "/create-post", label: "Compose Post", icon: "compose" },
-  { href: "/posts", label: "Posts History", icon: "book" },
-  { href: "/calender", label: "Calender", icon: "clock" },
+  { href: "/posts", label: "Scheduled Posts", icon: "clock" },
   { href: "/connections", label: "Social Accounts", icon: "spark" },
 ] as const;
 
@@ -36,6 +36,7 @@ function NavIcon({ icon }: { icon: (typeof navigation)[number]["icon"] }) {
 export function AppShellUx({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const [composerOpen, setComposerOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   async function handleLogout() {
@@ -60,7 +61,7 @@ export function AppShellUx({ children }: { children: ReactNode }) {
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><line x1="2" y1="4.5" x2="16" y2="4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><line x1="2" y1="9" x2="16" y2="9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><line x1="2" y1="13.5" x2="16" y2="13.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
           </button>
           <div className="flex items-center gap-3"><LogoMark /><div className="hidden sm:block"><div className="font-display text-xl font-semibold tracking-[-0.06em] text-ink-900">Snapkey</div><div className="text-[10px] uppercase tracking-[0.22em] text-[#8c6f00]">Social Suite</div></div></div>
-          <Link href="/create-post" className="primary-button h-11 px-4 py-0 text-xs inline-flex items-center">+ New Post</Link>
+          <button type="button" onClick={() => setComposerOpen(true)} className="primary-button h-11 px-4 py-0 text-xs">+ New Post</button>
         </div>
       </div>
 
@@ -123,6 +124,7 @@ export function AppShellUx({ children }: { children: ReactNode }) {
         </div>
       </nav>
 
+      <PostComposerModal open={composerOpen} onClose={() => setComposerOpen(false)} />
     </>
   );
 }

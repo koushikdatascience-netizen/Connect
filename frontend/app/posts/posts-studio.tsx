@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 
 import { EditPostModal } from "@/components/edit-post-modal-v2";
 import { ErrorNotice } from "@/components/error-notice";
 import { LivePostMetricsModal } from "@/components/live-post-metrics-modal";
+import { PostComposerModal } from "@/components/post-composer-modal-v2";
 import { cancelPost, fetchPosts } from "@/lib/api";
 import { Post } from "@/lib/types";
 
@@ -71,7 +71,7 @@ function getLivePostUrl(post: Post): string | null {
 export default function PostsStudio() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
+  const [composerOpen, setComposerOpen] = useState(false);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [platformFilter, setPlatformFilter] = useState("all");
@@ -130,7 +130,7 @@ export default function PostsStudio() {
                   <h1 className="font-display text-3xl font-semibold tracking-[-0.06em] text-ink-900">Scheduled Posts</h1>
                   <p className="mt-2 text-sm leading-6 text-ink-600">A more interactive post queue with filters, list/card toggles, and a details panel to keep editing fast.</p>
                 </div>
-                <button type="button" onClick={() => router.push("/create-post")} className="primary-button px-5 py-3 text-sm">Create Post</button>
+                <button type="button" onClick={() => setComposerOpen(true)} className="primary-button px-5 py-3 text-sm">Create Post</button>
               </div>
 
               <ErrorNotice error={error} fallback="We couldn't load scheduled posts right now." />
@@ -140,10 +140,14 @@ export default function PostsStudio() {
                   <input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search by caption or platform" className="field-input rounded-full" />
                   <select value={platformFilter} onChange={(event) => setPlatformFilter(event.target.value)} className="field-input rounded-full">
                     <option value="all">All platforms</option>
-                    <option value="instagram">Instagram</option>
-                    <option value="twitter">Twitter</option>
-                    <option value="linkedin">LinkedIn</option>
                     <option value="facebook">Facebook</option>
+                    <option value="instagram">Instagram</option>
+                    <option value="linkedin">LinkedIn</option>
+                    <option value="twitter">Twitter (X)</option>
+                    <option value="youtube">YouTube</option>
+                    <option value="blogger">Blogger</option>
+                    <option value="google_business">Google Business</option>
+                    <option value="wordpress">WordPress</option>
                   </select>
                   <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as FilterStatus)} className="field-input rounded-full">
                     <option value="all">All status</option>
@@ -178,14 +182,11 @@ export default function PostsStudio() {
                             <div className="mt-1 flex flex-wrap gap-3 text-xs text-ink-500">
                               <span className="capitalize">{post.platform}</span>
                               <span>{formatDate(post.scheduled_at ?? post.created_at)}</span>
-                              {post.retry_count > 0 && (
-                                <span className="text-[#b64e48]">{post.retry_count} retries</span>
-                              )}
                             </div>
-                            {(post.status === "failed" || post.status === "queued") && post.error_message && (
-                              <div className="mt-1.5 flex items-start gap-1.5 rounded-lg bg-[#fff1ef] px-2.5 py-1.5">
-                                <span className="mt-0.5 shrink-0 text-[#b64e48]">⚠</span>
-                                <p className="text-xs text-[#b64e48] leading-snug">{post.error_message}</p>
+                            {post.error_message && (["failed", "queued", "pending"].includes(post.status)) && (
+                              <div className="mt-1.5 flex items-start gap-1.5 rounded-lg border border-[#f5d5d0] bg-[#fff5f3] px-2.5 py-1.5">
+                                <span className="mt-px text-xs leading-none text-red-500">⚠</span>
+                                <p className="text-xs leading-5 text-[#b64e48] line-clamp-2">{post.error_message}</p>
                               </div>
                             )}
                           </div>
@@ -238,13 +239,11 @@ export default function PostsStudio() {
                         </div>
                         <div className="p-3">
                           <div className="text-sm font-semibold text-ink-900">{post.content || "Caption preview"}</div>
+                          <p className="mt-1 text-xs text-ink-500">2 lines is 2 lines max</p>
                           <div className="mt-3 flex flex-wrap gap-2">
                             <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusTone(post.status)}`}>{post.status}</span>
                             <span className="rounded-full bg-[#f4efe4] px-3 py-1 text-xs text-ink-700">{formatDate(post.scheduled_at ?? post.created_at)}</span>
                           </div>
-                          {(post.status === "failed" || post.status === "queued") && post.error_message && (
-                            <p className="mt-2 text-[11px] text-[#b64e48] leading-snug line-clamp-2">⚠ {post.error_message}</p>
-                          )}
                         </div>
                       </button>
                     ))}
@@ -271,25 +270,13 @@ export default function PostsStudio() {
                     </div>
                   </div>
                   <div className="mt-4 text-sm text-ink-700"><span className="font-semibold">Scheduled Time</span><div className="mt-1">{formatDate(selectedPost.scheduled_at ?? selectedPost.created_at)}</div></div>
-                  {(selectedPost.status === "failed" || selectedPost.status === "queued") && selectedPost.error_message && (
-                    <div className="mt-4 rounded-[16px] border border-[#f5c5c0] bg-[#fff5f3] p-3.5">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-[#b64e48]">⚠</span>
-                        <span className="text-xs font-semibold uppercase tracking-wide text-[#b64e48]">
-                          {selectedPost.status === "failed" ? "Failure Reason" : "Last Error"}
-                        </span>
-                        {selectedPost.retry_count > 0 && (
-                          <span className="ml-auto rounded-full bg-[#fde8e6] px-2 py-0.5 text-[11px] font-medium text-[#b64e48]">
-                            {selectedPost.retry_count} retries
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs leading-relaxed text-[#7a2e28]">{selectedPost.error_message}</p>
-                    </div>
-                  )}
-                  {selectedPost.status === "queued" && !selectedPost.error_message && (
-                    <div className="mt-4 rounded-[16px] border border-[#e8dfce] bg-[#fff8e8] p-3.5">
-                      <p className="text-xs text-ink-600">⏳ Waiting in queue — worker will pick this up shortly.</p>
+                  {selectedPost.error_message && (
+                    <div className="mt-4 rounded-xl border border-[#f5d5d0] bg-[#fff5f3] px-4 py-3">
+                      <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-[#b64e48]">Platform Error</div>
+                      <p className="text-sm leading-6 text-[#b64e48]">{selectedPost.error_message}</p>
+                      {selectedPost.retry_count > 0 && (
+                        <p className="mt-1 text-xs text-ink-500">Attempted {selectedPost.retry_count} of {selectedPost.max_retries} times</p>
+                      )}
                     </div>
                   )}
                   <div className="mt-5 space-y-3">
@@ -327,6 +314,7 @@ export default function PostsStudio() {
         </div>
       </main>
 
+      <PostComposerModal open={composerOpen} onClose={() => setComposerOpen(false)} onCreated={load} />
       <EditPostModal post={editingPost} onClose={() => setEditingPost(null)} onSaved={load} />
       {viewingMetricsPostId && (
         <LivePostMetricsModal

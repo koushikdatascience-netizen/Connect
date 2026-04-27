@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import { ErrorNotice } from "@/components/error-notice";
+import { PostComposerModal } from "@/components/post-composer-modal-v2";
 import { fetchAccounts, fetchPosts } from "@/lib/api";
 import { Account, Post } from "@/lib/types";
 
@@ -40,6 +41,7 @@ export function DashboardHome() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [composerOpen, setComposerOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
@@ -143,7 +145,7 @@ export function DashboardHome() {
                   </div>
                   <div className="flex flex-wrap gap-3">
                     <button type="button" className="secondary-button px-5 py-3 text-sm">AI Caption Studio</button>
-                    <Link href="/create-post" className="primary-button px-6 py-3 text-sm inline-flex items-center">+ Create Post</Link>
+                    <button type="button" onClick={() => setComposerOpen(true)} className="primary-button px-6 py-3 text-sm">+ Create Post</button>
                   </div>
                 </div>
               </div>
@@ -253,6 +255,7 @@ export function DashboardHome() {
         </div>
       </main>
 
+      <PostComposerModal open={composerOpen} onClose={() => setComposerOpen(false)} />
     </>
   );
 }
