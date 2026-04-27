@@ -42,7 +42,7 @@ export function Sidebar({
   const allSelected = totalSelectedAccounts === totalAccounts && totalAccounts > 0;
 
   return (
-    <aside className="h-full bg-[#fffdf7] xl:sticky xl:top-6 xl:h-[calc(160vh)] min-w-0 overflow-hidden rounded-2xl border border-[#f0e2b2] shadow-[0_10px_28px_rgba(180,144,34,0.08)]"style={{ minWidth: "400px" }}>
+    <aside className="h-full min-w-0 overflow-hidden rounded-2xl border border-[#f0e2b2] bg-[#fffdf7] shadow-[0_10px_28px_rgba(180,144,34,0.08)] xl:min-h-[720px] xl:max-h-[780px]">
       <div className="flex h-full min-h-0 flex-col">
         <div className="border-b border-[#f0e2b2] px-5 py-5">
           <p className="text-[10px] font-medium uppercase tracking-[0.15em] text-[#8c6f00]">
@@ -73,7 +73,7 @@ export function Sidebar({
                 : "bg-[#F5C800] text-[#111111] shadow-[0_8px_20px_rgba(245,200,0,0.18)] hover:-translate-y-0.5 hover:bg-[#E6BE3A]"
             }`}
           >
-            {allSelected ? "✓ Deselect All" : "Select All Accounts"}
+            {allSelected ? "Deselect all accounts" : "Select all accounts"}
           </button>
         </div>
 

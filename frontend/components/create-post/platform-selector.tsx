@@ -29,12 +29,10 @@ function AccountAvatar({ src, name }: { src?: string | null; name: string }) {
     <img
       src={src}
       alt={name}
-      // FIX: reduced from h-10 w-10 → h-8 w-8 to free up space for the name column
       className="h-8 w-8 shrink-0 rounded-full border border-[#f0e2b2] object-cover"
       onError={() => setImgError(true)}
     />
   ) : (
-    // FIX: reduced from h-10 w-10 → h-8 w-8 to free up space for the name column
     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#f0e2b2] bg-[#fff7d1] text-[13px] font-semibold text-[#8c6f00]">
       {name.charAt(0).toUpperCase()}
     </div>
@@ -151,18 +149,14 @@ export function PlatformSelector({
             }`}
           >
             <div className="overflow-hidden">
-              <div className="max-h-60 space-y-2 overflow-y-auto pr-1">
+              <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
                 {platform.accounts.map((account) => {
                   const checked = platform.selectedAccountIds.includes(account.id);
 
                   return (
                     <label
                       key={account.id}
-                      // FIX 1: added `min-w-0` so this flex container can shrink below its
-                      // natural content width — without it, children can't truncate properly.
-                      // FIX 2: reduced gap-3 → gap-2 and px-3 py-3 → px-2 py-2 to reclaim
-                      // horizontal space for the name column in narrow sidebars.
-                      className={`flex min-w-0 cursor-pointer items-center gap-2 rounded-xl border px-2 py-2 transition-all duration-200 ${
+                      className={`flex min-w-0 cursor-pointer items-center gap-2 rounded-xl border px-2.5 py-2.5 transition-all duration-200 ${
                         checked
                           ? "border-[#efcf59] bg-[#fff2b8]"
                           : "border-[#f0e2b2] bg-[#fffef9] hover:bg-[#fff9df]"
@@ -180,19 +174,14 @@ export function PlatformSelector({
                         name={account.account_name}
                       />
 
-                      {/* FIX 3: min-w-0 + flex-1 lets this column take remaining space and
-                          actually shrink so `truncate` has room to apply the ellipsis. */}
                       <div className="min-w-0 flex-1">
                         <div className="text-[10px] text-[#8c6f00]">
                           {getEntityLabel(account.account_type)}
                         </div>
-                        <div
-                          className="truncate text-[12px] font-semibold text-[#111111]"
-                          title={account.account_name}
-                        >
+                        <div className="text-[12px] font-semibold leading-5 text-[#111111] break-words">
                           {account.account_name}
                         </div>
-                        <div className="mt-0.5 truncate text-[10px] text-[#344054]">
+                        <div className="mt-0.5 text-[10px] leading-4 text-[#344054] break-words">
                           {formatAccountType(account.account_type)}
                         </div>
                       </div>

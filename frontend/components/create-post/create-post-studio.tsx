@@ -566,7 +566,7 @@ export function CreatePostStudio() {
           </div>
         ) : null}
 
-        <div className="mt-5 overflow-hidden rounded-[28px] border border-[#f0e2b2] bg-[#fffdf8] shadow-[0_20px_60px_rgba(180,144,34,0.10)] xl:grid xl:grid-cols-[300px_minmax(0,1fr)] xl:items-start">
+        <div className="mt-5 overflow-hidden rounded-[28px] border border-[#f0e2b2] bg-[#fffdf8] shadow-[0_20px_60px_rgba(180,144,34,0.10)] xl:grid xl:grid-cols-[minmax(320px,360px)_minmax(0,1fr)]">
           <Sidebar
             platforms={sidebarPlatforms}
             totalSelectedAccounts={totalSelectedAccounts}
