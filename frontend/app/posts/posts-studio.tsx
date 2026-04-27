@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { EditPostModal } from "@/components/edit-post-modal-v2";
 import { ErrorNotice } from "@/components/error-notice";
