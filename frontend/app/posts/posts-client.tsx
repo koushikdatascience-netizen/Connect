@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { ErrorNotice } from "@/components/error-notice";
 import { EditPostModal } from "@/components/edit-post-modal-v2";
-import { PostComposerModal } from "@/components/post-composer-modal-v2";
 import { cancelPost, fetchAccounts, fetchPostMetrics, fetchPosts, processOverduePosts, publishPostNow } from "@/lib/api";
 import { Account, NormalizedPostMetrics, Post, PostLiveMetricsResponse } from "@/lib/types";
 
@@ -157,6 +157,7 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 export default function PostsClient() {
+  const router = useRouter();
   const [posts, setPosts] = useState<Post[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [metricsByPost, setMetricsByPost] = useState<Record<number, PostLiveMetricsResponse>>({});
@@ -164,7 +165,6 @@ export default function PostsClient() {
   const [error, setError] = useState<string | null>(null);
   const [busyPostId, setBusyPostId] = useState<number | null>(null);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
-  const [composerOpen, setComposerOpen] = useState(false);
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -606,7 +606,7 @@ export default function PostsClient() {
                   {filterStatus !== "all" || searchQuery ? "Try changing your filters or search." : "Create your first post using the composer."}
                 </p>
                 {filterStatus === "all" && !searchQuery && (
-                  <button type="button" onClick={() => setComposerOpen(true)} className="primary-button mt-5 px-6">
+                  <button type="button" onClick={() => router.push("/create-post")} className="primary-button mt-5 px-6">
                     + Create Post
                   </button>
                 )}
@@ -616,7 +616,6 @@ export default function PostsClient() {
         </div>
       </main>
 
-      <PostComposerModal open={composerOpen} onClose={() => setComposerOpen(false)} onCreated={load} />
       <EditPostModal post={editingPost} onClose={() => setEditingPost(null)} onSaved={load} />
     </>
   );

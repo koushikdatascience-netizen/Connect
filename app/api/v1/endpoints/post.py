@@ -32,6 +32,7 @@ from app.core.logging import get_logger
 router = APIRouter()
 logger = get_logger("app.api.posts")
 
+
 def _is_future_timestamp(value):
     if not value:
         return False
@@ -46,8 +47,6 @@ def _request_id(request: Request) -> str:
 
 def _dispatch_publish(post_id: int, tenant_id: str, request_id: str, eta=None):
     try:
-        # Check worker health but don't block if ping fails
-        # Workers might be slow to respond or on different network
         worker_heartbeats = celery_app.control.ping(timeout=2.0)
         if not worker_heartbeats:
             logger.warning(
@@ -71,14 +70,14 @@ def _dispatch_publish(post_id: int, tenant_id: str, request_id: str, eta=None):
     kwargs = {"args": [post_id, tenant_id, request_id]}
     if eta is not None:
         kwargs["eta"] = eta
-    
+
     logger.info(
         "publish.enqueuing_task post_id=%s eta=%s queue=%s",
         post_id,
         eta,
         "default",
     )
-    
+
     try:
         task = celery_app.send_task("app.worker.tasks.publish_post_task", **kwargs)
         logger.info(
@@ -97,6 +96,8 @@ def _dispatch_publish(post_id: int, tenant_id: str, request_id: str, eta=None):
             ),
         ) from exc
 
+
+# ── Analytics ──────────────────────────────────────────────────────────────
 
 @router.get("/analytics/summary", response_model=PostAnalyticsSummary)
 def analytics_summary(
@@ -123,6 +124,63 @@ def analytics_recent_failures(
     safe_limit = max(1, min(limit, 50))
     return list_recent_post_failures(db, tenant_id, safe_limit)
 
+
+# ── FIX 1: /process-overdue MUST be declared before /{post_id} ─────────────
+#
+# FastAPI registers routes in declaration order. If /{post_id} comes first,
+# a POST to /process-overdue is matched as post_id="process-overdue", which
+# fails int conversion and returns 422 Unprocessable Entity.
+# Moving this route above all /{post_id} routes fixes it permanently.
+
+@router.post("/process-overdue", response_model=dict)
+def process_overdue_posts(
+    request: Request,
+    db: Session = Depends(get_db),
+    tenant_id: str = Depends(get_tenant),
+):
+    """
+    Manually trigger processing of all overdue scheduled/queued posts.
+    Useful when the worker was down and posts didn't get published on time.
+    """
+    posts = list_posts(db, tenant_id)
+    now = datetime.now(timezone.utc)
+    processed = []
+
+    for post in posts:
+        if post.status in ["scheduled", "queued"] and post.scheduled_at:
+            scheduled_time = post.scheduled_at
+            if scheduled_time.tzinfo is None:
+                scheduled_time = scheduled_time.replace(tzinfo=timezone.utc)
+
+            if scheduled_time < now:
+                try:
+                    request_id = _request_id(request)
+                    update_post_status(db, tenant_id, post.id, "queued", None)
+                    task = _dispatch_publish(post.id, tenant_id, request_id)
+                    processed.append({
+                        "post_id": post.id,
+                        "status": "queued",
+                        "task_id": task.id if task else None,
+                    })
+                    logger.info(
+                        "post.manual_overdue_dispatch post_id=%s scheduled_at=%s",
+                        post.id,
+                        post.scheduled_at,
+                    )
+                except Exception as e:
+                    logger.error(
+                        "post.manual_overdue_dispatch_failed post_id=%s error=%s",
+                        post.id,
+                        str(e),
+                    )
+
+    return {
+        "message": f"Processed {len(processed)} overdue posts",
+        "processed_posts": processed,
+    }
+
+
+# ── Collection endpoints ────────────────────────────────────────────────────
 
 @router.post("/", response_model=PostCreateResponse, status_code=status.HTTP_201_CREATED)
 def create(
@@ -153,40 +211,16 @@ def list_all_posts(
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant),
 ):
-    posts = list_posts(db, tenant_id)
-    
-    # Check for overdue scheduled posts and re-dispatch them
-    from app.crud.post import update_post_status
-    now = datetime.now(timezone.utc)
-    for post in posts:
-        if post.status in ["scheduled", "queued"] and post.scheduled_at:
-            scheduled_time = post.scheduled_at
-            if scheduled_time.tzinfo is None:
-                scheduled_time = scheduled_time.replace(tzinfo=timezone.utc)
-            
-            # If post is overdue by more than 1 minute, re-dispatch it
-            if scheduled_time < now and (now - scheduled_time).total_seconds() > 60:
-                logger.info(
-                    "post.overdue_redispatch post_id=%s scheduled_at=%s status=%s",
-                    post.id,
-                    post.scheduled_at,
-                    post.status,
-                )
-                try:
-                    # Update status to queued and re-dispatch
-                    update_post_status(db, tenant_id, post.id, "queued", None)
-                    request_id = "auto-retry"
-                    _dispatch_publish(post.id, tenant_id, request_id)
-                except Exception as e:
-                    logger.error(
-                        "post.overdue_redispatch_failed post_id=%s error=%s",
-                        post.id,
-                        str(e),
-                    )
-    
-    # Refresh the list after potential updates
+    # FIX 2: Removed overdue auto-dispatch from the list endpoint.
+    #
+    # The original code re-dispatched overdue posts on EVERY GET /posts call.
+    # This caused the same post to be dispatched repeatedly on every page load,
+    # leading to duplicate publishes and race conditions. Overdue processing is
+    # now only triggered explicitly via POST /process-overdue.
     return list_posts(db, tenant_id)
 
+
+# ── Per-post endpoints — ALL must come after the fixed-path routes above ────
 
 @router.get("/{post_id}", response_model=PostRead)
 def get_single_post(
@@ -320,52 +354,3 @@ def cancel_post(
 
     updated_post = update_post_status(db, tenant_id, post_id, "cancelled", None)
     return {"post_id": post_id, "status": updated_post.status if updated_post else "cancelled", "task_id": None}
-
-
-@router.post("/process-overdue", response_model=dict)
-def process_overdue_posts(
-    request: Request,
-    db: Session = Depends(get_db),
-    tenant_id: str = Depends(get_tenant),
-):
-    """
-    Manually trigger processing of all overdue scheduled/queued posts.
-    This is useful when worker was down and posts didn't get published on time.
-    """
-    posts = list_posts(db, tenant_id)
-    now = datetime.now(timezone.utc)
-    processed = []
-    
-    for post in posts:
-        if post.status in ["scheduled", "queued"] and post.scheduled_at:
-            scheduled_time = post.scheduled_at
-            if scheduled_time.tzinfo is None:
-                scheduled_time = scheduled_time.replace(tzinfo=timezone.utc)
-            
-            # If post is overdue, re-dispatch it
-            if scheduled_time < now:
-                try:
-                    request_id = _request_id(request)
-                    update_post_status(db, tenant_id, post.id, "queued", None)
-                    task = _dispatch_publish(post.id, tenant_id, request_id)
-                    processed.append({
-                        "post_id": post.id,
-                        "status": "queued",
-                        "task_id": task.id if task else None,
-                    })
-                    logger.info(
-                        "post.manual_overdue_dispatch post_id=%s scheduled_at=%s",
-                        post.id,
-                        post.scheduled_at,
-                    )
-                except Exception as e:
-                    logger.error(
-                        "post.manual_overdue_dispatch_failed post_id=%s error=%s",
-                        post.id,
-                        str(e),
-                    )
-    
-    return {
-        "message": f"Processed {len(processed)} overdue posts",
-        "processed_posts": processed,
-    }

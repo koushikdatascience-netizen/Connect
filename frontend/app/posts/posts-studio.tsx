@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { EditPostModal } from "@/components/edit-post-modal-v2";
 import { ErrorNotice } from "@/components/error-notice";
 import { LivePostMetricsModal } from "@/components/live-post-metrics-modal";
-import { PostComposerModal } from "@/components/post-composer-modal-v2";
 import { cancelPost, fetchPosts } from "@/lib/api";
 import { Post } from "@/lib/types";
 
@@ -71,7 +71,7 @@ function getLivePostUrl(post: Post): string | null {
 export default function PostsStudio() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [composerOpen, setComposerOpen] = useState(false);
+  const router = useRouter();
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [platformFilter, setPlatformFilter] = useState("all");
@@ -130,7 +130,7 @@ export default function PostsStudio() {
                   <h1 className="font-display text-3xl font-semibold tracking-[-0.06em] text-ink-900">Scheduled Posts</h1>
                   <p className="mt-2 text-sm leading-6 text-ink-600">A more interactive post queue with filters, list/card toggles, and a details panel to keep editing fast.</p>
                 </div>
-                <button type="button" onClick={() => setComposerOpen(true)} className="primary-button px-5 py-3 text-sm">Create Post</button>
+                <button type="button" onClick={() => router.push("/create-post")} className="primary-button px-5 py-3 text-sm">Create Post</button>
               </div>
 
               <ErrorNotice error={error} fallback="We couldn't load scheduled posts right now." />
@@ -295,7 +295,6 @@ export default function PostsStudio() {
         </div>
       </main>
 
-      <PostComposerModal open={composerOpen} onClose={() => setComposerOpen(false)} onCreated={load} />
       <EditPostModal post={editingPost} onClose={() => setEditingPost(null)} onSaved={load} />
       {viewingMetricsPostId && (
         <LivePostMetricsModal
