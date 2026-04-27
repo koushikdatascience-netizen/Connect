@@ -1,1 +1,1 @@
-export { ConnectionsStudioV2 as default } from "./connections-studio-v2";
+export { default } from "./connections-client";

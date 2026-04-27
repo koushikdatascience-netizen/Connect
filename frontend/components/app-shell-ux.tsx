@@ -8,7 +8,8 @@ import { clearStoredAuthToken, logoutSession } from "@/lib/api";
 
 const navigation = [
   { href: "/create-post", label: "Compose Post", icon: "compose" },
-  { href: "/posts", label: "Scheduled Posts", icon: "clock" },
+  { href: "/posts", label: "Posts History", icon: "book" },
+  { href: "/calender", label: "Calender", icon: "clock" },
   { href: "/connections", label: "Social Accounts", icon: "spark" },
 ] as const;
 

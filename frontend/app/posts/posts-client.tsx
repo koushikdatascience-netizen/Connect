@@ -620,3 +620,15 @@ export default function PostsClient() {
     </>
   );
 }
+
+
+// ADD THESE EXPORTS at the bottom of posts-client.tsx
+export {
+  PlatformBadge,
+  StatusBadge,
+  getLivePostUrl,
+  normalizeMetrics,
+  MetricsRow,
+  formatDate
+};
+
