@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 
 import { EditPostModal } from "@/components/edit-post-modal-v2";
 import { ErrorNotice } from "@/components/error-notice";
@@ -178,7 +177,16 @@ export default function PostsStudio() {
                             <div className="mt-1 flex flex-wrap gap-3 text-xs text-ink-500">
                               <span className="capitalize">{post.platform}</span>
                               <span>{formatDate(post.scheduled_at ?? post.created_at)}</span>
+                              {post.retry_count > 0 && (
+                                <span className="text-[#b64e48]">{post.retry_count} retries</span>
+                              )}
                             </div>
+                            {(post.status === "failed" || post.status === "queued") && post.error_message && (
+                              <div className="mt-1.5 flex items-start gap-1.5 rounded-lg bg-[#fff1ef] px-2.5 py-1.5">
+                                <span className="mt-0.5 shrink-0 text-[#b64e48]">⚠</span>
+                                <p className="text-xs text-[#b64e48] leading-snug">{post.error_message}</p>
+                              </div>
+                            )}
                           </div>
                           <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusTone(post.status)}`}>{post.status}</span>
                           <div className="flex gap-2">
@@ -229,11 +237,13 @@ export default function PostsStudio() {
                         </div>
                         <div className="p-3">
                           <div className="text-sm font-semibold text-ink-900">{post.content || "Caption preview"}</div>
-                          <p className="mt-1 text-xs text-ink-500">2 lines is 2 lines max</p>
                           <div className="mt-3 flex flex-wrap gap-2">
                             <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusTone(post.status)}`}>{post.status}</span>
                             <span className="rounded-full bg-[#f4efe4] px-3 py-1 text-xs text-ink-700">{formatDate(post.scheduled_at ?? post.created_at)}</span>
                           </div>
+                          {(post.status === "failed" || post.status === "queued") && post.error_message && (
+                            <p className="mt-2 text-[11px] text-[#b64e48] leading-snug line-clamp-2">⚠ {post.error_message}</p>
+                          )}
                         </div>
                       </button>
                     ))}
@@ -260,6 +270,27 @@ export default function PostsStudio() {
                     </div>
                   </div>
                   <div className="mt-4 text-sm text-ink-700"><span className="font-semibold">Scheduled Time</span><div className="mt-1">{formatDate(selectedPost.scheduled_at ?? selectedPost.created_at)}</div></div>
+                  {(selectedPost.status === "failed" || selectedPost.status === "queued") && selectedPost.error_message && (
+                    <div className="mt-4 rounded-[16px] border border-[#f5c5c0] bg-[#fff5f3] p-3.5">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-[#b64e48]">⚠</span>
+                        <span className="text-xs font-semibold uppercase tracking-wide text-[#b64e48]">
+                          {selectedPost.status === "failed" ? "Failure Reason" : "Last Error"}
+                        </span>
+                        {selectedPost.retry_count > 0 && (
+                          <span className="ml-auto rounded-full bg-[#fde8e6] px-2 py-0.5 text-[11px] font-medium text-[#b64e48]">
+                            {selectedPost.retry_count} retries
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs leading-relaxed text-[#7a2e28]">{selectedPost.error_message}</p>
+                    </div>
+                  )}
+                  {selectedPost.status === "queued" && !selectedPost.error_message && (
+                    <div className="mt-4 rounded-[16px] border border-[#e8dfce] bg-[#fff8e8] p-3.5">
+                      <p className="text-xs text-ink-600">⏳ Waiting in queue — worker will pick this up shortly.</p>
+                    </div>
+                  )}
                   <div className="mt-5 space-y-3">
                     <button type="button" onClick={() => setEditingPost(selectedPost)} className="primary-button w-full justify-center py-3">Edit Post</button>
                     <button type="button" onClick={() => setEditingPost(selectedPost)} className="secondary-button w-full justify-center py-3">Reschedule</button>
