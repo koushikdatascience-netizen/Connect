@@ -15,6 +15,7 @@ from app.schemas.post import (
 )
 from app.crud.post import (
     create_post,
+    delete_post,
     get_post,
     get_post_analytics_by_platform,
     get_post_analytics_summary,
@@ -318,6 +319,20 @@ def edit_post(
         task = _dispatch_publish(post.id, tenant_id, request_id)
 
     return {"post_id": post.id, "status": post.status, "task_id": task.id if task else None}
+
+
+@router.delete("/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_single_post(
+    post_id: int,
+    db: Session = Depends(get_db),
+    tenant_id: str = Depends(get_tenant),
+):
+    deleted = delete_post(db, tenant_id, post_id)
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Post not found",
+        )
 
 
 @router.post("/{post_id}/publish-now", response_model=PostCreateResponse)

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { ErrorNotice } from "@/components/error-notice";
-import { beginOAuthLogin, connectWordpressSite, deactivateAccount, fetchAccounts, fetchAccountStatus } from "@/lib/api";
+import { beginOAuthLogin, connectWordpressSite, deleteAccount, fetchAccounts, fetchAccountStatus } from "@/lib/api";
 import { Account, AccountStatusResponse, PlatformName } from "@/lib/types";
 
 // ─── platform config ────────────────────────────────────────────────────────
@@ -242,7 +242,8 @@ export default function ConnectionsClient() {
 
   async function handleRemoveAccount(id: number) {
     try {
-      await deactivateAccount(id);
+      setError(null);
+      await deleteAccount(id);
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unable to remove account.");

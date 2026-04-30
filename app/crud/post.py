@@ -250,6 +250,27 @@ def update_post_status(
     return post
 
 
+def delete_post(db: Session, tenant_id: str, post_id: int):
+    post = (
+        db.query(ScheduledPost)
+        .filter(
+            ScheduledPost.id == post_id,
+            ScheduledPost.tenant_id == tenant_id,
+        )
+        .first()
+    )
+    if not post:
+        return False
+
+    db.query(PostMedia).filter(
+        PostMedia.post_id == post_id,
+        PostMedia.tenant_id == tenant_id,
+    ).delete()
+    db.delete(post)
+    db.commit()
+    return True
+
+
 def _replace_post_media(db: Session, tenant_id: str, post_id: int, media_ids):
     media_ids = _validate_media_ids(db, tenant_id, media_ids)
 

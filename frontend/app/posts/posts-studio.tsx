@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { EditPostModal } from "@/components/edit-post-modal-v2";
 import { ErrorNotice } from "@/components/error-notice";
 import { LivePostMetricsModal } from "@/components/live-post-metrics-modal";
-import { cancelPost, fetchPosts } from "@/lib/api";
+import { deletePost, fetchPosts } from "@/lib/api";
 import { Post } from "@/lib/types";
 
 type FilterStatus = "all" | "scheduled" | "posted" | "draft" | "failed";
@@ -112,10 +112,12 @@ export default function PostsStudio() {
 
   async function handleDelete(postId: number) {
     try {
-      await cancelPost(postId);
+      setError(null);
+      await deletePost(postId);
+      setSelectedPostId((current) => (current === postId ? null : current));
       await load();
     } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : "Unable to update post.");
+      setError(deleteError instanceof Error ? deleteError.message : "Unable to delete post.");
     }
   }
 
@@ -192,9 +194,36 @@ export default function PostsStudio() {
                           </div>
                           <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusTone(post.status)}`}>{post.status}</span>
                           <div className="flex gap-2">
-                            <span className="secondary-button px-3 py-2 text-xs">Edit</span>
-                            <span className="secondary-button px-3 py-2 text-xs">Reschedule</span>
-                            <span className="secondary-button px-3 py-2 text-xs">Delete</span>
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                setEditingPost(post);
+                              }}
+                              className="secondary-button px-3 py-2 text-xs"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                setEditingPost(post);
+                              }}
+                              className="secondary-button px-3 py-2 text-xs"
+                            >
+                              Reschedule
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                void handleDelete(post.id);
+                              }}
+                              className="secondary-button px-3 py-2 text-xs text-[#b64e48] hover:border-[#f5d5d0] hover:bg-[#fff1ef]"
+                            >
+                              Delete
+                            </button>
                             {post.status === "posted" && (
                               <>
                                 {/* FIX: "Live View" now opens the actual post in a new tab.

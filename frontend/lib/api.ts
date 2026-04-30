@@ -264,6 +264,12 @@ export function cancelPost(postId: number) {
   );
 }
 
+export async function deletePost(postId: number) {
+  await apiFetch<null>(`/api/v1/posts/${postId}`, {
+    method: "DELETE",
+  });
+}
+
 export function processOverduePosts() {
   return apiFetch<{ message: string; processed_posts: Array<{ post_id: number; status: string; task_id: string | null }> }>(
     "/api/v1/posts/process-overdue",
@@ -279,4 +285,10 @@ export function deactivateAccount(accountId: number) {
     `/api/v1/accounts/${accountId}/deactivate`,
     { method: "POST" },
   );
+}
+
+export async function deleteAccount(accountId: number) {
+  await apiFetch<null>(`/api/v1/accounts/${accountId}`, {
+    method: "DELETE",
+  });
 }
