@@ -90,6 +90,20 @@ jobs:
           CLOUDINARY_API_SECRET: test
         run: |
           uv run alembic upgrade head
+          nohup uv run uvicorn app.main:app --host 127.0.0.1 --port 8000 > uvicorn.log 2>&1 &
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:8000/api/v1/health >/dev/null; then
+              echo "API is ready"
+              break
+            fi
+            echo "Waiting for API... ($i/30)"
+            sleep 2
+          done
+          if ! curl -fsS http://127.0.0.1:8000/api/v1/health >/dev/null; then
+            echo "API failed to start"
+            cat uvicorn.log
+            exit 1
+          fi
           uv run pytest tests/ -v --tb=short
 
   deploy-backend:
