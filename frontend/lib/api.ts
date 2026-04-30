@@ -164,7 +164,7 @@ export function getOAuthLoginUrl(platform: string) {
 
 export async function beginOAuthLogin(
   platform: string,
-  options?: { addAnother?: boolean },
+  options?: { addAnother?: boolean; openInNewTab?: boolean },
 ) {
   const oauthPlatform = platform === "youtube" ? "google" : platform;
   const addAnother = options?.addAnother ? "true" : "false";
@@ -172,6 +172,17 @@ export async function beginOAuthLogin(
     `/api/v1/oauth/${oauthPlatform}/authorize?add_another=${addAnother}`,
   );
   if (typeof window !== "undefined") {
+    if (options?.openInNewTab) {
+      const popup = window.open(
+        response.authorization_url,
+        "_blank",
+        "noopener,noreferrer,width=760,height=880",
+      );
+      if (!popup) {
+        window.location.href = response.authorization_url;
+      }
+      return;
+    }
     window.location.href = response.authorization_url;
   }
 }

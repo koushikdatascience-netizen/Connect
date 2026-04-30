@@ -219,6 +219,7 @@ export default function ConnectionsClient() {
   const [status, setStatus]     = useState<AccountStatusResponse>(emptyStatus);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [error, setError]       = useState<string | null>(null);
+  const [oauthBanner, setOauthBanner] = useState<{ tone: "success" | "error"; text: string } | null>(null);
 
   async function handleOAuthConnect(platform: PlatformName, addAnother = false) {
     try {
@@ -234,7 +235,7 @@ export default function ConnectionsClient() {
         await load();
         return;
       }
-      await beginOAuthLogin(platform, { addAnother });
+      await beginOAuthLogin(platform, { addAnother, openInNewTab: true });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unable to start social login.");
     }
@@ -262,6 +263,55 @@ export default function ConnectionsClient() {
   }
 
   useEffect(() => { void load(); }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const parseOauthResult = () => {
+      const url = new URL(window.location.href);
+      const oauthResult = url.searchParams.get("oauth_result");
+      const oauthPlatform = url.searchParams.get("oauth_platform");
+      const oauthMessage = url.searchParams.get("oauth_message");
+      const oauthCount = url.searchParams.get("oauth_count");
+      if (!oauthResult || !oauthMessage) return false;
+
+      const platformLabel = oauthPlatform
+        ? `${oauthPlatform[0].toUpperCase()}${oauthPlatform.slice(1).replace(/_/g, " ")}`
+        : "Social";
+
+      setOauthBanner({
+        tone: oauthResult === "success" ? "success" : "error",
+        text:
+          oauthResult === "success"
+            ? `${platformLabel}: ${oauthMessage}${oauthCount ? ` Connected ${oauthCount} account${oauthCount === "1" ? "" : "s"}.` : ""}`
+            : `${platformLabel}: ${oauthMessage}`,
+      });
+
+      url.searchParams.delete("oauth_result");
+      url.searchParams.delete("oauth_platform");
+      url.searchParams.delete("oauth_message");
+      url.searchParams.delete("oauth_count");
+      window.history.replaceState({}, "", url.pathname + url.search + url.hash);
+      void load();
+      return true;
+    };
+
+    parseOauthResult();
+
+    const refreshOnReturn = () => {
+      if (document.visibilityState === "visible") {
+        void load();
+      }
+    };
+
+    window.addEventListener("focus", refreshOnReturn);
+    document.addEventListener("visibilitychange", refreshOnReturn);
+
+    return () => {
+      window.removeEventListener("focus", refreshOnReturn);
+      document.removeEventListener("visibilitychange", refreshOnReturn);
+    };
+  }, []);
 
   const accountsByPlatform = useMemo(() =>
     platformMeta.reduce<Record<PlatformName, Account[]>>((acc, p) => {
@@ -300,6 +350,22 @@ export default function ConnectionsClient() {
       {/* error */}
       <div style={{ maxWidth: 760, margin: "0 auto" }}>
         <ErrorNotice error={error} fallback="We couldn't load social account connections right now." />
+        {oauthBanner ? (
+          <div
+            style={{
+              marginTop: 12,
+              borderRadius: 16,
+              border: oauthBanner.tone === "success" ? "1px solid #d7e9c0" : "1px solid #f0c4bf",
+              background: oauthBanner.tone === "success" ? "#f7fbef" : "#fff5f3",
+              color: oauthBanner.tone === "success" ? "#53722c" : "#b64e48",
+              padding: "12px 14px",
+              fontSize: 13,
+              fontWeight: 600,
+            }}
+          >
+            {oauthBanner.text}
+          </div>
+        ) : null}
       </div>
 
       {/* accordion list */}

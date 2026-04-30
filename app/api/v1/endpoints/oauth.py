@@ -119,12 +119,34 @@ def _get_tenant_and_user(request: Request):
 def _page_accounts(access_token: str):
     pages_response = requests.get(
         "https://graph.facebook.com/v18.0/me/accounts",
-        params={"access_token": access_token},
+        params={
+            "access_token": access_token,
+            "fields": "id,name,access_token,category,tasks",
+            "limit": 200,
+        },
         timeout=30,
     )
     if not pages_response.ok:
         _raise_provider_error("facebook", pages_response)
     return pages_response.json().get("data", [])
+
+
+def _page_details(page_id: str, page_access_token: str) -> dict:
+    response = requests.get(
+        f"https://graph.facebook.com/v18.0/{page_id}",
+        params={
+            "access_token": page_access_token,
+            "fields": (
+                "name,category,"
+                "instagram_business_account{id,username,profile_picture_url},"
+                "connected_instagram_account{id,username,profile_picture_url}"
+            ),
+        },
+        timeout=30,
+    )
+    if not response.ok:
+        _raise_provider_error("facebook", response)
+    return response.json()
 
 
 def _linkedin_headers(access_token: str):
@@ -287,7 +309,7 @@ def _dashboard_redirect(platform: str, result: str, message: str, count: int = 0
     }
     if count:
         params["oauth_count"] = str(count)
-    return RedirectResponse(f"{settings.frontend_url}/?{urlencode(params)}")
+    return RedirectResponse(f"{settings.frontend_url}/connections?{urlencode(params)}")
 
 
 def _provider_query_error(platform: str, error: Optional[str], error_description: Optional[str]):
@@ -337,7 +359,7 @@ def _facebook_authorization_url(tenant_id: str, user_id: str, add_another: bool 
         "client_id": settings.FACEBOOK_CLIENT_ID,
         "redirect_uri": settings.facebook_redirect_uri,
         "state": state,
-        "scope": "pages_manage_posts,pages_read_engagement,instagram_basic,instagram_content_publish",
+        "scope": "pages_manage_posts,pages_read_engagement,pages_show_list,business_management,instagram_basic,instagram_content_publish",
     }
     if add_another:
         params["auth_type"] = "rerequest"
@@ -350,7 +372,7 @@ def _instagram_authorization_url(tenant_id: str, user_id: str, add_another: bool
         "client_id": settings.FACEBOOK_CLIENT_ID,
         "redirect_uri": settings.instagram_redirect_uri,
         "state": state,
-        "scope": "instagram_basic,instagram_content_publish,pages_show_list",
+        "scope": "instagram_basic,instagram_content_publish,pages_show_list,pages_read_engagement,business_management",
     }
     if add_another:
         params["auth_type"] = "rerequest"
@@ -603,15 +625,22 @@ def facebook_callback(
         saved_accounts = []
 
         for page in _page_accounts(access_token):
+            page_data = _page_details(page["id"], page["access_token"])
             account = save_social_account(
                 tenant_id=tenant_id,
                 platform="facebook",
                 platform_account_id=page["id"],
-                account_name=page["name"],
+                account_name=page_data.get("name") or page["name"],
                 access_token=page["access_token"],
                 account_type="page",
             )
             saved_accounts.append(account)
+
+        if not saved_accounts:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No Facebook Pages were returned for the authenticated account. Please ensure you granted page access.",
+            )
 
         logger.info(
             "oauth.callback.success tenant=%s user=%s provider=facebook accounts=%s",
@@ -701,19 +730,8 @@ def instagram_callback(
         saved_accounts = []
 
         for page in _page_accounts(access_token):
-            page_details = requests.get(
-                f"https://graph.facebook.com/v18.0/{page['id']}",
-                params={
-                    "access_token": page["access_token"],
-                    "fields": "instagram_business_account{id,username,profile_picture_url},name",
-                },
-                timeout=30,
-            )
-            if not page_details.ok:
-                _raise_provider_error("instagram", page_details)
-
-            page_data = page_details.json()
-            instagram_account = page_data.get("instagram_business_account")
+            page_data = _page_details(page["id"], page["access_token"])
+            instagram_account = page_data.get("instagram_business_account") or page_data.get("connected_instagram_account")
             if not instagram_account:
                 continue
 
