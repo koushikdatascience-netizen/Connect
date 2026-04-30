@@ -149,6 +149,10 @@ def _page_details(page_id: str, page_access_token: str) -> dict:
     return response.json()
 
 
+def _facebook_page_picture_url(page_id: str) -> str:
+    return f"https://graph.facebook.com/v18.0/{page_id}/picture?type=small"
+
+
 def _linkedin_headers(access_token: str):
     return {
         "Authorization": f"Bearer {access_token}",
@@ -633,6 +637,7 @@ def facebook_callback(
                 account_name=page_data.get("name") or page["name"],
                 access_token=page["access_token"],
                 account_type="page",
+                profile_picture_url=_facebook_page_picture_url(page["id"]),
             )
             saved_accounts.append(account)
 

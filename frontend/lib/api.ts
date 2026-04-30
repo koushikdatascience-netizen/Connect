@@ -168,19 +168,25 @@ export async function beginOAuthLogin(
 ) {
   const oauthPlatform = platform === "youtube" ? "google" : platform;
   const addAnother = options?.addAnother ? "true" : "false";
+  let authTab: Window | null = null;
+
+  if (typeof window !== "undefined" && options?.openInNewTab) {
+    authTab = window.open("", "_blank");
+    if (!authTab) {
+      throw new Error("Popup or tab opening was blocked by the browser. Please allow popups for this site and try again.");
+    }
+    authTab.document.write("<title>Connecting account...</title><p style=\"font-family: sans-serif; padding: 24px;\">Redirecting to the provider login...</p>");
+  }
+
   const response = await apiFetch<{ authorization_url: string }>(
     `/api/v1/oauth/${oauthPlatform}/authorize?add_another=${addAnother}`,
   );
   if (typeof window !== "undefined") {
     if (options?.openInNewTab) {
-      const popup = window.open(
-        response.authorization_url,
-        "_blank",
-        "noopener,noreferrer,width=760,height=880",
-      );
-      if (!popup) {
-        window.location.href = response.authorization_url;
+      if (!authTab || authTab.closed) {
+        throw new Error("The authentication tab was closed before the login flow could start.");
       }
+      authTab.location.href = response.authorization_url;
       return;
     }
     window.location.href = response.authorization_url;
