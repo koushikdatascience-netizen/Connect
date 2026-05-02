@@ -1,231 +1,73 @@
 name: Deploy to Linux Server
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
-env:
-  # Server configuration - REPLACE THESE VALUES
-  SERVER_IP: ${{ secrets.SERVER_IP }}  # e.g., "123.45.67.89" or "yourdomain.com"
-  SSH_USERNAME: ${{ secrets.SSH_USERNAME }}  # e.g., "deploy" or "root"
-  SSH_PORT: ${{ secrets.SSH_PORT || '22' }}  # default SSH port is 22
-  DEPLOY_PATH: ${{ secrets.DEPLOY_PATH || '/home/deploy/socialsync' }}  # where to deploy on server
-
-  # Docker configuration
-  DOCKER_COMPOSE_FILE: docker-compose.prod.yml
-  DOCKER_NETWORK: socialsync_network
-
-  # Database configuration - REPLACE THESE VALUES
-  POSTGRES_USER: ${{ secrets.POSTGRES_USER || 'postgres' }}
-  POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-  POSTGRES_DB: ${{ secrets.POSTGRES_DB || 'socialsync' }}
-  POSTGRES_PORT: ${{ secrets.POSTGRES_PORT || '5432' }}
-
-  # Redis configuration
-  REDIS_PORT: ${{ secrets.REDIS_PORT || '6379' }}
-
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: test_db
-        ports:
-          - 5432:5432
-        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
-
-      redis:
-        image: redis:7-alpine
-        ports:
-          - 6379:6379
-        options: --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e .[test]
-
-      - name: Run tests
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
-          REDIS_URL: redis://localhost:6379/0
-          ENVIRONMENT: test
-        run: |
-          pytest tests/ -v
-
-  build-and-deploy:
-    needs: test
+  deploy:
+    name: Deploy Frontend via SSH
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: 🚀 Start Deployment
+        run: echo "Starting deployment to server..."
 
-      - name: Install SSH key
-        uses: shimataro/ssh-key-action@v2
+      - name: 🔐 Deploy using SSH
+        uses: appleboy/ssh-action@v1.2.0
         with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          known_hosts: ${{ secrets.KNOWN_HOSTS }}
+          port: 22
 
-      - name: Create production docker-compose file
+          script: |
+            set -e
+
+            echo "===================================="
+            echo "🚀 DEPLOYMENT STARTED"
+            echo "===================================="
+
+            # Navigate to project
+            cd /home/ubuntu/SocialSyncV1/frontend
+
+            echo "📂 Current directory:"
+            pwd
+
+            echo "📥 Pulling latest code..."
+            git fetch origin
+            git reset --hard origin/main
+
+            echo "📦 Installing dependencies..."
+            npm install
+
+            echo "🏗 Building Next.js app..."
+            npm run build
+
+            echo "♻️ Restarting app with PM2..."
+            pm2 reload socialsync-frontend || pm2 start npm --name "socialsync-frontend" -- start
+
+            echo "📊 PM2 Status:"
+            pm2 list
+
+            echo "===================================="
+            echo "✅ DEPLOYMENT SUCCESSFUL"
+            echo "===================================="
+
+      - name: 🌐 Verify Deployment
         run: |
-          cat > $DOCKER_COMPOSE_FILE << 'EOF'
-          services:
-            backend:
-              build:
-                context: .
-                dockerfile: Dockerfile
-              container_name: socialsync_backend
-              ports:
-                - "8000:8000"
-              env_file: .env.production
-              depends_on:
-                db:
-                  condition: service_healthy
-                redis:
-                  condition: service_started
-              networks:
-                - $DOCKER_NETWORK
-              restart: unless-stopped
+          echo "Checking if app is responding..."
 
-            worker:
-              build:
-                context: .
-                dockerfile: Dockerfile
-              container_name: socialsync_worker
-              env_file: .env.production
-              depends_on:
-                db:
-                  condition: service_healthy
-                redis:
-                  condition: service_started
-                backend:
-                  condition: service_started
-              networks:
-                - $DOCKER_NETWORK
-              restart: unless-stopped
+          sleep 10
 
-            beat:
-              build:
-                context: .
-                dockerfile: Dockerfile
-              container_name: socialsync_beat
-              env_file: .env.production
-              depends_on:
-                db:
-                  condition: service_healthy
-                redis:
-                  condition: service_started
-                backend:
-                  condition: service_started
-              networks:
-                - $DOCKER_NETWORK
-              restart: unless-stopped
-
-            redis:
-              image: redis:7-alpine
-              container_name: socialsync_redis
-              ports:
-                - "$REDIS_PORT:6379"
-              volumes:
-                - redis_data:/data
-              networks:
-                - $DOCKER_NETWORK
-              restart: unless-stopped
-
-            db:
-              image: postgres:16-alpine
-              container_name: socialsync_db
-              environment:
-                POSTGRES_USER: $POSTGRES_USER
-                POSTGRES_PASSWORD: $POSTGRES_PASSWORD
-                POSTGRES_DB: $POSTGRES_DB
-              ports:
-                - "$POSTGRES_PORT:5432"
-              volumes:
-                - postgres_data:/var/lib/postgresql/data
-              networks:
-                - $DOCKER_NETWORK
-              healthcheck:
-                test: ["CMD-SHELL", "pg_isready -U $POSTGRES_USER"]
-                interval: 10s
-                timeout: 5s
-                retries: 5
-              restart: unless-stopped
-
-          volumes:
-            postgres_data:
-            redis_data:
-
-          networks:
-            $DOCKER_NETWORK:
-              driver: bridge
-          EOF
-
-      - name: Copy files to server
-        run: |
-          # Create deployment directory if it doesn't exist
-          ssh -p $SSH_PORT $SSH_USERNAME@$SERVER_IP "mkdir -p $DEPLOY_PATH"
-
-          # Copy all necessary files
-          rsync -avz -e "ssh -p $SSH_PORT" \
-            --exclude='.git' \
-            --exclude='.github' \
-            --exclude='node_modules' \
-            --exclude='__pycache__' \
-            --exclude='*.pyc' \
-            --exclude='.env' \
-            --exclude='.env.local' \
-            --exclude='test.env' \
-            ./ $SSH_USERNAME@$SERVER_IP:$DEPLOY_PATH/
-
-      - name: Deploy to server
-        run: |
-          ssh -p $SSH_PORT $SSH_USERNAME@$SERVER_IP << 'EOF'
-          cd $DEPLOY_PATH
-
-          # Stop existing containers if running
-          docker compose -f $DOCKER_COMPOSE_FILE down || true
-
-          # Build and start containers
-          docker compose -f $DOCKER_COMPOSE_FILE up -d --build
-
-          # Run database migrations
-          docker compose -f $DOCKER_COMPOSE_FILE exec backend alembic upgrade head
-
-          # Clean up unused images and volumes
-          docker system prune -f
-          EOF
-
-      - name: Verify deployment
-        run: |
-          # Wait for backend to start
-          sleep 30
-
-          # Check if backend is running
-          if curl -sSf "http://$SERVER_IP:8000/api/v1/health" > /dev/null; then
-            echo "✅ Backend is running successfully!"
+          if curl -sSf http://${{ secrets.SSH_HOST }}:3000 > /dev/null; then
+            echo "✅ App is live!"
           else
-            echo "❌ Backend failed to start"
+            echo "❌ App is not responding"
             exit 1
           fi
 
-  notify:
-    needs: build-and-deploy
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deployment Notification
-        run: |
-          echo "🚀 Deployment to Linux server completed successfully!"
-          echo "Backend URL: http://$SERVER_IP:8000"
-          echo "Deployment path: $DEPLOY_PATH"
+      - name: 🎉 Done
+        run: echo "Deployment workflow completed successfully!"
