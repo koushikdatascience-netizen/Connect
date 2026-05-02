@@ -223,16 +223,15 @@ export function CreatePostStudio() {
               media={media}
               selectedMediaIds={selectedMediaIds}
               selectedPlatforms={selectedPlatforms}
-              previewEnabled={true}
-              aiPanelOpen={false}
-              uploading={false}
+
               onCaptionChange={setCaption}
               onHashtagsChange={setHashtags}
               onMentionsChange={setMentions}
               onAltTextChange={setAltText}
+
               onMediaSelectionToggle={toggleMedia}
               onFilesSelected={handleFilesSelected}
-            />
+              />
           </div>
         </motion.div>
 

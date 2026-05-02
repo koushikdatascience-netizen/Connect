@@ -162,7 +162,7 @@ export function PostEditor({
                   `}
                 >
                   <img
-                    src={m.url}
+                    src={m.file_url}
                     className="h-20 w-full object-cover"
                   />
                 </motion.div>
