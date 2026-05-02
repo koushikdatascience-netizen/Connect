@@ -157,11 +157,115 @@ function buildPlatformPayload(platform: PlatformName, config: PlatformConfigMap[
       twitter: {
         reply_settings: config.twitterReplySettings,
         thread_mode: config.twitterThreadMode,
+        sensitive_media: config.twitterSensitive,
+        card_enabled: config.twitterCardEnabled,
+        super_followers_only: config.twitterForSuperFollowers,
+      },
+    };
+  }
+
+  if (platform === "youtube") {
+    return {
+      youtube: {
+        title: config.youtubeTitle,
+        privacy: config.youtubePrivacy,
+        category_id: config.youtubeCategoryId,
+        tags: config.youtubeTags,
+        notify_subscribers: config.youtubeNotifySubscribers,
+        embeddable: config.youtubeEmbeddable,
+        license: config.youtubeLicense,
+        made_for_kids: config.youtubeMadeForKids,
+        language: config.youtubeLanguage,
+        default_audio_language: config.youtubeDefaultAudioLanguage,
+        publish_at: toUtcIsoString(config.youtubePublishAt),
+      },
+    };
+  }
+
+  if (platform === "blogger") {
+    return {
+      blogger: {
+        title: config.bloggerTitle,
+        labels: config.bloggerLabels,
+        is_draft: config.bloggerIsDraft,
+        reader_comments: config.bloggerReaderComments,
+        custom_meta_robots_tags: config.bloggerCustomMetaRobotsTags,
+        location: config.bloggerLocation,
+      },
+    };
+  }
+
+  if (platform === "google_business") {
+    return {
+      google_business: {
+        post_type: config.googleBusinessPostType,
+        topic_type: config.googleBusinessTopicType,
+        cta: config.googleBusinessCta,
+        cta_url: config.googleBusinessCtaUrl,
+        event_title: config.googleBusinessEventTitle,
+        event_start_date: config.googleBusinessEventStartDate,
+        event_end_date: config.googleBusinessEventEndDate,
+        offer_code: config.googleBusinessOfferCode,
+        offer_redeem_url: config.googleBusinessOfferRedeemUrl,
+        offer_terms: config.googleBusinessOfferTerms,
+        alert_type: config.googleBusinessAlertType,
+      },
+    };
+  }
+
+  if (platform === "wordpress") {
+    return {
+      wordpress: {
+        title: config.wordpressTitle,
+        status: config.wordpressStatus,
+        categories: config.wordpressCategories,
+        tags: config.wordpressTags,
+        slug: config.wordpressSlug,
+        excerpt: config.wordpressExcerpt,
+        comment_status: config.wordpressCommentStatus,
+        ping_status: config.wordpressPingStatus,
+        featured_media_enabled: config.wordpressFeaturedMediaEnabled,
+        format: config.wordpressFormat,
+        sticky: config.wordpressSticky,
+        author_id: config.wordpressAuthorId,
+        password: config.wordpressPassword,
       },
     };
   }
 
   return { [platform]: {} };
+}
+
+function validatePlatformBeforeSubmit(platform: PlatformName, config: PlatformConfigMap[PlatformName]) {
+  if (platform === "youtube" && !config.youtubeTitle.trim()) {
+    return "YouTube video title is required.";
+  }
+
+  if (platform === "blogger" && !config.bloggerTitle.trim()) {
+    return "Blogger post title is required.";
+  }
+
+  if (platform === "wordpress" && !config.wordpressTitle.trim()) {
+    return "WordPress post title is required.";
+  }
+
+  if (platform === "google_business") {
+    if (config.googleBusinessPostType === "EVENT") {
+      if (!config.googleBusinessEventTitle.trim()) return "Google Business event title is required.";
+      if (!config.googleBusinessEventStartDate) return "Google Business event start date is required.";
+      if (!config.googleBusinessEventEndDate) return "Google Business event end date is required.";
+    }
+
+    if (config.googleBusinessPostType === "OFFER" && !config.googleBusinessOfferTerms.trim()) {
+      return "Google Business offer terms are required for offer posts.";
+    }
+
+    if (config.googleBusinessCta !== "NONE" && !config.googleBusinessCtaUrl.trim()) {
+      return "Google Business CTA URL is required when a CTA button is selected.";
+    }
+  }
+
+  return null;
 }
 
 export function CreatePostStudio() {
@@ -186,6 +290,7 @@ export function CreatePostStudio() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [activePlatformTab, setActivePlatformTab] = useState<PlatformName | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -205,6 +310,16 @@ export function CreatePostStudio() {
 
     void load();
   }, []);
+
+  useEffect(() => {
+    if (selectedPlatforms.length > 0) {
+      if (!activePlatformTab || !selectedPlatforms.includes(activePlatformTab)) {
+        setActivePlatformTab(selectedPlatforms[0]);
+      }
+    } else {
+      setActivePlatformTab(null);
+    }
+  }, [selectedPlatforms, activePlatformTab]);
 
   const accountsByPlatform = useMemo(() => {
     return PLATFORM_ORDER.reduce<Record<PlatformName, Account[]>>((acc, platform) => {
@@ -253,6 +368,7 @@ export function CreatePostStudio() {
     });
 
     setExpandedPlatforms((current) => ({ ...current, [platform]: enabled }));
+    if (enabled) setActivePlatformTab(platform);
   }
 
   function toggleAccount(platform: PlatformName, accountId: number, enabled: boolean) {
@@ -273,6 +389,7 @@ export function CreatePostStudio() {
     });
 
     setExpandedPlatforms((current) => ({ ...current, [platform]: true }));
+    if (enabled) setActivePlatformTab(platform);
   }
 
   function toggleAllAccounts(platform: PlatformName, enabled: boolean) {
@@ -292,6 +409,7 @@ export function CreatePostStudio() {
     });
 
     setExpandedPlatforms((current) => ({ ...current, [platform]: true }));
+    if (enabled) setActivePlatformTab(platform);
   }
 
   function toggleAllGlobalAccounts(enabled: boolean) {
@@ -475,6 +593,15 @@ export function CreatePostStudio() {
       return;
     }
 
+    for (const platform of selectedPlatforms) {
+      const validationError = validatePlatformBeforeSubmit(platform, platformConfigs[platform]);
+      if (validationError) {
+        setError(validationError);
+        setActivePlatformTab(platform);
+        return;
+      }
+    }
+
     try {
       setSubmitting(true);
       setError(null);
@@ -511,79 +638,92 @@ export function CreatePostStudio() {
 
   if (loading) {
     return (
-      <main className="bg-[#fffaf0] px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-[1600px]">
-          <div className="rounded-3xl border border-[#f1e4ad] bg-[#fffdf7] p-8 text-center text-sm text-[#2f3847] shadow-[0_18px_50px_rgba(180,144,34,0.08)]">
-            Loading composer...
-          </div>
-        </div>
+      <main className="flex min-h-screen items-center justify-center bg-[#f7f2e8]">
+        <div className="rounded-full border border-[#eadfcb] bg-white px-5 py-3 text-sm text-[#6f6558] shadow-[0_12px_30px_rgba(36,24,6,0.06)]">Loading composer...</div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-[#fffaf0] px-4 pb-24 pt-6 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-[1600px]">
-        <section className="relative mb-6 overflow-hidden rounded-[28px] border border-[#f2d75c] bg-[#F5C800] px-7 py-6 shadow-[0_18px_45px_rgba(245,200,0,0.22)]">
-          <div className="max-w-3xl">
-            <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-[rgba(0,0,0,0.48)]">
-              Content Studio
-            </p>
-            <h1 className="mt-3 text-2xl font-semibold text-[#111111]">
-              Create & Publish Content
-            </h1>
-            <p className="mt-2 text-[13px] text-[rgba(0,0,0,0.55)]">
-              Write once. Publish everywhere.
-            </p>
+    <main className="flex min-h-screen flex-col bg-[radial-gradient(circle_at_top_left,_#fffdf8_0%,_#f7f2e8_55%,_#f0e7d8_100%)]">
+      {/* Top notification bar */}
+      {(message || error) && (
+        <div className="px-6 pt-6">
+          {message && (
+            <div className="flex items-center gap-2 rounded-[18px] border border-[#cfe6c7] bg-[#f4fbf1] px-4 py-3 text-sm text-[#2d6d36] shadow-[0_12px_30px_rgba(36,24,6,0.04)]">
+              <span>{message}</span>
+              <button type="button" onClick={() => setMessage(null)} className="ml-auto text-green-400 hover:text-green-600">×</button>
+            </div>
+          )}
+          {error && (
+            <div className="flex items-center gap-2 rounded-[18px] border border-[#ebc8c2] bg-[#fff5f3] px-4 py-3 text-sm text-[#9b3d2f] shadow-[0_12px_30px_rgba(36,24,6,0.04)]">
+              <span>{error}</span>
+              <button type="button" onClick={() => setError(null)} className="ml-auto text-red-400 hover:text-red-600">×</button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 3-column layout — fills viewport height */}
+      <div className="flex flex-1 gap-6 overflow-hidden px-6 pb-6 pt-6">
+
+        {/* LEFT — Platforms & Accounts */}
+        <div className="flex w-[320px] shrink-0 flex-col overflow-hidden">
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <Sidebar
+              platforms={sidebarPlatforms}
+              totalSelectedAccounts={totalSelectedAccounts}
+              totalAccounts={totalAccounts}
+              groupName={groupName}
+              accountGroups={accountGroups}
+              onGroupNameChange={setGroupName}
+              onSaveGroup={handleSaveGroup}
+              onApplyGroup={handleApplyGroup}
+              onRemoveGroup={handleRemoveGroup}
+              onSelectAll={toggleAllGlobalAccounts}
+              onPlatformToggle={setPlatformEnabled}
+              onSelectAllAccounts={toggleAllAccounts}
+              onAccountToggle={toggleAccount}
+            />
+          </div>
+        </div>
+
+        {/* CENTER — Post Editor */}
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+          {/* Center header */}
+          <div className="mb-4 rounded-[30px] border border-[#eadfcb] bg-white px-6 py-5 shadow-[0_18px_50px_rgba(36,24,6,0.05)]">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#9b7b3f]">Compose Workspace</p>
+              <h1 className="mt-2 text-[30px] font-semibold tracking-[-0.03em] text-[#1f170c]">Create your post</h1>
+              <p className="mt-2 text-sm text-[#6f6558]">Write once, publish everywhere with cleaner per-platform controls.</p>
+            </div>
           </div>
 
-          <div className="absolute right-7 top-6 flex flex-wrap gap-2">
-            <span className="rounded-[20px] bg-[rgba(0,0,0,0.08)] px-3 py-1.5 text-[11px] text-[rgba(0,0,0,0.55)]">
-              {selectedPlatforms.length} platform{selectedPlatforms.length === 1 ? "" : "s"} active
-            </span>
-            <span className="rounded-[20px] bg-[rgba(0,0,0,0.08)] px-3 py-1.5 text-[11px] text-[rgba(0,0,0,0.55)]">
-              {media.length} asset{media.length === 1 ? "" : "s"} in library
-            </span>
-          </div>
-        </section>
+          {/* Selected platform chips */}
+          {selectedPlatforms.length > 0 && (
+            <div className="mb-4 flex items-center gap-2 overflow-x-auto rounded-[24px] border border-[#eadfcb] bg-white px-5 py-4 shadow-[0_18px_50px_rgba(36,24,6,0.04)]">
+              <span className="shrink-0 text-xs font-semibold uppercase tracking-[0.18em] text-[#8d8274]">Selected platforms ({selectedPlatforms.length})</span>
+              <div className="flex flex-wrap gap-1.5">
+                {selectedPlatforms.map((platform) => (
+                  <div
+                    key={platform}
+                    className="flex items-center gap-2 rounded-full border border-[#eadfcb] bg-[#fffaf2] px-3 py-1 text-xs font-medium text-[#352819]"
+                  >
+                    {PLATFORM_LABELS[platform]}
+                    <button
+                      type="button"
+                      onClick={() => setPlatformEnabled(platform, false)}
+                      className="ml-0.5 text-[#9d917d] hover:text-[#6f5316]"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
-        {message ? (
-          <div className="mb-4 rounded-2xl border border-[#efd98a] bg-[#fff5c8] px-4 py-3 text-sm font-medium text-[#5b4500] shadow-[0_10px_24px_rgba(245,200,0,0.14)]">
-            {message}
-          </div>
-        ) : null}
-        {error ? (
-          <div className="mb-4 flex items-center gap-2 border-l-[3px] border-[#E24B4A] bg-[#fff1f1] px-6 py-2.5">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#E24B4A]" />
-            <p className="text-xs text-[#c24646]">{error}</p>
-            <button
-              type="button"
-              onClick={() => setError(null)}
-              className="ml-auto text-[11px] text-[#c24646] underline"
-            >
-              See logs
-            </button>
-          </div>
-        ) : null}
-
-        <div className="mt-5 overflow-hidden rounded-[28px] border border-[#f0e2b2] bg-[#fffdf8] shadow-[0_20px_60px_rgba(180,144,34,0.10)] xl:grid xl:grid-cols-[minmax(320px,360px)_minmax(0,1fr)]">
-          <Sidebar
-            platforms={sidebarPlatforms}
-            totalSelectedAccounts={totalSelectedAccounts}
-            totalAccounts={totalAccounts}
-            groupName={groupName}
-            accountGroups={accountGroups}
-            onGroupNameChange={setGroupName}
-            onSaveGroup={handleSaveGroup}
-            onApplyGroup={handleApplyGroup}
-            onRemoveGroup={handleRemoveGroup}
-            onSelectAll={toggleAllGlobalAccounts}
-            onPlatformToggle={setPlatformEnabled}
-            onSelectAllAccounts={toggleAllAccounts}
-            onAccountToggle={toggleAccount}
-          />
-
-          <div className="space-y-6 xl:border-l xl:border-[#f0e2b2]">
+          <div className="min-h-0 flex-1 overflow-y-auto">
             <PostEditor
               caption={caption}
               hashtags={hashtags}
@@ -609,44 +749,53 @@ export function CreatePostStudio() {
               onAiPanelToggle={() => setAiPanelOpen((current) => !current)}
               onApplyAiAssist={applyAiAssist}
             />
-
-            <PlatformSettings
-              selectedPlatforms={selectedPlatforms}
-              selectedAccounts={selectedAccounts}
-              platformConfigs={platformConfigs}
-              accountsByPlatform={accountsByPlatform}
-              expandedPlatforms={expandedPlatforms}
-              onToggleExpand={(platform) =>
-                setExpandedPlatforms((current) => ({
-                  ...current,
-                  [platform]: !(current[platform] ?? true),
-                }))
-              }
-              onConfigChange={updatePlatformConfig}
-            />
           </div>
+        </div>
+
+        {/* RIGHT — Platform Settings */}
+        <div className="flex w-[340px] shrink-0 flex-col overflow-hidden rounded-[30px] border border-[#eadfcb] bg-white shadow-[0_18px_50px_rgba(36,24,6,0.05)]">
+          <PlatformSettings
+            selectedPlatforms={selectedPlatforms}
+            selectedAccounts={selectedAccounts}
+            platformConfigs={platformConfigs}
+            accountsByPlatform={accountsByPlatform}
+            expandedPlatforms={expandedPlatforms}
+            activePlatformTab={activePlatformTab}
+            onTabChange={setActivePlatformTab}
+            onToggleExpand={(platform) =>
+              setExpandedPlatforms((current) => ({
+                ...current,
+                [platform]: !(current[platform] ?? true),
+              }))
+            }
+            onConfigChange={updatePlatformConfig}
+          />
         </div>
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[#f0e2b2] bg-[rgba(255,251,240,0.96)] backdrop-blur">
-        <div className="mx-auto flex max-w-[1600px] justify-end gap-2.5 px-6 py-3">
-          <div className="flex gap-2.5">
-            <button
-              type="button"
-              onClick={() => router.push("/")}
-              className="rounded-xl border border-[#eadba6] bg-[#fffef9] px-[18px] py-[9px] text-[13px] font-medium text-[#1f2937] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#d8c36e] hover:text-[#111111]"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={() => void handleSubmit()}
-              disabled={submitting}
-              className="rounded-xl bg-[#F5C800] px-5 py-[9px] text-[13px] font-medium text-[#111111] shadow-[0_10px_24px_rgba(245,200,0,0.28)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#E6BE3A] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {submitting ? "Creating..." : "Create Post"}
-            </button>
-          </div>
+      {/* Bottom action bar */}
+      <div className="border-t border-[#eadfcb] bg-white/70 px-6 py-4 backdrop-blur">
+        <div className="flex items-center justify-end gap-3">
+          <button
+            type="button"
+            onClick={() => router.push("/")}
+            className="rounded-[16px] border border-[#decdaa] bg-white px-4 py-2.5 text-sm font-medium text-[#4b3f2f] transition hover:bg-[#fcf7ee]"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleSubmit()}
+            disabled={submitting}
+            className="flex items-center gap-2 rounded-[16px] bg-[#1f170c] px-5 py-2.5 text-sm font-semibold text-[#f6d48f] shadow-[0_18px_40px_rgba(31,23,12,0.18)] transition hover:bg-[#130d05] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {submitting ? "Creating..." : "Review & publish"}
+            {!submitting && (
+              <svg viewBox="0 0 16 16" className="h-4 w-4 fill-current" aria-hidden="true">
+                <path d="M6.22 3.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L9.94 8 6.22 4.28a.75.75 0 0 1 0-1.06Z" />
+              </svg>
+            )}
+          </button>
         </div>
       </div>
     </main>
