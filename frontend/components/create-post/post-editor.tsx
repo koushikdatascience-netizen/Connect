@@ -1,6 +1,7 @@
 "use client";
 
-import { ChangeEvent, DragEvent, startTransition, useRef } from "react";
+import { ChangeEvent, DragEvent, useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { MediaAsset, PlatformName } from "@/lib/types";
 
 type Props = {
@@ -18,11 +19,8 @@ type Props = {
   onHashtagsChange: (value: string) => void;
   onMentionsChange: (value: string) => void;
   onAltTextChange: (value: string) => void;
-  onMediaSelectionToggle: (mediaId: number, enabled: boolean) => void;
+  onMediaSelectionToggle: (mediaId: number) => void;
   onFilesSelected: (files: FileList | null) => void;
-  onPreviewToggle: () => void;
-  onAiPanelToggle: () => void;
-  onApplyAiAssist: (mode: "tighten" | "cta" | "hashtags") => void;
 };
 
 function MediaThumbnail({ asset }: { asset: MediaAsset }) {
@@ -37,7 +35,7 @@ function MediaThumbnail({ asset }: { asset: MediaAsset }) {
   }
 
   return (
-    <div className="flex h-full w-full items-center justify-center bg-[#f4ecdd] text-xs text-[#8d8274]">
+    <div className="flex h-full w-full items-center justify-center bg-gray-100 text-xs">
       {asset.file_type}
     </div>
   );
@@ -47,31 +45,36 @@ export function PostEditor({
   caption,
   hashtags,
   mentions,
-  altText,
   media,
   selectedMediaIds,
-  selectedPlatforms,
-  previewEnabled,
-  aiPanelOpen,
   uploading,
   onCaptionChange,
   onHashtagsChange,
   onMentionsChange,
-  onAltTextChange,
   onMediaSelectionToggle,
   onFilesSelected,
-  onPreviewToggle,
-  onAiPanelToggle,
-  onApplyAiAssist,
 }: Props) {
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  const [dragActive, setDragActive] = useState(false);
 
   const selectedMedia = media.filter((m) =>
     selectedMediaIds.includes(m.id)
   );
 
-  function handleDrop(event: DragEvent<HTMLButtonElement>) {
+  const charLimit = 2200;
+
+  /* ---------------- HANDLERS ---------------- */
+
+  function autoResize(e: any) {
+    e.target.style.height = "auto";
+    e.target.style.height = e.target.scrollHeight + "px";
+  }
+
+  function handleDrop(event: DragEvent<HTMLDivElement>) {
     event.preventDefault();
+    setDragActive(false);
     onFilesSelected(event.dataTransfer.files);
   }
 
@@ -80,83 +83,123 @@ export function PostEditor({
     event.target.value = "";
   }
 
-  const charLimit = 2200;
+  /* ---------------- UI ---------------- */
 
   return (
-    <div className="flex flex-col gap-4 p-3">
+    <div className="flex flex-col gap-4 p-4">
 
-      {/* Caption */}
-      <div className="rounded-xl border border-[#eee3d0] bg-white p-4">
-        <label className="text-xs font-semibold text-[#8d8274] mb-2 block">
+      {/* CAPTION */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="rounded-2xl border p-4"
+      >
+        <label className="text-xs font-semibold text-gray-500 mb-2 block">
           Caption
         </label>
 
         <textarea
+          ref={textareaRef}
           value={caption}
-          onChange={(e) => onCaptionChange(e.target.value)}
+          onChange={(e) => {
+            onCaptionChange(e.target.value);
+            autoResize(e);
+          }}
           placeholder="Write your post..."
-          className="min-h-[180px] w-full resize-none bg-transparent text-sm outline-none"
+          className="w-full resize-none bg-transparent text-sm outline-none min-h-[80px] max-h-[160px]"
         />
 
-        <div className="mt-2 flex justify-between text-xs text-gray-400">
-          <span>{caption.length}/{charLimit}</span>
+        <div className="mt-2 text-xs text-gray-400">
+          {caption.length}/{charLimit}
         </div>
-      </div>
+      </motion.div>
 
-      {/* MEDIA (FIXED CLEAN VERSION) */}
-      <div className="rounded-xl border border-[#eee3d0] bg-white p-4">
-        <label className="text-xs font-semibold text-[#8d8274] mb-3 block">
+      {/* HASHTAGS */}
+      <motion.input
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        value={hashtags}
+        onChange={(e) => onHashtagsChange(e.target.value)}
+        placeholder="#hashtags"
+        className="rounded-xl border px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-black/20"
+      />
+
+      {/* MENTIONS */}
+      <motion.input
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        value={mentions}
+        onChange={(e) => onMentionsChange(e.target.value)}
+        placeholder="@mentions"
+        className="rounded-xl border px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-black/20"
+      />
+
+      {/* MEDIA */}
+      <motion.div
+        layout
+        className="rounded-2xl border p-4"
+      >
+        <label className="text-xs font-semibold text-gray-500 mb-3 block">
           Media
         </label>
 
-        {/* Selected Media */}
-        {selectedMedia.length > 0 && (
-          <div className="mb-4">
-            <p className="text-[11px] text-gray-400 mb-2">
-              Selected media
-            </p>
-
-            <div className="flex gap-2 overflow-x-auto">
+        {/* MEDIA GRID */}
+        <AnimatePresence>
+          {selectedMedia.length > 0 && (
+            <motion.div
+              layout
+              className="mb-4 grid grid-cols-3 gap-2"
+            >
               {selectedMedia.map((asset) => (
-                <div
+                <motion.div
                   key={asset.id}
-                  className="relative h-[90px] w-[90px] shrink-0 rounded-lg overflow-hidden border"
+                  layout
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.7, opacity: 0 }}
+                  whileHover={{ scale: 1.05 }}
+                  className="relative h-[90px] rounded-lg overflow-hidden border"
                 >
                   <MediaThumbnail asset={asset} />
 
                   <button
-                    onClick={() =>
-                      onMediaSelectionToggle(asset.id, false)
-                    }
-                    className="absolute top-1 right-1 bg-black/60 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center"
+                    onClick={() => onMediaSelectionToggle(asset.id)}
+                    className="absolute top-1 right-1 bg-black/60 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"
                   >
                     ×
                   </button>
-                </div>
+                </motion.div>
               ))}
-            </div>
-          </div>
-        )}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        {/* Upload */}
-        <button
-          type="button"
+        {/* UPLOAD BOX */}
+        <motion.div
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
           onClick={() => inputRef.current?.click()}
-          onDragOver={(e) => e.preventDefault()}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragActive(true);
+          }}
+          onDragLeave={() => setDragActive(false)}
           onDrop={handleDrop}
-          className="flex h-[110px] w-[110px] flex-col items-center justify-center gap-2 rounded-lg border border-dashed text-gray-500 hover:bg-gray-50"
+          className={`flex h-[120px] w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed transition ${
+            dragActive ? "bg-black/5 border-black" : "hover:bg-gray-50"
+          }`}
         >
           {uploading ? (
             "Uploading..."
           ) : (
             <>
-              <span className="text-lg">+</span>
-              <span className="text-xs text-center">
-                Add media
+              <span className="text-xl">+</span>
+              <span className="text-xs">
+                Click or drag media
               </span>
             </>
           )}
-        </button>
+        </motion.div>
 
         <input
           ref={inputRef}
@@ -165,24 +208,7 @@ export function PostEditor({
           onChange={handleInput}
           className="hidden"
         />
-      </div>
-
-      {/* Hashtags */}
-      <input
-        value={hashtags}
-        onChange={(e) => onHashtagsChange(e.target.value)}
-        placeholder="Hashtags..."
-        className="rounded-lg border p-3 text-sm"
-      />
-
-      {/* Mentions */}
-      <input
-        value={mentions}
-        onChange={(e) => onMentionsChange(e.target.value)}
-        placeholder="Mentions..."
-        className="rounded-lg border p-3 text-sm"
-      />
-
+      </motion.div>
     </div>
   );
 }

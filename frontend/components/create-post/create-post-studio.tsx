@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 
 import {
-  PLATFORM_LABELS,
   PLATFORM_META,
   PLATFORM_ORDER,
   createDefaultPlatformConfig,
@@ -15,15 +15,12 @@ import { Sidebar } from "@/components/create-post/sidebar";
 import { PlatformLogo } from "@/components/platform-logo";
 import {
   PlatformConfigMap,
-  SavedAccountGroup,
   SelectedAccountsMap,
 } from "@/components/create-post/types";
-import { createPost, fetchAccounts, fetchMedia, uploadMedia } from "@/lib/api";
+import { fetchAccounts, uploadMedia } from "@/lib/api";
 import { Account, MediaAsset, PlatformName } from "@/lib/types";
 
-const ACCOUNT_GROUPS_KEY = "snapkey_account_groups_v1";
-
-/* ---------------- HELPERS (UNCHANGED) ---------------- */
+/* ---------------- HELPERS ---------------- */
 
 function createEmptySelectedAccounts(): SelectedAccountsMap {
   return {
@@ -58,6 +55,8 @@ export function CreatePostStudio() {
 
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [media, setMedia] = useState<MediaAsset[]>([]);
+  const [selectedMediaIds, setSelectedMediaIds] = useState<number[]>([]);
+
   const [selectedPlatforms, setSelectedPlatforms] = useState<PlatformName[]>([]);
   const [selectedAccounts, setSelectedAccounts] =
     useState<SelectedAccountsMap>(createEmptySelectedAccounts);
@@ -68,37 +67,64 @@ export function CreatePostStudio() {
   const [hashtags, setHashtags] = useState("");
   const [mentions, setMentions] = useState("");
   const [altText, setAltText] = useState("");
-  const [selectedMediaIds, setSelectedMediaIds] = useState<number[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
-
   const [activePlatformTab, setActivePlatformTab] =
     useState<PlatformName | null>(null);
 
-  /* ---------------- DATA LOAD ---------------- */
+  /* ---------------- LOAD ---------------- */
 
   useEffect(() => {
     async function load() {
       try {
         setLoading(true);
-        const [accountData, mediaData] = await Promise.all([
-          fetchAccounts(),
-          fetchMedia(),
-        ]);
+        const accountData = await fetchAccounts();
         setAccounts(accountData.filter((a) => a.is_active));
-        setMedia(mediaData);
-      } catch (e) {
-        setError("Failed to load composer.");
       } finally {
         setLoading(false);
       }
     }
     load();
   }, []);
+
+  /* ---------------- MEDIA (FIXED) ---------------- */
+
+  const handleFilesSelected = (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+
+    const upload = async () => {
+      const uploads = Array.from(files).map((file) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        return uploadMedia(formData);
+      });
+
+      const uploaded = await Promise.all(uploads);
+
+      setMedia(uploaded);
+      setSelectedMediaIds(uploaded.map((m) => m.id));
+    };
+
+    upload(); // ✅ no Promise return
+  };
+
+  const toggleMedia = (id: number) => {
+    setSelectedMediaIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  /* ---------------- PLATFORM ---------------- */
+
+  const handlePlatformToggle = (platform: PlatformName) => {
+    setSelectedPlatforms((prev) =>
+      prev.includes(platform)
+        ? prev.filter((p) => p !== platform)
+        : [...prev, platform]
+    );
+  };
 
   /* ---------------- DERIVED ---------------- */
 
@@ -122,48 +148,20 @@ export function CreatePostStudio() {
     [accountsByPlatform, selectedAccounts, selectedPlatforms]
   );
 
-  /* ---------------- UI ---------------- */
-
   if (loading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#faf7f2]">
-        <div className="rounded-lg border border-[#eee3d0] bg-white px-4 py-2 text-sm text-[#6f6558]">
-          Loading...
-        </div>
+        Loading...
       </main>
     );
   }
 
   return (
     <main className="flex min-h-screen flex-col bg-[#faf7f2]">
-
-      {/* Notifications */}
-      {(message || error) && (
-        <div className="px-4 pt-4">
-          {message && (
-            <div className="mb-2 flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
-              {message}
-              <button onClick={() => setMessage(null)} className="ml-auto">
-                ×
-              </button>
-            </div>
-          )}
-          {error && (
-            <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
-              {error}
-              <button onClick={() => setError(null)} className="ml-auto">
-                ×
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* MAIN LAYOUT */}
-      <div className="flex flex-1 gap-4 overflow-hidden px-4 py-4">
+      <div className="flex flex-1 gap-5 px-5 py-4">
 
         {/* LEFT */}
-        <div className="w-[220px] shrink-0 overflow-y-auto">
+        <div className="w-[240px] shrink-0 overflow-y-auto">
           <Sidebar
             platforms={sidebarPlatforms}
             totalSelectedAccounts={0}
@@ -175,41 +173,48 @@ export function CreatePostStudio() {
             onApplyGroup={() => {}}
             onRemoveGroup={() => {}}
             onSelectAll={() => {}}
-            onPlatformToggle={() => {}}
+            onPlatformToggle={handlePlatformToggle}
             onSelectAllAccounts={() => {}}
             onAccountToggle={() => {}}
           />
         </div>
 
         {/* CENTER */}
-        <div className="flex flex-1 flex-col overflow-hidden">
-
-          {/* Header */}
-          <div className="mb-3 rounded-xl border border-[#eee3d0] bg-white px-4 py-3">
-            <p className="text-xs text-[#6f6558]">Compose</p>
-            <h1 className="text-xl font-semibold text-[#1f170c]">
-              Create post
-            </h1>
+        <motion.div
+          className="flex flex-1 flex-col gap-3"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        >
+          <div className="rounded-2xl border bg-white px-5 py-4 shadow-sm">
+            <h1 className="text-lg font-semibold">Create Post</h1>
           </div>
 
-          {/* Chips */}
-          {selectedPlatforms.length > 0 && (
-            <div className="mb-3 flex gap-2 rounded-xl border border-[#eee3d0] bg-white px-3 py-2">
-              {selectedPlatforms.map((p) => (
-                <div
-                  key={p}
-                  className="flex items-center gap-1 rounded-full bg-[#f5f1e8] px-2 py-0.5 text-xs"
-                >
-                  <PlatformLogo platform={p} className="h-3.5 w-3.5" />
-                  {p}
-                  <button onClick={() => {}}>×</button>
-                </div>
-              ))}
-            </div>
-          )}
+          <AnimatePresence>
+            {selectedPlatforms.length > 0 && (
+              <motion.div className="flex gap-2 overflow-x-auto rounded-2xl border bg-white px-3 py-2 shadow-sm">
+                {selectedPlatforms.map((p) => (
+                  <motion.div
+                    key={p}
+                    className="flex items-center gap-2 rounded-full border px-3 py-1 text-xs"
+                  >
+                    <PlatformLogo platform={p} className="h-3.5 w-3.5" />
+                    <span className="capitalize">{p}</span>
+                    <button
+                      onClick={() =>
+                        setSelectedPlatforms((prev) =>
+                          prev.filter((x) => x !== p)
+                        )
+                      }
+                    >
+                      ✕
+                    </button>
+                  </motion.div>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-          {/* Editor */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto rounded-2xl border bg-white shadow-sm">
             <PostEditor
               caption={caption}
               hashtags={hashtags}
@@ -225,17 +230,14 @@ export function CreatePostStudio() {
               onHashtagsChange={setHashtags}
               onMentionsChange={setMentions}
               onAltTextChange={setAltText}
-              onMediaSelectionToggle={() => {}}
-              onFilesSelected={() => {}}
-              onPreviewToggle={() => {}}
-              onAiPanelToggle={() => {}}
-              onApplyAiAssist={() => {}}
+              onMediaSelectionToggle={toggleMedia}
+              onFilesSelected={handleFilesSelected}
             />
           </div>
-        </div>
+        </motion.div>
 
         {/* RIGHT */}
-        <div className="w-[260px] shrink-0 rounded-xl border border-[#eee3d0] bg-white px-4 py-3">
+        <div className="w-[280px] shrink-0 rounded-2xl border bg-white px-4 py-4 shadow-sm">
           <PlatformSettings
             selectedPlatforms={selectedPlatforms}
             selectedAccounts={selectedAccounts}
@@ -250,22 +252,24 @@ export function CreatePostStudio() {
         </div>
       </div>
 
-      {/* Bottom bar */}
-      <div className="border-t border-[#eee3d0] bg-white px-4 py-3">
-        <div className="flex justify-end gap-2">
-          <button
+      {/* FOOTER */}
+      <div className="border-t bg-white px-5 py-3">
+        <div className="flex justify-end gap-3">
+          <motion.button
+            whileTap={{ scale: 0.95 }}
             onClick={() => router.push("/")}
-            className="rounded-lg border px-3 py-1.5 text-sm"
+            className="rounded-lg border px-4 py-2 text-sm"
           >
             Cancel
-          </button>
+          </motion.button>
 
-          <button
+          <motion.button
+            whileTap={{ scale: 0.95 }}
             disabled={submitting}
-            className="rounded-lg bg-black px-4 py-1.5 text-sm text-white"
+            className="rounded-lg bg-black px-5 py-2 text-sm text-white"
           >
-            {submitting ? "Creating..." : "Publish"}
-          </button>
+            {submitting ? "Publishing..." : "Publish"}
+          </motion.button>
         </div>
       </div>
     </main>
