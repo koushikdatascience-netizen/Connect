@@ -87,6 +87,39 @@ jobs:
           CLOUDINARY_API_SECRET: ci
         run: uv run alembic upgrade head
 
+      - name: Start API
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/socialsync
+          REDIS_URL: redis://localhost:6379/0
+          ENCRYPTION_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+          BACKEND_PUBLIC_URL: http://127.0.0.1:8000
+          FRONTEND_URL: http://localhost:3000
+          AUTH_REQUIRED: "false"
+          FACEBOOK_CLIENT_ID: ci
+          FACEBOOK_SECRET: ci
+          LINKEDIN_CLIENT_ID: ci
+          LINKEDIN_SECRET: ci
+          GOOGLE_CLIENT_ID: ci
+          GOOGLE_SECRET: ci
+          TWITTER_CLIENT_ID: ci
+          TWITTER_CLIENT_SECRET: ci
+          CLOUDINARY_CLOUD_NAME: ci
+          CLOUDINARY_API_KEY: ci
+          CLOUDINARY_API_SECRET: ci
+        run: |
+          nohup uv run uvicorn app.main:app --host 127.0.0.1 --port 8000 > uvicorn.log 2>&1 &
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:8000/api/v1/health >/dev/null; then
+              echo "API is ready"
+              exit 0
+            fi
+            echo "Waiting for API... ($i/30)"
+            sleep 2
+          done
+          echo "API failed to start"
+          cat uvicorn.log
+          exit 1
+
       - name: Run backend tests
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/socialsync
