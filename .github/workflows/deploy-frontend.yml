@@ -1,53 +1,37 @@
 name: Deploy Frontend to Vercel
 
 on:
-  push:
-    branches: [main, master]
-    paths:
-      - 'frontend/**'
-      - '.github/workflows/deploy-frontend.yml'
-  workflow_dispatch: # Manual trigger
+  workflow_dispatch:
 
 env:
+  VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
   VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
+    steps:
+      - uses: actions/checkout@v4
 
       - name: Install Vercel CLI
-        run: npm install --global vercel@latest
+        run: npm install -g vercel@latest
 
-      - name: Pull Vercel environment
-        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
-        working-directory: frontend
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --environment=production --token=$VERCEL_TOKEN
 
-      - name: Build project
-        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
-        working-directory: frontend
+      - name: Build Project Artifacts
+        run: vercel build --prod --token=$VERCEL_TOKEN
 
-      - name: Deploy to Vercel
+      - name: Deploy Project Artifacts to Vercel
+        run: vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN
+
+  notify:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deployment Notification
         run: |
-          DEPLOYMENT_URL=$(vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }})
-          echo "✅ Frontend deployed to: $DEPLOYMENT_URL"
-          echo "FRONTEND_URL=$DEPLOYMENT_URL" >> $GITHUB_ENV
-        working-directory: frontend
-
-      - name: Deployment summary
-        run: |
-          echo "## Frontend Deployment Summary" >> $GITHUB_STEP_SUMMARY
-          echo "- **URL**: ${{ env.FRONTEND_URL }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "🚀 Frontend deployed successfully to Vercel!"
+          echo "Frontend URL: https://${{ secrets.VERCEL_PROJECT_ID }}.vercel.app"
