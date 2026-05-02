@@ -92,7 +92,7 @@ export function CreatePostStudio() {
   /* ---------------- MEDIA ---------------- */
 
   const handleFilesSelected = (files: FileList | null) => {
-    if (!files || files.length === 0) return;
+    if (!files) return;
 
     const upload = async () => {
       const uploads = Array.from(files).map((file) => {
@@ -116,7 +116,7 @@ export function CreatePostStudio() {
     );
   };
 
-  /* ---------------- PLATFORM ---------------- */
+  /* ---------------- PLATFORM LOGIC (FIXED) ---------------- */
 
   const handlePlatformToggle = (platform: PlatformName) => {
     setSelectedPlatforms((prev) =>
@@ -124,6 +124,39 @@ export function CreatePostStudio() {
         ? prev.filter((p) => p !== platform)
         : [...prev, platform]
     );
+  };
+
+  const handleSelectAll = (enabled: boolean) => {
+    setSelectedPlatforms(enabled ? PLATFORM_ORDER : []);
+  };
+
+  const handleSelectAllAccounts = (
+    platform: PlatformName,
+    enabled: boolean
+  ) => {
+    const accs = accountsByPlatform[platform];
+
+    setSelectedAccounts((prev) => ({
+      ...prev,
+      [platform]: enabled ? accs.map((a) => a.id) : [],
+    }));
+  };
+
+  const handleAccountToggle = (
+    platform: PlatformName,
+    accountId: number,
+    enabled: boolean
+  ) => {
+    setSelectedAccounts((prev) => {
+      const current = prev[platform];
+
+      return {
+        ...prev,
+        [platform]: enabled
+          ? [...current, accountId]
+          : current.filter((id) => id !== accountId),
+      };
+    });
   };
 
   /* ---------------- DERIVED ---------------- */
@@ -148,7 +181,9 @@ export function CreatePostStudio() {
     [accountsByPlatform, selectedAccounts, selectedPlatforms]
   );
 
-  /* ---------------- LOADING ---------------- */
+  const totalSelectedAccounts = Object.values(selectedAccounts).flat().length;
+
+  /* ---------------- UI ---------------- */
 
   if (loading) {
     return (
@@ -160,15 +195,13 @@ export function CreatePostStudio() {
 
   return (
     <main className="flex h-full flex-col">
-
-      {/* MAIN GRID */}
       <div className="flex flex-1 gap-6 p-4">
 
         {/* LEFT SIDEBAR */}
-        <div className="w-[260px] shrink-0 overflow-y-auto rounded-2xl border border-[#eadfcb] bg-white/80 backdrop-blur shadow-sm">
+        <div className="w-[260px] shrink-0 h-full overflow-y-auto pr-1 rounded-2xl border bg-white shadow-sm">
           <Sidebar
             platforms={sidebarPlatforms}
-            totalSelectedAccounts={0}
+            totalSelectedAccounts={totalSelectedAccounts}
             totalAccounts={accounts.length}
             groupName=""
             accountGroups={[]}
@@ -176,62 +209,38 @@ export function CreatePostStudio() {
             onSaveGroup={() => {}}
             onApplyGroup={() => {}}
             onRemoveGroup={() => {}}
-            onSelectAll={() => {}}
+            onSelectAll={handleSelectAll}
             onPlatformToggle={handlePlatformToggle}
-            onSelectAllAccounts={() => {}}
-            onAccountToggle={() => {}}
+            onSelectAllAccounts={handleSelectAllAccounts}
+            onAccountToggle={handleAccountToggle}
           />
         </div>
 
         {/* CENTER */}
         <div className="flex flex-1 flex-col gap-4">
-
-          {/* HEADER */}
-          <div className="rounded-2xl border border-[#eadfcb] bg-white/80 px-6 py-4 backdrop-blur shadow-sm">
-            <h1 className="text-lg font-semibold text-[#2a2116]">
-              Create your post
-            </h1>
-
-            <p className="text-xs text-[#8a7d6a]">
-              Write once, publish everywhere
-            </p>
+          <div className="rounded-2xl border bg-white px-6 py-4 shadow-sm">
+            <h1 className="text-lg font-semibold">Create your post</h1>
           </div>
 
-          {/* SELECTED PLATFORMS */}
           <AnimatePresence>
             {selectedPlatforms.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className="flex gap-2 overflow-x-auto rounded-xl border border-[#eadfcb] bg-white/70 px-3 py-2 backdrop-blur"
-              >
+              <motion.div className="flex gap-2 overflow-x-auto rounded-xl border bg-white px-3 py-2">
                 {selectedPlatforms.map((p) => (
-                  <motion.div
-                    key={p}
-                    whileHover={{ scale: 1.05 }}
-                    className="flex items-center gap-2 rounded-full border bg-white px-3 py-1 text-xs shadow-sm"
-                  >
+                  <div key={p} className="flex items-center gap-2 px-3 py-1 border rounded-full text-xs">
                     <PlatformLogo platform={p} className="h-3.5 w-3.5" />
-                    <span className="capitalize">{p}</span>
-                    <button
-                      onClick={() =>
-                        setSelectedPlatforms((prev) =>
-                          prev.filter((x) => x !== p)
-                        )
-                      }
-                      className="text-gray-400 hover:text-black"
-                    >
-                      ✕
-                    </button>
-                  </motion.div>
+                    {p}
+                    <button onClick={() =>
+                      setSelectedPlatforms((prev) =>
+                        prev.filter((x) => x !== p)
+                      )
+                    }>✕</button>
+                  </div>
                 ))}
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* EDITOR */}
-          <div className="flex-1 overflow-hidden rounded-2xl border border-[#eadfcb] bg-white/80 backdrop-blur shadow-sm">
+          <div className="flex-1 overflow-y-auto rounded-2xl border bg-white shadow-sm">
             <PostEditor
               caption={caption}
               hashtags={hashtags}
@@ -250,8 +259,8 @@ export function CreatePostStudio() {
           </div>
         </div>
 
-        {/* RIGHT PANEL */}
-        <div className="w-[300px] shrink-0 rounded-2xl border border-[#eadfcb] bg-white/80 px-4 py-4 backdrop-blur shadow-sm">
+        {/* RIGHT */}
+        <div className="w-[300px] shrink-0 rounded-2xl border bg-white px-4 py-4 shadow-sm">
           <PlatformSettings
             selectedPlatforms={selectedPlatforms}
             selectedAccounts={selectedAccounts}
@@ -267,26 +276,12 @@ export function CreatePostStudio() {
       </div>
 
       {/* FOOTER */}
-      <div className="border-t bg-white/80 px-6 py-3 backdrop-blur">
+      <div className="border-t bg-white px-6 py-3">
         <div className="flex justify-end gap-3">
-
-          <motion.button
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => router.push("/")}
-            className="rounded-lg border px-4 py-2 text-sm hover:bg-gray-100"
-          >
-            Cancel
-          </motion.button>
-
-          <motion.button
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.95 }}
-            disabled={submitting}
-            className="rounded-lg bg-[#1f170c] px-6 py-2 text-sm text-[#f6d48f] shadow-md hover:bg-black"
-          >
+          <button onClick={() => router.push("/")}>Cancel</button>
+          <button disabled={submitting}>
             {submitting ? "Publishing..." : "Publish"}
-          </motion.button>
+          </button>
         </div>
       </div>
     </main>
