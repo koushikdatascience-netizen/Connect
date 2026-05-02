@@ -1,0 +1,61 @@
+name: Deploy to EC2 Server
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "app/**"
+      - "frontend/**"
+      - "alembic/**"
+      - "Dockerfile"
+      - "docker-entrypoint.sh"
+      - "docker-compose.yml"
+      - "wait-for-db.sh"
+      - "start-*.sh"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/deploy-server.yml"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy App Stack
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT }}
+          script_stop: true
+          command_timeout: 45m
+          script: |
+            set -e
+            cd /home/abm-admin1/Connect
+
+            git fetch origin main
+            git checkout main
+            git pull --ff-only origin main
+
+            docker compose -f docker-compose.server.yml down
+            docker compose -f docker-compose.server.yml build --no-cache
+            docker compose -f docker-compose.server.yml up -d
+
+            docker exec socialsync_backend sh -lc 'uv run alembic upgrade head'
+
+            cd /home/abm-admin1/Connect/frontend
+            npm ci
+            npm run build
+            pm2 restart socialsync-frontend
+            pm2 save
+
+            docker compose -f /home/abm-admin1/Connect/docker-compose.server.yml ps
+            docker logs socialsync_backend --tail=50
+            docker logs socialsync_worker --tail=50
