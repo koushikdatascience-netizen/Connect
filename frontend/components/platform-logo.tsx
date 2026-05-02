@@ -1,7 +1,6 @@
 import {
   SiFacebook,
   SiInstagram,
-  SiLinkedin,
   SiX,
   SiYoutube,
   SiTiktok,
@@ -10,10 +9,17 @@ import {
   SiBlogger,
 } from "react-icons/si";
 
+import { FaLinkedin } from "react-icons/fa";
+
+type Props = {
+  platform: string;
+  className?: string;
+};
+
 const ICON_MAP: Record<string, any> = {
   facebook: SiFacebook,
   instagram: SiInstagram,
-  linkedin: SiLinkedin,
+  linkedin: FaLinkedin, // ✅ FIXED (use FontAwesome)
   twitter: SiX,
   youtube: SiYoutube,
   tiktok: SiTiktok,
@@ -34,14 +40,9 @@ const BRAND_COLORS: Record<string, string> = {
   blogger: "#FF5722",
 };
 
-export function PlatformLogo({
-  platform,
-  className,
-}: {
-  platform: string;
-  className?: string;
-}) {
+export function PlatformLogo({ platform, className }: Props) {
   const Icon = ICON_MAP[platform];
+
   if (!Icon) return null;
 
   return (
