@@ -1,0 +1,84 @@
+name: Deploy to Server (Production Safe)
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          script: |
+            set -e
+
+            echo "🚀 Starting deployment..."
+
+            cd ~/Connect
+
+            echo "📌 Saving current commit (for rollback)..."
+            PREV_COMMIT=$(git rev-parse HEAD)
+            echo "Previous commit: $PREV_COMMIT"
+
+            echo "📥 Pull latest code..."
+            git fetch origin
+            git reset --hard origin/main
+
+            echo "📦 Backend setup..."
+            pip install -r requirements.txt || true
+            alembic upgrade head || true
+
+            echo "📦 Frontend setup..."
+            cd frontend
+            npm install
+            npm run build
+            cd ..
+
+            echo "🔁 Reloading apps (zero downtime)..."
+            pm2 reload all || pm2 restart all
+
+            echo "⏳ Waiting for services..."
+            sleep 5
+
+            echo "🩺 Health check..."
+
+            # BACKEND CHECK
+            if ! curl -fsS http://localhost:8000/api/v1/health > /dev/null; then
+              echo "❌ Backend failed!"
+              FAIL=1
+            fi
+
+            # FRONTEND CHECK
+            if ! curl -fsS http://localhost:3000 > /dev/null; then
+              echo "❌ Frontend failed!"
+              FAIL=1
+            fi
+
+            if [ "$FAIL" = "1" ]; then
+              echo "🔴 Deployment failed. Rolling back..."
+
+              git reset --hard $PREV_COMMIT
+
+              cd frontend
+              npm install
+              npm run build
+              cd ..
+
+              pm2 reload all || pm2 restart all
+
+              echo "✅ Rollback completed"
+              exit 1
+            fi
+
+            echo "💾 Saving PM2 state..."
+            pm2 save
+
+            echo "✅ Deployment successful!"

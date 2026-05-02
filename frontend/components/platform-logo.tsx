@@ -17,8 +17,6 @@ type Props = {
   className?: string;
 };
 
-/* ---------------- ICON MAP ---------------- */
-
 const ICON_MAP: Record<string, any> = {
   facebook: SiFacebook,
   instagram: SiInstagram,
@@ -30,8 +28,6 @@ const ICON_MAP: Record<string, any> = {
   wordpress: SiWordpress,
   blogger: SiBlogger,
 };
-
-/* ---------------- BRAND COLORS ---------------- */
 
 const BRAND_COLORS: Record<string, string> = {
   facebook: "#1877F2",
@@ -45,34 +41,27 @@ const BRAND_COLORS: Record<string, string> = {
   blogger: "#FF5722",
 };
 
-/* ---------------- COMPONENT ---------------- */
-
-export function PlatformLogo({ platform, className = "" }: Props) {
+export function PlatformLogo({ platform, className }: Props) {
   const Icon = ICON_MAP[platform];
+  const color = BRAND_COLORS[platform];
 
   if (!Icon) return null;
 
-  const color = BRAND_COLORS[platform] || "#000";
-
   return (
-    <span className="inline-flex items-center justify-center">
-      <Icon
-        className={`
-          ${className}
-          transition-all duration-200 ease-out
-          hover:scale-110
-        `}
-        style={{
-          color: color,
-          fill: color,
-
-          // 🔥 PREMIUM GLOW EFFECT
-          filter: `drop-shadow(0 0 4px ${color}) drop-shadow(0 0 10px ${color}66)`,
-
-          // smoother rendering
-          willChange: "transform",
-        }}
-      />
-    </span>
+    <div
+      className="flex items-center justify-center rounded-full p-1.5 transition-all duration-200 hover:scale-110"
+      style={{
+        background: `${color}15`,
+        boxShadow: `0 0 0px ${color}`,
+      }}
+      onMouseEnter={(e) =>
+        (e.currentTarget.style.boxShadow = `0 0 12px ${color}`)
+      }
+      onMouseLeave={(e) =>
+        (e.currentTarget.style.boxShadow = `0 0 0px ${color}`)
+      }
+    >
+      <Icon className={className} style={{ fill: color }} />
+    </div>
   );
 }

@@ -32,6 +32,7 @@ export function PlatformSelector({
   onAccountToggle,
 }: Props) {
   const hasAccounts = platform.accounts.length > 0;
+
   const selectedCount = platform.selectedAccountIds.length;
   const allSelected =
     hasAccounts && selectedCount === platform.accounts.length;
@@ -56,13 +57,30 @@ export function PlatformSelector({
       }`}
     >
       {/* PLATFORM ROW */}
-      <div className="flex items-center gap-2 px-2 py-2">
+      <div
+        onClick={() => hasAccounts && onPlatformToggle(!platform.selected)}
+        className={`
+        relative rounded-xl border p-3 flex items-center gap-3 cursor-pointer
+        transition-all duration-200
+        ${
+          platform.selected
+            ? "bg-[#fff9ef] border-[#d4a94f] shadow-[0_6px_18px_rgba(212,169,79,0.25)] scale-[1.02]"
+            : "hover:bg-[#f9f6f1] hover:shadow-sm"
+        }
+        `}
+      >
+        {/* LEFT ACTIVE BAR */}
+        {platform.selected && (
+          <div className="absolute left-0 top-0 h-full w-[3px] bg-gradient-to-b from-yellow-400 to-yellow-600 rounded-l-md" />
+        )}
+
+        {/* CHECKBOX */}
         <input
           type="checkbox"
           checked={platform.selected}
-          disabled={!hasAccounts}
           onChange={(e) => onPlatformToggle(e.target.checked)}
-          className="h-4 w-4 accent-black"
+          onClick={(e) => e.stopPropagation()}
+          className="h-4 w-4"
         />
 
         {/* ICON */}
@@ -70,19 +88,25 @@ export function PlatformSelector({
           <PlatformLogo platform={platform.id} className="h-4 w-4" />
         </div>
 
+        {/* NAME */}
         <div className="flex-1 text-sm font-medium capitalize">
           {platform.id}
         </div>
 
+        {/* COUNT */}
         {selectedCount > 0 && (
           <span className="text-[10px] text-gray-500">
             {selectedCount}
           </span>
         )}
 
+        {/* EXPAND */}
         {hasAccounts && (
           <button
-            onClick={() => setExpanded((v) => !v)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setExpanded((v) => !v);
+            }}
             className="text-xs text-gray-500 hover:text-black"
           >
             {expanded ? "−" : "+"}
@@ -92,7 +116,7 @@ export function PlatformSelector({
 
       {/* ACCOUNTS LIST */}
       <AnimatePresence>
-        {expanded && (
+        {expanded && hasAccounts && (
           <motion.div
             key="accounts"
             initial={{ height: 0, opacity: 0 }}
