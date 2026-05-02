@@ -41,26 +41,26 @@ export function Sidebar({
   const allSelected = totalSelectedAccounts === totalAccounts && totalAccounts > 0;
 
   return (
-    <div className="flex flex-col gap-5 p-4">
-      <div className="rounded-[28px] border border-[#eadfcb] bg-white p-5 shadow-[0_18px_50px_rgba(36,24,6,0.05)]">
-        <div className="mb-4 flex items-start justify-between gap-3">
+    <div className="flex flex-col gap-4 p-2">
+      <div className="rounded-[24px] border border-[#eadfcb] bg-white p-4 shadow-[0_14px_36px_rgba(36,24,6,0.05)]">
+        <div className="mb-3 flex items-start justify-between gap-2">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#9b7b3f]">
               Platforms & Accounts
             </p>
-            <p className="mt-2 text-sm text-[#6f6558]">
-              Select accounts to publish your post.
+            <p className="mt-1 text-[12px] text-[#6f6558]">
+              Pick connected accounts.
             </p>
           </div>
           <button
             type="button"
             onClick={() => onSelectAll(!allSelected)}
-            className="rounded-full border border-[#e5d7be] bg-[#fff9ef] px-3 py-1.5 text-[11px] font-semibold text-[#7a5c1f] hover:bg-[#fff1cf]"
+            className="rounded-full border border-[#e5d7be] bg-[#fff9ef] px-2.5 py-1 text-[10px] font-semibold text-[#7a5c1f] hover:bg-[#fff1cf]"
           >
             {allSelected ? "Clear all" : "Select all"}
           </button>
         </div>
-        <div className="space-y-3">
+        <div className="space-y-2">
         {platforms.map((platform) => (
           <PlatformSelector
             key={platform.id}
@@ -76,8 +76,8 @@ export function Sidebar({
       </div>
 
       {accountGroups.length > 0 && (
-        <div className="rounded-[28px] border border-[#eadfcb] bg-white px-5 py-5 shadow-[0_18px_50px_rgba(36,24,6,0.05)]">
-          <div className="mb-3 flex items-center justify-between">
+        <div className="rounded-[24px] border border-[#eadfcb] bg-white px-4 py-4 shadow-[0_14px_36px_rgba(36,24,6,0.05)]">
+          <div className="mb-2 flex items-center justify-between">
             <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#9b7b3f]">Account Groups</p>
             <span className="text-[11px] text-[#9d917d]">{accountGroups.length} saved</span>
           </div>
@@ -85,7 +85,7 @@ export function Sidebar({
             {accountGroups.map((group) => (
               <div
                 key={group.id}
-                className="flex items-center justify-between rounded-[18px] border border-[#ede2cf] bg-[#fffdfa] px-3 py-3"
+                className="flex items-center justify-between rounded-[16px] border border-[#ede2cf] bg-[#fffdfa] px-3 py-2.5"
               >
                 <button
                   type="button"
@@ -110,8 +110,8 @@ export function Sidebar({
         </div>
       )}
 
-      <div className="rounded-[28px] border border-[#eadfcb] bg-white px-5 py-5 shadow-[0_18px_50px_rgba(36,24,6,0.05)]">
-        <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#9b7b3f]">Save as Group</p>
+      <div className="rounded-[24px] border border-[#eadfcb] bg-white px-4 py-4 shadow-[0_14px_36px_rgba(36,24,6,0.05)]">
+        <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#9b7b3f]">Save as Group</p>
         <div className="flex gap-2">
           <input
             value={groupName}

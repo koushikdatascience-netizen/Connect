@@ -19,11 +19,11 @@ function AccountAvatar({ src, name }: { src?: string | null; name: string }) {
     <img
       src={src}
       alt={name}
-      className="h-9 w-9 shrink-0 rounded-full border border-[#eadfcb] object-cover"
+      className="h-8 w-8 shrink-0 rounded-full border border-[#eadfcb] object-cover"
       onError={() => setImgError(true)}
     />
   ) : (
-    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#eadfcb] bg-[#f6efe4] text-[11px] font-semibold text-[#6f6558]">
+    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#eadfcb] bg-[#f6efe4] text-[10px] font-semibold text-[#6f6558]">
       {name.charAt(0).toUpperCase()}
     </div>
   );
@@ -35,6 +35,16 @@ function getEntityLabel(accountType?: string | null) {
   if (t.includes("page")) return "Page";
   if (t.includes("group")) return "Group";
   return "Account";
+}
+
+function compactAccountName(name: string) {
+  const trimmed = name.trim();
+  if (trimmed.length <= 14) return trimmed;
+  const parts = trimmed.split(/\s+/);
+  if (parts.length > 1) {
+    return `${parts[0].slice(0, 8)} ${parts[1].slice(0, 4)}`.trim();
+  }
+  return `${trimmed.slice(0, 12)}…`;
 }
 
 export function PlatformSelector({
@@ -53,9 +63,9 @@ export function PlatformSelector({
   }, [platform.selected]);
 
   return (
-    <div className="rounded-[24px] border border-[#ede2cf] bg-white/90 px-4 py-4 shadow-[0_12px_30px_rgba(36,24,6,0.04)]">
+    <div className="rounded-[20px] border border-[#ede2cf] bg-white/90 px-3 py-3 shadow-[0_10px_24px_rgba(36,24,6,0.04)]">
       {/* Platform row */}
-      <div className="flex items-start gap-3">
+      <div className="flex items-start gap-2.5">
         {/* Checkbox */}
         <label className="flex cursor-pointer items-center">
           <input
@@ -68,20 +78,21 @@ export function PlatformSelector({
         </label>
 
         {/* Platform icon */}
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#fff8eb] ring-1 ring-[#eadfcb]">
-          <PlatformLogo platform={platform.id} className="h-5 w-5" />
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#fff8eb] ring-1 ring-[#eadfcb]">
+          <PlatformLogo platform={platform.id} className="h-4.5 w-4.5" />
         </div>
 
-        {/* Platform name + account count */}
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 pt-0.5">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-sm font-semibold text-[#1f170c]">{platform.label}</span>
-            <span className="text-[11px] text-[#9d917d]">
-              {hasAccounts ? `${platform.accounts.length} account${platform.accounts.length !== 1 ? "s" : ""}` : "Not connected"}
+            <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#9b7b3f]">
+              {hasAccounts ? `${platform.accounts.length} acc` : "0 acc"}
+            </span>
+            <span className="text-[9px] text-[#9d917d]">
+              {platform.selected ? "live" : "idle"}
             </span>
           </div>
           {platform.selected && selectedCount > 0 && (
-              <p className="mt-1 truncate text-[11px] font-medium text-[#9b7b3f]">
+              <p className="mt-0.5 truncate text-[10px] font-medium text-[#9b7b3f]">
               {selectedCount} selected
             </p>
           )}
@@ -106,7 +117,7 @@ export function PlatformSelector({
 
       {/* Accounts list (collapsible) */}
       {hasAccounts && expanded && (
-        <div className="ml-[26px] mt-4 border-l border-[#efe4d1] pl-6 space-y-2">
+        <div className="ml-[22px] mt-3 border-l border-[#efe4d1] pl-4 space-y-1.5">
           {platform.accounts.length > 1 && (
             <div className="flex items-center justify-between pb-1">
               <span className="text-[10px] text-[#9d917d]">{selectedCount}/{platform.accounts.length} selected</span>
@@ -125,7 +136,7 @@ export function PlatformSelector({
             return (
               <label
                 key={account.id}
-                className={`flex cursor-pointer items-center gap-2.5 rounded-lg border px-2.5 py-2 transition-colors ${
+                className={`flex cursor-pointer items-center gap-2 rounded-[14px] border px-2 py-1.5 transition-colors ${
                   checked
                     ? "border-[#d9be87] bg-[#fff8e8]"
                     : "border-[#efe4d1] bg-[#fffdfa] hover:bg-[#fcf7ee]"
@@ -139,8 +150,8 @@ export function PlatformSelector({
                 />
                 <AccountAvatar src={account.profile_picture_url} name={account.account_name} />
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-xs font-medium text-[#241b10]">{account.account_name}</div>
-                  <div className="text-[10px] text-[#9d917d]">{getEntityLabel(account.account_type)}</div>
+                  <div className="truncate text-[11px] font-medium text-[#241b10]">{compactAccountName(account.account_name)}</div>
+                  <div className="text-[9px] uppercase tracking-[0.12em] text-[#9d917d]">{getEntityLabel(account.account_type)}</div>
                 </div>
               </label>
             );

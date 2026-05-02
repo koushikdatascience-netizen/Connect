@@ -12,6 +12,7 @@ import {
 import { PlatformSettings } from "@/components/create-post/platform-settings";
 import { PostEditor } from "@/components/create-post/post-editor";
 import { Sidebar } from "@/components/create-post/sidebar";
+import { PlatformLogo } from "@/components/platform-logo";
 import {
   PlatformConfigMap,
   SavedAccountGroup,
@@ -665,10 +666,10 @@ export function CreatePostStudio() {
       )}
 
       {/* 3-column layout — fills viewport height */}
-      <div className="flex flex-1 gap-6 overflow-hidden px-6 pb-6 pt-6">
+      <div className="flex flex-1 gap-4 overflow-hidden px-4 pb-4 pt-4">
 
         {/* LEFT — Platforms & Accounts */}
-        <div className="flex w-[320px] shrink-0 flex-col overflow-hidden">
+        <div className="flex w-[272px] shrink-0 flex-col overflow-hidden">
           <div className="min-h-0 flex-1 overflow-y-auto">
             <Sidebar
               platforms={sidebarPlatforms}
@@ -691,25 +692,25 @@ export function CreatePostStudio() {
         {/* CENTER — Post Editor */}
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
           {/* Center header */}
-          <div className="mb-4 rounded-[30px] border border-[#eadfcb] bg-white px-6 py-5 shadow-[0_18px_50px_rgba(36,24,6,0.05)]">
+          <div className="mb-3 rounded-[26px] border border-[#eadfcb] bg-white px-5 py-4 shadow-[0_14px_36px_rgba(36,24,6,0.05)]">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#9b7b3f]">Compose Workspace</p>
-              <h1 className="mt-2 text-[30px] font-semibold tracking-[-0.03em] text-[#1f170c]">Create your post</h1>
-              <p className="mt-2 text-sm text-[#6f6558]">Write once, publish everywhere with cleaner per-platform controls.</p>
+              <h1 className="mt-2 text-[26px] font-semibold tracking-[-0.03em] text-[#1f170c]">Create your post</h1>
+              <p className="mt-1.5 text-[13px] text-[#6f6558]">Write once, publish everywhere with cleaner per-platform controls.</p>
             </div>
           </div>
 
           {/* Selected platform chips */}
           {selectedPlatforms.length > 0 && (
-            <div className="mb-4 flex items-center gap-2 overflow-x-auto rounded-[24px] border border-[#eadfcb] bg-white px-5 py-4 shadow-[0_18px_50px_rgba(36,24,6,0.04)]">
-              <span className="shrink-0 text-xs font-semibold uppercase tracking-[0.18em] text-[#8d8274]">Selected platforms ({selectedPlatforms.length})</span>
+            <div className="mb-3 flex items-center gap-2 overflow-x-auto rounded-[20px] border border-[#eadfcb] bg-white px-4 py-3 shadow-[0_14px_36px_rgba(36,24,6,0.04)]">
+              <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#8d8274]">Platforms ({selectedPlatforms.length})</span>
               <div className="flex flex-wrap gap-1.5">
                 {selectedPlatforms.map((platform) => (
                   <div
                     key={platform}
-                    className="flex items-center gap-2 rounded-full border border-[#eadfcb] bg-[#fffaf2] px-3 py-1 text-xs font-medium text-[#352819]"
+                    className="flex items-center gap-1.5 rounded-full border border-[#eadfcb] bg-[#fffaf2] px-2.5 py-1 text-[11px] font-medium text-[#352819]"
                   >
-                    {PLATFORM_LABELS[platform]}
+                    <PlatformLogo platform={platform} className="h-3.5 w-3.5" />
                     <button
                       type="button"
                       onClick={() => setPlatformEnabled(platform, false)}
@@ -753,7 +754,7 @@ export function CreatePostStudio() {
         </div>
 
         {/* RIGHT — Platform Settings */}
-        <div className="flex w-[340px] shrink-0 flex-col overflow-hidden rounded-[30px] border border-[#eadfcb] bg-white shadow-[0_18px_50px_rgba(36,24,6,0.05)]">
+        <div className="flex w-[312px] shrink-0 flex-col overflow-hidden rounded-[26px] border border-[#eadfcb] bg-white shadow-[0_14px_36px_rgba(36,24,6,0.05)]">
           <PlatformSettings
             selectedPlatforms={selectedPlatforms}
             selectedAccounts={selectedAccounts}
