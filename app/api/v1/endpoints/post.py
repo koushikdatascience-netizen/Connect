@@ -50,23 +50,38 @@ def _dispatch_publish(post_id: int, tenant_id: str, request_id: str, eta=None):
     try:
         worker_heartbeats = celery_app.control.ping(timeout=2.0)
         if not worker_heartbeats:
-            logger.warning(
-                "publish.worker_ping_empty post_id=%s request_id=%s; continuing to enqueue anyway",
+            logger.error(
+                "publish.worker_ping_empty post_id=%s request_id=%s; refusing to enqueue",
                 post_id,
                 request_id,
             )
-        else:
-            logger.info(
-                "publish.worker_ping_ok post_id=%s workers=%d",
-                post_id,
-                len(worker_heartbeats),
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=(
+                    "Publishing worker is offline, so the post cannot be processed right now. "
+                    "Please retry after the queue service is restored."
+                ),
             )
+        logger.info(
+            "publish.worker_ping_ok post_id=%s workers=%d",
+            post_id,
+            len(worker_heartbeats),
+        )
+    except HTTPException:
+        raise
     except Exception as exc:
         logger.warning(
-            "publish.queue_healthcheck_failed request_id=%s error=%s; continuing to enqueue",
+            "publish.queue_healthcheck_failed request_id=%s error=%s; refusing to enqueue",
             request_id,
             str(exc),
         )
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=(
+                "Unable to verify the publishing worker status. "
+                "Please retry once the queue service is healthy."
+            ),
+        ) from exc
 
     kwargs = {"args": [post_id, tenant_id, request_id]}
     if eta is not None:
@@ -96,6 +111,15 @@ def _dispatch_publish(post_id: int, tenant_id: str, request_id: str, eta=None):
                 "Please ensure queue services are running and retry."
             ),
         ) from exc
+
+
+def _mark_dispatch_failure(
+    db: Session,
+    tenant_id: str,
+    post_id: int,
+    detail: str,
+):
+    update_post_status(db, tenant_id, post_id, "failed", detail)
 
 
 # ── Analytics ──────────────────────────────────────────────────────────────
@@ -161,12 +185,19 @@ def process_overdue_posts(
                     processed.append({
                         "post_id": post.id,
                         "status": "queued",
-                        "task_id": task.id if task else None,
-                    })
+                            "task_id": task.id if task else None,
+                        })
                     logger.info(
                         "post.manual_overdue_dispatch post_id=%s scheduled_at=%s",
                         post.id,
                         post.scheduled_at,
+                    )
+                except HTTPException as exc:
+                    _mark_dispatch_failure(db, tenant_id, post.id, exc.detail)
+                    logger.error(
+                        "post.manual_overdue_dispatch_failed post_id=%s detail=%s",
+                        post.id,
+                        exc.detail,
                     )
                 except Exception as e:
                     logger.error(
@@ -199,10 +230,14 @@ def create(
         ) from exc
 
     request_id = _request_id(request)
-    if _is_future_timestamp(post.scheduled_at):
-        task = _dispatch_publish(post.id, tenant_id, request_id, eta=post.scheduled_at)
-    else:
-        task = _dispatch_publish(post.id, tenant_id, request_id)
+    try:
+        if _is_future_timestamp(post.scheduled_at):
+            task = _dispatch_publish(post.id, tenant_id, request_id, eta=post.scheduled_at)
+        else:
+            task = _dispatch_publish(post.id, tenant_id, request_id)
+    except HTTPException as exc:
+        _mark_dispatch_failure(db, tenant_id, post.id, exc.detail)
+        raise
 
     return {"post_id": post.id, "status": post.status, "task_id": task.id if task else None}
 
@@ -313,10 +348,14 @@ def edit_post(
 
     task = None
     request_id = _request_id(request)
-    if post.status == "scheduled":
-        task = _dispatch_publish(post.id, tenant_id, request_id, eta=post.scheduled_at)
-    elif post.status == "queued":
-        task = _dispatch_publish(post.id, tenant_id, request_id)
+    try:
+        if post.status == "scheduled":
+            task = _dispatch_publish(post.id, tenant_id, request_id, eta=post.scheduled_at)
+        elif post.status == "queued":
+            task = _dispatch_publish(post.id, tenant_id, request_id)
+    except HTTPException as exc:
+        _mark_dispatch_failure(db, tenant_id, post.id, exc.detail)
+        raise
 
     return {"post_id": post.id, "status": post.status, "task_id": task.id if task else None}
 
@@ -350,7 +389,11 @@ def publish_now(
         )
 
     updated_post = update_post_status(db, tenant_id, post_id, "queued", None)
-    task = _dispatch_publish(post_id, tenant_id, _request_id(request))
+    try:
+        task = _dispatch_publish(post_id, tenant_id, _request_id(request))
+    except HTTPException as exc:
+        _mark_dispatch_failure(db, tenant_id, post_id, exc.detail)
+        raise
     return {"post_id": post_id, "status": updated_post.status if updated_post else "queued", "task_id": task.id}
 
 

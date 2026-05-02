@@ -26,7 +26,8 @@ while [ $RETRY_COUNT -lt $MAX_RETRIES ] && [ $DB_READY -eq 0 ]; do
 import sys
 try:
     import psycopg2
-    conn = psycopg2.connect('$DATABASE_URL', connect_timeout=5)
+    database_url = '$DATABASE_URL'.replace('+psycopg2', '').replace('+psycopg', '')
+    conn = psycopg2.connect(database_url, connect_timeout=5)
     conn.close()
     print('PostgreSQL connection verified!')
     sys.exit(0)
