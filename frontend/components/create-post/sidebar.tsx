@@ -41,9 +41,9 @@ export function Sidebar({
   const allSelected = totalSelectedAccounts === totalAccounts && totalAccounts > 0;
 
   return (
-    <div className="flex flex-col gap-4 p-2">
-      <div className="rounded-[24px] border border-[#eadfcb] bg-white p-4 shadow-[0_14px_36px_rgba(36,24,6,0.05)]">
-        <div className="mb-3 flex items-start justify-between gap-2">
+    <div className="flex flex-col gap-2 p-1">
+      <div className="rounded-md border border-[#eee3d0] bg-transparent p-2 shadow-none">
+        <div className="mb-2 flex items-start justify-between gap-1">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#9b7b3f]">
               Platforms & Accounts
@@ -60,7 +60,7 @@ export function Sidebar({
             {allSelected ? "Clear all" : "Select all"}
           </button>
         </div>
-        <div className="space-y-2">
+        <div className="space-y-1">
         {platforms.map((platform) => (
           <PlatformSelector
             key={platform.id}
@@ -76,7 +76,7 @@ export function Sidebar({
       </div>
 
       {accountGroups.length > 0 && (
-        <div className="rounded-[24px] border border-[#eadfcb] bg-white px-4 py-4 shadow-[0_14px_36px_rgba(36,24,6,0.05)]">
+        <div className="rounded-md border border-[#eee3d0] bg-transparent p-2 shadow-none">
           <div className="mb-2 flex items-center justify-between">
             <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#9b7b3f]">Account Groups</p>
             <span className="text-[11px] text-[#9d917d]">{accountGroups.length} saved</span>
@@ -110,7 +110,7 @@ export function Sidebar({
         </div>
       )}
 
-      <div className="rounded-[24px] border border-[#eadfcb] bg-white px-4 py-4 shadow-[0_14px_36px_rgba(36,24,6,0.05)]">
+      <div className="rounded-md border border-[#eee3d0] bg-transparent p-2 shadow-none">
         <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#9b7b3f]">Save as Group</p>
         <div className="flex gap-2">
           <input

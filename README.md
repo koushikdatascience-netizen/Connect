@@ -277,15 +277,30 @@ docker exec -it socialsync_redis redis-cli FLUSHALL
 
 ## Deployment
 
-For the practical hosted-frontend test setup, use:
+This project supports multiple deployment options:
 
-- [DEPLOYMENT_VERCEL_NGROK.md](/D:/SocialSyncV1/DEPLOYMENT_VERCEL_NGROK.md)
-- [AWS_PRODUCTION_DEPLOYMENT.md](/D:/SocialSyncV1/AWS_PRODUCTION_DEPLOYMENT.md)
+### Production Deployment
 
-Important limitation:
+- **Linux Server Deployment**: [DEPLOYMENT_LINUX_SERVER.md](/D:/SocialSyncV1/DEPLOYMENT_LINUX_SERVER.md)
+  - Complete CI/CD pipeline for deploying backend to your own Linux server
+  - Automated testing and deployment via GitHub Actions
+  - Docker-based deployment with PostgreSQL and Redis
 
-- frontend auto redeploys on GitHub push through Vercel
-- backend does **not** auto redeploy through ngrok because it still runs on your own machine
+### Development/Testing Deployment
+
+- **Vercel + Ngrok**: [DEPLOYMENT_VERCEL_NGROK.md](/D:/SocialSyncV1/DEPLOYMENT_VERCEL_NGROK.md)
+  - Hosted frontend with local backend
+  - Good for testing and development
+
+- **AWS Production**: [AWS_PRODUCTION_DEPLOYMENT.md](/D:/SocialSyncV1/AWS_PRODUCTION_DEPLOYMENT.md)
+  - Full AWS deployment guide
+
+### CI/CD Pipeline
+
+The project now includes GitHub Actions workflows for:
+- Automatic backend deployment to your Linux server on push to main branch
+- Automatic frontend deployment to Vercel on push to main branch
+- Automated testing before deployment
 
 ## Troubleshooting
 

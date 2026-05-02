@@ -17,8 +17,8 @@
   --color-ink-600: #667085;
   --color-ink-500: #98a1b2;
 
-  --color-line: #f0e2b2;
-  --color-soft: #fff8dc;
+  --color-line: #e5e7eb;
+  --color-soft: #f9fafb;
 
   --color-green-400: #22d48a;
   --color-green-300: #4de8a3;
@@ -29,14 +29,10 @@
   * { @apply border-line; }
   html { @apply scroll-smooth; }
 
-  body {
-    @apply min-h-screen text-ink-900 antialiased;
-    background-color: #fffaf0;
-    background-image:
-      radial-gradient(ellipse 60% 38% at 72% 8%, rgba(255, 213, 42, 0.16) 0%, transparent 100%),
-      radial-gradient(ellipse 50% 44% at 18% 90%, rgba(255, 213, 42, 0.08) 0%, transparent 100%),
-      linear-gradient(180deg, #fffdf7 0%, #fff8e8 60%, #fff4dc 100%);
-  }
+ body {
+  @apply min-h-screen text-ink-900 antialiased;
+  background-color: #f8fafc;
+}
 
   button, input, select, textarea { @apply outline-none; }
 
@@ -112,8 +108,9 @@
   .status-pill-muted { @apply bg-[#fff8dc] text-ink-700; }
 
   .card {
-    @apply rounded-[24px] border border-[#f0e2b2] bg-[#fffef9] shadow-[0_12px_32px_rgba(180,144,34,0.10)];
-  }
+  @apply rounded-[20px] border bg-white shadow-sm;
+  border-color: #e5e7eb;
+}
 
   .platform-card {
     transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.22s ease;
@@ -128,9 +125,8 @@
     transition: background-color 0.15s, color 0.15s, transform 0.15s;
   }
   .nav-link:hover {
-    @apply bg-[#fff7d1] text-ink-900;
-    transform: translateX(2px);
-  }
+  @apply bg-gray-100 text-ink-900;
+}
   .nav-link.active {
     background-color: rgba(255, 213, 42, 0.18);
     color: #8c6f00;

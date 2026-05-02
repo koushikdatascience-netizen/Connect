@@ -79,7 +79,7 @@ export function PostEditor({
   const charLimit = 2200;
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-4 p-3">
       {/* Caption */}
       <div className="rounded-[28px] border border-[#eadfcb] bg-white px-6 py-6 shadow-[0_18px_50px_rgba(36,24,6,0.06)]">
         <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.22em] text-[#8d8274]">

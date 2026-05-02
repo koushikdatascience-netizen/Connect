@@ -19,11 +19,11 @@ function AccountAvatar({ src, name }: { src?: string | null; name: string }) {
     <img
       src={src}
       alt={name}
-      className="h-8 w-8 shrink-0 rounded-full border border-[#eadfcb] object-cover"
+      className="h-5 w-5 shrink-0 rounded-full border border-[#eadfcb] object-cover"
       onError={() => setImgError(true)}
     />
   ) : (
-    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#eadfcb] bg-[#f6efe4] text-[10px] font-semibold text-[#6f6558]">
+    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-[#eadfcb] bg-[#f6efe4] text-[9px] font-semibold text-[#6f6558]">
       {name.charAt(0).toUpperCase()}
     </div>
   );
@@ -63,101 +63,123 @@ export function PlatformSelector({
   }, [platform.selected]);
 
   return (
-    <div className="rounded-[20px] border border-[#ede2cf] bg-white/90 px-3 py-3 shadow-[0_10px_24px_rgba(36,24,6,0.04)]">
+    <div className="px-2 py-1.5">
       {/* Platform row */}
-      <div className="flex items-start gap-2.5">
-        {/* Checkbox */}
-        <label className="flex cursor-pointer items-center">
-          <input
-            type="checkbox"
-            checked={platform.selected}
-            disabled={!hasAccounts}
-            onChange={(e) => onPlatformToggle(e.target.checked)}
-            className="mt-1 h-4 w-4 rounded border-[#cdbd98] text-[#b8871a] focus:ring-[#ead39a] disabled:cursor-not-allowed disabled:opacity-50"
-          />
-        </label>
+      <div className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          checked={platform.selected}
+          disabled={!hasAccounts}
+          onChange={(e) => onPlatformToggle(e.target.checked)}
+          className="h-4 w-4 rounded border-[#cdbd98] text-[#b8871a] focus:ring-[#ead39a] disabled:opacity-50"
+        />
 
         {/* Platform icon */}
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#fff8eb] ring-1 ring-[#eadfcb]">
-          <PlatformLogo platform={platform.id} className="h-4.5 w-4.5" />
+        <div className="flex h-5 w-5 items-center justify-center">
+          <PlatformLogo platform={platform.id} className="h-3.5 w-3.5" />
         </div>
 
-        <div className="min-w-0 flex-1 pt-0.5">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#9b7b3f]">
-              {hasAccounts ? `${platform.accounts.length} acc` : "0 acc"}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-medium text-[#6f6558]">
+              {platform.id}
             </span>
             <span className="text-[9px] text-[#9d917d]">
-              {platform.selected ? "live" : "idle"}
+              {hasAccounts ? `${platform.accounts.length}` : "0"}
             </span>
           </div>
+
           {platform.selected && selectedCount > 0 && (
-              <p className="mt-0.5 truncate text-[10px] font-medium text-[#9b7b3f]">
+            <p className="text-[9px] text-[#9b7b3f]">
               {selectedCount} selected
             </p>
           )}
         </div>
 
-        {/* Expand toggle */}
         {hasAccounts && (
           <button
             type="button"
             onClick={() => setExpanded((v) => !v)}
-            className="flex h-7 w-7 items-center justify-center rounded-full text-[#9d917d] hover:bg-[#faf3e5] hover:text-[#6f5316]"
+            className="flex h-5 w-5 items-center justify-center rounded-full text-[#9d917d] transition hover:bg-[#f3eee4]"
           >
             <svg
               viewBox="0 0 16 16"
-              className={`h-3.5 w-3.5 fill-current transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}
+              className={`h-3.5 w-3.5 transition-transform duration-200 ${
+                expanded ? "rotate-180" : ""
+              }`}
             >
-              <path d="M4.22 6.22a.75.75 0 0 1 1.06 0L8 8.94l2.72-2.72a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 7.28a.75.75 0 0 1 0-1.06Z" />
+              <path
+                fill="currentColor"
+                d="M4.22 6.22a.75.75 0 0 1 1.06 0L8 8.94l2.72-2.72a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 7.28a.75.75 0 0 1 0-1.06Z"
+              />
             </svg>
           </button>
         )}
       </div>
 
-      {/* Accounts list (collapsible) */}
-      {hasAccounts && expanded && (
-        <div className="ml-[22px] mt-3 border-l border-[#efe4d1] pl-4 space-y-1.5">
-          {platform.accounts.length > 1 && (
-            <div className="flex items-center justify-between pb-1">
-              <span className="text-[10px] text-[#9d917d]">{selectedCount}/{platform.accounts.length} selected</span>
-              <button
-                type="button"
-                onClick={() => onSelectAllAccounts(!allSelected)}
-                className="text-[10px] font-semibold text-[#9b7b3f] hover:text-[#6f5316]"
-              >
-                {allSelected ? "Clear all" : "Select all"}
-              </button>
-            </div>
-          )}
+      {/* Animated Accounts List */}
+      <div
+        className={`overflow-hidden transition-all duration-300 ${
+          expanded ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
+        }`}
+      >
+        {hasAccounts && (
+          <div className="ml-5 mt-1 space-y-1">
+            {platform.accounts.length > 1 && (
+              <div className="flex items-center justify-between">
+                <span className="text-[9px] text-[#9d917d]">
+                  {selectedCount}/{platform.accounts.length}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => onSelectAllAccounts(!allSelected)}
+                  className="text-[9px] font-medium text-[#9b7b3f] hover:text-[#6f5316]"
+                >
+                  {allSelected ? "Clear" : "All"}
+                </button>
+              </div>
+            )}
 
-          {platform.accounts.map((account) => {
-            const checked = platform.selectedAccountIds.includes(account.id);
-            return (
-              <label
-                key={account.id}
-                className={`flex cursor-pointer items-center gap-2 rounded-[14px] border px-2 py-1.5 transition-colors ${
-                  checked
-                    ? "border-[#d9be87] bg-[#fff8e8]"
-                    : "border-[#efe4d1] bg-[#fffdfa] hover:bg-[#fcf7ee]"
-                }`}
-              >
-                <input
-                  type="checkbox"
-                  checked={checked}
-                  onChange={(e) => onAccountToggle(account.id, e.target.checked)}
-                  className="h-3.5 w-3.5 rounded border-[#cdbd98] text-[#b8871a] focus:ring-[#ead39a]"
-                />
-                <AccountAvatar src={account.profile_picture_url} name={account.account_name} />
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-[11px] font-medium text-[#241b10]">{compactAccountName(account.account_name)}</div>
-                  <div className="text-[9px] uppercase tracking-[0.12em] text-[#9d917d]">{getEntityLabel(account.account_type)}</div>
-                </div>
-              </label>
-            );
-          })}
-        </div>
-      )}
+            {platform.accounts.map((account) => {
+              const checked = platform.selectedAccountIds.includes(account.id);
+
+              return (
+                <label
+                  key={account.id}
+                  className={`flex cursor-pointer items-center gap-2 px-1 py-1 rounded-md transition-all duration-150 ${
+                    checked
+                      ? "bg-[#f3eee4]"
+                      : "hover:bg-[#f7f3eb]"
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={(e) =>
+                      onAccountToggle(account.id, e.target.checked)
+                    }
+                    className="h-3.5 w-3.5 mt-[1px] rounded border-[#cdbd98] text-[#b8871a] focus:ring-[#ead39a]"
+                  />
+
+                  <AccountAvatar
+                    src={account.profile_picture_url}
+                    name={account.account_name}
+                  />
+
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-[10px] font-medium text-[#241b10]">
+                      {compactAccountName(account.account_name)}
+                    </div>
+                    <div className="text-[9px] text-[#9d917d]">
+                      {getEntityLabel(account.account_type)}
+                    </div>
+                  </div>
+                </label>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
