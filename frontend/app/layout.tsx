@@ -6,14 +6,17 @@ import { AuthGate } from "@/components/auth-gate";
 
 import "./globals.css";
 
+/* ✅ GOOGLE FONTS (SAFE MODE) */
 const bodyFont = DM_Sans({
   subsets: ["latin"],
   variable: "--font-body",
+  display: "swap",
 });
 
 const displayFont = Space_Grotesk({
   subsets: ["latin"],
   variable: "--font-display",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -23,9 +26,9 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en">
       <body className={`${bodyFont.variable} ${displayFont.variable}`}>

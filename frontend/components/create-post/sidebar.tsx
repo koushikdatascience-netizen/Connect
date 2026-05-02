@@ -52,12 +52,13 @@ export function Sidebar({
     totalSelectedAccounts === totalAccounts && totalAccounts > 0;
 
   return (
-    <div className="flex h-full flex-col gap-5 p-3 overflow-y-auto">
+    // ❌ removed h-full + overflow
+    // ✅ let parent control scroll
+    <div className="flex flex-col gap-5 p-3 min-h-0">
 
       {/* ---------------- PLATFORMS ---------------- */}
       <div className="rounded-2xl border border-[#eadfcb] bg-white/80 backdrop-blur p-4 shadow-sm">
 
-        {/* HEADER */}
         <div className="mb-4 flex items-start justify-between">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-wider text-[#9b7b3f]">
@@ -82,7 +83,6 @@ export function Sidebar({
           </motion.button>
         </div>
 
-        {/* PLATFORM LIST */}
         <div className="space-y-2">
           {platforms.map((platform) => (
             <PlatformSelector
@@ -106,7 +106,6 @@ export function Sidebar({
       {accountGroups.length > 0 && (
         <div className="rounded-2xl border border-[#eadfcb] bg-white/80 backdrop-blur p-4 shadow-sm">
 
-          {/* HEADER */}
           <div className="mb-4 flex items-center justify-between">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-[#9b7b3f]">
               Account Groups
@@ -116,7 +115,6 @@ export function Sidebar({
             </span>
           </div>
 
-          {/* GROUP LIST */}
           <div className="space-y-2">
             {accountGroups.map((group) => (
               <motion.div

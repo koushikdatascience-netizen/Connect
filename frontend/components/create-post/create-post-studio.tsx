@@ -116,7 +116,7 @@ export function CreatePostStudio() {
     );
   };
 
-  /* ---------------- PLATFORM LOGIC (FIXED) ---------------- */
+  /* ---------------- PLATFORM ---------------- */
 
   const handlePlatformToggle = (platform: PlatformName) => {
     setSelectedPlatforms((prev) =>
@@ -194,30 +194,33 @@ export function CreatePostStudio() {
   }
 
   return (
-    <main className="flex h-full flex-col">
-      <div className="flex flex-1 gap-6 p-4">
+    <main className="flex flex-1 min-h-0 flex-col">
+      <div className="flex flex-1 min-h-0 gap-6 p-4">
 
-        {/* LEFT SIDEBAR */}
-        <div className="w-[260px] shrink-0 h-full overflow-y-auto pr-1 rounded-2xl border bg-white shadow-sm">
-          <Sidebar
-            platforms={sidebarPlatforms}
-            totalSelectedAccounts={totalSelectedAccounts}
-            totalAccounts={accounts.length}
-            groupName=""
-            accountGroups={[]}
-            onGroupNameChange={() => {}}
-            onSaveGroup={() => {}}
-            onApplyGroup={() => {}}
-            onRemoveGroup={() => {}}
-            onSelectAll={handleSelectAll}
-            onPlatformToggle={handlePlatformToggle}
-            onSelectAllAccounts={handleSelectAllAccounts}
-            onAccountToggle={handleAccountToggle}
-          />
+        {/* LEFT SIDEBAR ✅ FIXED */}
+        <div className="w-[260px] shrink-0 flex flex-col min-h-0">
+          <div className="flex-1 overflow-y-auto pr-1 rounded-2xl border bg-white shadow-sm">
+            <Sidebar
+              platforms={sidebarPlatforms}
+              totalSelectedAccounts={totalSelectedAccounts}
+              totalAccounts={accounts.length}
+              groupName=""
+              accountGroups={[]}
+              onGroupNameChange={() => {}}
+              onSaveGroup={() => {}}
+              onApplyGroup={() => {}}
+              onRemoveGroup={() => {}}
+              onSelectAll={handleSelectAll}
+              onPlatformToggle={handlePlatformToggle}
+              onSelectAllAccounts={handleSelectAllAccounts}
+              onAccountToggle={handleAccountToggle}
+            />
+          </div>
         </div>
 
         {/* CENTER */}
-        <div className="flex flex-1 flex-col gap-4">
+        <div className="flex flex-1 flex-col min-h-0 gap-4">
+
           <div className="rounded-2xl border bg-white px-6 py-4 shadow-sm">
             <h1 className="text-lg font-semibold">Create your post</h1>
           </div>
@@ -240,6 +243,7 @@ export function CreatePostStudio() {
             )}
           </AnimatePresence>
 
+          {/* EDITOR SCROLL FIX */}
           <div className="flex-1 overflow-y-auto rounded-2xl border bg-white shadow-sm">
             <PostEditor
               caption={caption}
@@ -260,7 +264,7 @@ export function CreatePostStudio() {
         </div>
 
         {/* RIGHT */}
-        <div className="w-[300px] shrink-0 rounded-2xl border bg-white px-4 py-4 shadow-sm">
+        <div className="w-[300px] shrink-0 rounded-2xl border bg-white px-4 py-4 shadow-sm overflow-y-auto">
           <PlatformSettings
             selectedPlatforms={selectedPlatforms}
             selectedAccounts={selectedAccounts}
