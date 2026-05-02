@@ -89,7 +89,7 @@ export function CreatePostStudio() {
     load();
   }, []);
 
-  /* ---------------- MEDIA (FIXED) ---------------- */
+  /* ---------------- MEDIA ---------------- */
 
   const handleFilesSelected = (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -107,7 +107,7 @@ export function CreatePostStudio() {
       setSelectedMediaIds(uploaded.map((m) => m.id));
     };
 
-    upload(); // ✅ no Promise return
+    upload();
   };
 
   const toggleMedia = (id: number) => {
@@ -148,20 +148,24 @@ export function CreatePostStudio() {
     [accountsByPlatform, selectedAccounts, selectedPlatforms]
   );
 
+  /* ---------------- LOADING ---------------- */
+
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#faf7f2]">
-        Loading...
-      </main>
+      <div className="flex h-full items-center justify-center text-sm text-gray-500">
+        Loading workspace...
+      </div>
     );
   }
 
   return (
-    <main className="flex min-h-screen flex-col bg-[#faf7f2]">
-      <div className="flex flex-1 gap-5 px-5 py-4">
+    <main className="flex h-full flex-col">
 
-        {/* LEFT */}
-        <div className="w-[240px] shrink-0 overflow-y-auto">
+      {/* MAIN GRID */}
+      <div className="flex flex-1 gap-6 p-4">
+
+        {/* LEFT SIDEBAR */}
+        <div className="w-[260px] shrink-0 overflow-y-auto rounded-2xl border border-[#eadfcb] bg-white/80 backdrop-blur shadow-sm">
           <Sidebar
             platforms={sidebarPlatforms}
             totalSelectedAccounts={0}
@@ -180,22 +184,33 @@ export function CreatePostStudio() {
         </div>
 
         {/* CENTER */}
-        <motion.div
-          className="flex flex-1 flex-col gap-3"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-        >
-          <div className="rounded-2xl border bg-white px-5 py-4 shadow-sm">
-            <h1 className="text-lg font-semibold">Create Post</h1>
+        <div className="flex flex-1 flex-col gap-4">
+
+          {/* HEADER */}
+          <div className="rounded-2xl border border-[#eadfcb] bg-white/80 px-6 py-4 backdrop-blur shadow-sm">
+            <h1 className="text-lg font-semibold text-[#2a2116]">
+              Create your post
+            </h1>
+
+            <p className="text-xs text-[#8a7d6a]">
+              Write once, publish everywhere
+            </p>
           </div>
 
+          {/* SELECTED PLATFORMS */}
           <AnimatePresence>
             {selectedPlatforms.length > 0 && (
-              <motion.div className="flex gap-2 overflow-x-auto rounded-2xl border bg-white px-3 py-2 shadow-sm">
+              <motion.div
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="flex gap-2 overflow-x-auto rounded-xl border border-[#eadfcb] bg-white/70 px-3 py-2 backdrop-blur"
+              >
                 {selectedPlatforms.map((p) => (
                   <motion.div
                     key={p}
-                    className="flex items-center gap-2 rounded-full border px-3 py-1 text-xs"
+                    whileHover={{ scale: 1.05 }}
+                    className="flex items-center gap-2 rounded-full border bg-white px-3 py-1 text-xs shadow-sm"
                   >
                     <PlatformLogo platform={p} className="h-3.5 w-3.5" />
                     <span className="capitalize">{p}</span>
@@ -205,6 +220,7 @@ export function CreatePostStudio() {
                           prev.filter((x) => x !== p)
                         )
                       }
+                      className="text-gray-400 hover:text-black"
                     >
                       ✕
                     </button>
@@ -214,7 +230,8 @@ export function CreatePostStudio() {
             )}
           </AnimatePresence>
 
-          <div className="flex-1 overflow-y-auto rounded-2xl border bg-white shadow-sm">
+          {/* EDITOR */}
+          <div className="flex-1 overflow-hidden rounded-2xl border border-[#eadfcb] bg-white/80 backdrop-blur shadow-sm">
             <PostEditor
               caption={caption}
               hashtags={hashtags}
@@ -223,20 +240,18 @@ export function CreatePostStudio() {
               media={media}
               selectedMediaIds={selectedMediaIds}
               selectedPlatforms={selectedPlatforms}
-
               onCaptionChange={setCaption}
               onHashtagsChange={setHashtags}
               onMentionsChange={setMentions}
               onAltTextChange={setAltText}
-
               onMediaSelectionToggle={toggleMedia}
               onFilesSelected={handleFilesSelected}
-              />
+            />
           </div>
-        </motion.div>
+        </div>
 
-        {/* RIGHT */}
-        <div className="w-[280px] shrink-0 rounded-2xl border bg-white px-4 py-4 shadow-sm">
+        {/* RIGHT PANEL */}
+        <div className="w-[300px] shrink-0 rounded-2xl border border-[#eadfcb] bg-white/80 px-4 py-4 backdrop-blur shadow-sm">
           <PlatformSettings
             selectedPlatforms={selectedPlatforms}
             selectedAccounts={selectedAccounts}
@@ -252,20 +267,23 @@ export function CreatePostStudio() {
       </div>
 
       {/* FOOTER */}
-      <div className="border-t bg-white px-5 py-3">
+      <div className="border-t bg-white/80 px-6 py-3 backdrop-blur">
         <div className="flex justify-end gap-3">
+
           <motion.button
+            whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => router.push("/")}
-            className="rounded-lg border px-4 py-2 text-sm"
+            className="rounded-lg border px-4 py-2 text-sm hover:bg-gray-100"
           >
             Cancel
           </motion.button>
 
           <motion.button
+            whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.95 }}
             disabled={submitting}
-            className="rounded-lg bg-black px-5 py-2 text-sm text-white"
+            className="rounded-lg bg-[#1f170c] px-6 py-2 text-sm text-[#f6d48f] shadow-md hover:bg-black"
           >
             {submitting ? "Publishing..." : "Publish"}
           </motion.button>

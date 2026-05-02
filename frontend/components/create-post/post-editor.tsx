@@ -37,87 +37,83 @@ export function PostEditor({
   onFilesSelected,
 }: Props) {
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex h-full flex-col gap-4 p-4 overflow-y-auto">
 
-      {/* HEADER */}
+      {/* CAPTION CARD */}
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        className="rounded-2xl border bg-white px-5 py-4 shadow-[0_6px_20px_rgba(0,0,0,0.05)]"
+        className="
+          rounded-2xl border border-[#eadfcb]
+          bg-white/80 backdrop-blur p-4
+          shadow-sm transition-all duration-200
+          hover:shadow-md
+        "
       >
-        <h1 className="text-lg font-semibold text-[#1f170c]">
-          Create your post
-        </h1>
-        <p className="text-xs text-[#8a7b65]">
-          Write once, publish everywhere
-        </p>
-      </motion.div>
+        <div className="flex items-center justify-between">
+          <label className="text-[11px] font-semibold uppercase tracking-wider text-[#9b7b3f]">
+            Caption
+          </label>
 
-      {/* CAPTION */}
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.05 }}
-        className="rounded-2xl border bg-white p-4 shadow-sm"
-      >
-        <label className="text-[11px] font-semibold uppercase tracking-wider text-[#9b7b3f]">
-          Caption
-        </label>
+          <span className="text-[10px] text-gray-400">
+            {caption.length}/2200
+          </span>
+        </div>
 
         <textarea
           value={caption}
           onChange={(e) => onCaptionChange(e.target.value)}
           placeholder="Write your post caption..."
           className="
-            mt-2 w-full min-h-[140px] resize-none rounded-xl border p-3 text-sm
+            mt-2 w-full min-h-[140px] resize-none
+            rounded-xl border border-[#eee3d0] bg-white/70 p-3 text-sm
             outline-none transition-all duration-200
-            focus:ring-1 focus:ring-[#d1ac63]
+            focus:ring-2 focus:ring-[#d4a94f]/40 focus:border-[#d4a94f]
           "
         />
-
-        <div className="mt-1 text-right text-[10px] text-gray-400">
-          {caption.length}/2200
-        </div>
       </motion.div>
 
       {/* TAG INPUTS */}
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="grid grid-cols-1 gap-3"
+        transition={{ delay: 0.05 }}
+        className="grid grid-cols-2 gap-3"
       >
-        {/* HASHTAGS */}
         <input
           value={hashtags}
           onChange={(e) => onHashtagsChange(e.target.value)}
           placeholder="#hashtags"
           className="
-            h-10 rounded-xl border px-3 text-sm
+            h-10 rounded-xl border border-[#eee3d0] bg-white/70 px-3 text-sm
             outline-none transition-all duration-200
-            focus:ring-1 focus:ring-[#d1ac63]
+            focus:ring-2 focus:ring-[#d4a94f]/40 focus:border-[#d4a94f]
           "
         />
 
-        {/* MENTIONS */}
         <input
           value={mentions}
           onChange={(e) => onMentionsChange(e.target.value)}
           placeholder="@mentions"
           className="
-            h-10 rounded-xl border px-3 text-sm
+            h-10 rounded-xl border border-[#eee3d0] bg-white/70 px-3 text-sm
             outline-none transition-all duration-200
-            focus:ring-1 focus:ring-[#d1ac63]
+            focus:ring-2 focus:ring-[#d4a94f]/40 focus:border-[#d4a94f]
           "
         />
       </motion.div>
 
-      {/* MEDIA UPLOADER */}
+      {/* MEDIA CARD */}
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.15 }}
-        className="rounded-2xl border bg-white p-4 shadow-sm"
+        transition={{ delay: 0.1 }}
+        className="
+          rounded-2xl border border-[#eadfcb]
+          bg-white/80 backdrop-blur p-4
+          shadow-sm transition-all duration-200
+          hover:shadow-md
+        "
       >
         <p className="text-[11px] font-semibold uppercase tracking-wider text-[#9b7b3f]">
           Media
@@ -126,13 +122,19 @@ export function PostEditor({
         {/* DROPZONE */}
         <label
           className="
-            mt-3 flex h-32 cursor-pointer flex-col items-center justify-center
-            rounded-xl border-2 border-dashed
-            transition-all duration-200
-            hover:border-[#d1ac63] hover:bg-[#fffaf3]
+            mt-3 flex h-36 cursor-pointer flex-col items-center justify-center
+            rounded-xl border-2 border-dashed border-[#e6dccb]
+            bg-white/50 transition-all duration-200
+            hover:border-[#d4a94f] hover:bg-[#fff9ef]
           "
         >
-          <span className="text-xl">＋</span>
+          <motion.div
+            whileHover={{ scale: 1.2 }}
+            className="text-2xl text-[#9b7b3f]"
+          >
+            +
+          </motion.div>
+
           <span className="text-xs text-gray-500">
             Click or drag media
           </span>
@@ -145,9 +147,9 @@ export function PostEditor({
           />
         </label>
 
-        {/* MEDIA PREVIEW */}
+        {/* MEDIA GRID */}
         {media.length > 0 && (
-          <div className="mt-3 grid grid-cols-3 gap-2">
+          <div className="mt-4 grid grid-cols-3 gap-3">
             {media.map((m) => {
               const selected = selectedMediaIds.includes(m.id);
 
@@ -157,14 +159,24 @@ export function PostEditor({
                   whileHover={{ scale: 1.05 }}
                   onClick={() => onMediaSelectionToggle(m.id)}
                   className={`
-                    relative cursor-pointer overflow-hidden rounded-lg border
-                    ${selected ? "ring-2 ring-[#d4a94f]" : ""}
+                    relative cursor-pointer overflow-hidden rounded-xl border
+                    transition-all duration-200
+                    ${selected
+                      ? "ring-2 ring-[#d4a94f] shadow-md"
+                      : "hover:shadow-sm"}
                   `}
                 >
                   <img
                     src={m.file_url}
-                    className="h-20 w-full object-cover"
+                    className="h-24 w-full object-cover"
                   />
+
+                  {/* SELECT OVERLAY */}
+                  {selected && (
+                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center text-white text-xs">
+                      Selected
+                    </div>
+                  )}
                 </motion.div>
               );
             })}
@@ -173,19 +185,24 @@ export function PostEditor({
       </motion.div>
 
       {/* ALT TEXT */}
-      <motion.input
+      <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        value={altText}
-        onChange={(e) => onAltTextChange(e.target.value)}
-        placeholder="Alt text (optional)"
+        transition={{ delay: 0.15 }}
         className="
-          h-10 rounded-xl border px-3 text-sm
-          outline-none transition-all duration-200
-          focus:ring-1 focus:ring-[#d1ac63]
+          rounded-xl border border-[#eadfcb]
+          bg-white/80 backdrop-blur p-3
         "
-      />
+      >
+        <input
+          value={altText}
+          onChange={(e) => onAltTextChange(e.target.value)}
+          placeholder="Alt text (optional)"
+          className="
+            w-full bg-transparent text-sm outline-none
+          "
+        />
+      </motion.div>
     </div>
   );
 }

@@ -1,6 +1,10 @@
 "use client";
 
-import { SavedAccountGroup, SidebarPlatform } from "@/components/create-post/types";
+import { motion } from "framer-motion";
+import {
+  SavedAccountGroup,
+  SidebarPlatform,
+} from "@/components/create-post/types";
 import { PlatformSelector } from "@/components/create-post/platform-selector";
 
 type Props = {
@@ -14,12 +18,18 @@ type Props = {
   onApplyGroup: (groupId: string) => void;
   onRemoveGroup: (groupId: string) => void;
   onSelectAll: (enabled: boolean) => void;
-  onPlatformToggle: (platformId: SidebarPlatform["id"], enabled: boolean) => void;
-  onSelectAllAccounts: (platformId: SidebarPlatform["id"], enabled: boolean) => void;
+  onPlatformToggle: (
+    platformId: SidebarPlatform["id"],
+    enabled: boolean
+  ) => void;
+  onSelectAllAccounts: (
+    platformId: SidebarPlatform["id"],
+    enabled: boolean
+  ) => void;
   onAccountToggle: (
     platformId: SidebarPlatform["id"],
     accountId: number,
-    enabled: boolean,
+    enabled: boolean
   ) => void;
 };
 
@@ -42,10 +52,10 @@ export function Sidebar({
     totalSelectedAccounts === totalAccounts && totalAccounts > 0;
 
   return (
-    <div className="flex flex-col gap-4 p-2 h-full overflow-y-auto">
+    <div className="flex h-full flex-col gap-5 p-3 overflow-y-auto">
 
-      {/* PLATFORMS */}
-      <div className="rounded-2xl border border-[#eee3d0] bg-white p-4 shadow-[0_6px_20px_rgba(0,0,0,0.05)]">
+      {/* ---------------- PLATFORMS ---------------- */}
+      <div className="rounded-2xl border border-[#eadfcb] bg-white/80 backdrop-blur p-4 shadow-sm">
 
         {/* HEADER */}
         <div className="mb-4 flex items-start justify-between">
@@ -53,24 +63,23 @@ export function Sidebar({
             <p className="text-[11px] font-semibold uppercase tracking-wider text-[#9b7b3f]">
               Platforms & Accounts
             </p>
-            <p className="text-[12px] text-[#6f6558]">
+            <p className="text-[12px] text-[#7a6f5c]">
               Select accounts to publish
             </p>
           </div>
 
-          <button
-            type="button"
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => onSelectAll(!allSelected)}
             className="
               rounded-full px-3 py-1 text-[10px] font-semibold
               bg-gradient-to-r from-[#1f170c] to-[#3a2b10]
-              text-[#f6d48f]
-              transition-all duration-200
-              hover:scale-105 hover:shadow-md
+              text-[#f6d48f] shadow-sm
             "
           >
             {allSelected ? "Clear" : "All"}
-          </button>
+          </motion.button>
         </div>
 
         {/* PLATFORM LIST */}
@@ -93,9 +102,9 @@ export function Sidebar({
         </div>
       </div>
 
-      {/* ACCOUNT GROUPS */}
+      {/* ---------------- ACCOUNT GROUPS ---------------- */}
       {accountGroups.length > 0 && (
-        <div className="rounded-2xl border border-[#eee3d0] bg-white p-4 shadow-[0_6px_20px_rgba(0,0,0,0.05)]">
+        <div className="rounded-2xl border border-[#eadfcb] bg-white/80 backdrop-blur p-4 shadow-sm">
 
           {/* HEADER */}
           <div className="mb-4 flex items-center justify-between">
@@ -110,14 +119,15 @@ export function Sidebar({
           {/* GROUP LIST */}
           <div className="space-y-2">
             {accountGroups.map((group) => (
-              <div
+              <motion.div
                 key={group.id}
+                whileHover={{ scale: 1.02 }}
                 className="
-                  group flex items-center justify-between rounded-xl border
-                  bg-[#fffdfa] px-3 py-2
+                  group flex items-center justify-between rounded-xl
+                  border border-[#eee3d0]
+                  bg-white px-3 py-2
                   transition-all duration-200
-                  hover:shadow-[0_4px_14px_rgba(0,0,0,0.08)]
-                  hover:scale-[1.01]
+                  hover:shadow-md
                 "
               >
                 <button
@@ -125,9 +135,10 @@ export function Sidebar({
                   onClick={() => onApplyGroup(group.id)}
                   className="flex-1 text-left"
                 >
-                  <div className="text-xs font-semibold text-[#241b10]">
+                  <div className="text-xs font-semibold text-[#2a2116]">
                     {group.name}
                   </div>
+
                   <div className="text-[10px] text-[#9d917d]">
                     {group.accountIds.length} accounts
                   </div>
@@ -139,20 +150,21 @@ export function Sidebar({
                   className="
                     ml-2 rounded-full p-1
                     text-[#9d917d]
-                    transition-all duration-200
+                    opacity-0 transition-all duration-200
+                    group-hover:opacity-100
                     hover:bg-red-50 hover:text-red-600
                   "
                 >
                   ✕
                 </button>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
       )}
 
-      {/* SAVE GROUP */}
-      <div className="rounded-2xl border border-[#eee3d0] bg-white p-4 shadow-[0_6px_20px_rgba(0,0,0,0.05)]">
+      {/* ---------------- SAVE GROUP ---------------- */}
+      <div className="rounded-2xl border border-[#eadfcb] bg-white/80 backdrop-blur p-4 shadow-sm">
 
         <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-[#9b7b3f]">
           Save Group
@@ -164,26 +176,28 @@ export function Sidebar({
             onChange={(event) => onGroupNameChange(event.target.value)}
             placeholder="Group name..."
             className="
-              h-9 flex-1 rounded-md border px-2 text-xs
+              h-9 flex-1 rounded-md border border-[#eee3d0]
+              bg-white/70 px-2 text-xs
               outline-none transition-all duration-200
-              focus:ring-1 focus:ring-[#d1ac63]
+              focus:ring-2 focus:ring-[#d4a94f]/40 focus:border-[#d4a94f]
             "
           />
 
-          <button
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             type="button"
             onClick={onSaveGroup}
             disabled={!groupName.trim()}
             className="
               rounded-md px-3 text-xs text-white
               bg-gradient-to-r from-black to-[#333]
-              transition-all duration-200
-              hover:scale-105 hover:shadow-md
+              shadow-sm
               disabled:opacity-40 disabled:cursor-not-allowed
             "
           >
             Save
-          </button>
+          </motion.button>
         </div>
       </div>
     </div>
