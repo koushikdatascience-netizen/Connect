@@ -1,3 +1,5 @@
+"use client";
+
 import {
   SiFacebook,
   SiInstagram,
@@ -8,7 +10,6 @@ import {
   SiWordpress,
   SiBlogger,
 } from "react-icons/si";
-
 import { FaLinkedin } from "react-icons/fa";
 
 type Props = {
@@ -16,10 +17,12 @@ type Props = {
   className?: string;
 };
 
+/* ---------------- ICON MAP ---------------- */
+
 const ICON_MAP: Record<string, any> = {
   facebook: SiFacebook,
   instagram: SiInstagram,
-  linkedin: FaLinkedin, // ✅ FIXED (use FontAwesome)
+  linkedin: FaLinkedin,
   twitter: SiX,
   youtube: SiYoutube,
   tiktok: SiTiktok,
@@ -27,6 +30,8 @@ const ICON_MAP: Record<string, any> = {
   wordpress: SiWordpress,
   blogger: SiBlogger,
 };
+
+/* ---------------- BRAND COLORS ---------------- */
 
 const BRAND_COLORS: Record<string, string> = {
   facebook: "#1877F2",
@@ -40,15 +45,34 @@ const BRAND_COLORS: Record<string, string> = {
   blogger: "#FF5722",
 };
 
-export function PlatformLogo({ platform, className }: Props) {
+/* ---------------- COMPONENT ---------------- */
+
+export function PlatformLogo({ platform, className = "" }: Props) {
   const Icon = ICON_MAP[platform];
 
   if (!Icon) return null;
 
+  const color = BRAND_COLORS[platform] || "#000";
+
   return (
-    <Icon
-      className={className}
-      style={{ color: BRAND_COLORS[platform] }}
-    />
+    <span className="inline-flex items-center justify-center">
+      <Icon
+        className={`
+          ${className}
+          transition-all duration-200 ease-out
+          hover:scale-110
+        `}
+        style={{
+          color: color,
+          fill: color,
+
+          // 🔥 PREMIUM GLOW EFFECT
+          filter: `drop-shadow(0 0 4px ${color}) drop-shadow(0 0 10px ${color}66)`,
+
+          // smoother rendering
+          willChange: "transform",
+        }}
+      />
+    </span>
   );
 }
