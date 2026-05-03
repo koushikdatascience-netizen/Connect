@@ -13,10 +13,12 @@ import { PlatformSettings } from "@/components/create-post/platform-settings";
 import { PostEditor } from "@/components/create-post/post-editor";
 import { Sidebar } from "@/components/create-post/sidebar";
 import { PlatformLogo } from "@/components/platform-logo";
+
 import {
   PlatformConfigMap,
   SelectedAccountsMap,
 } from "@/components/create-post/types";
+
 import { fetchAccounts, uploadMedia } from "@/lib/api";
 import { Account, MediaAsset, PlatformName } from "@/lib/types";
 
@@ -60,8 +62,15 @@ export function CreatePostStudio() {
   const [selectedPlatforms, setSelectedPlatforms] = useState<PlatformName[]>([]);
   const [selectedAccounts, setSelectedAccounts] =
     useState<SelectedAccountsMap>(createEmptySelectedAccounts);
+
   const [platformConfigs, setPlatformConfigs] =
     useState<PlatformConfigMap>(createEmptyConfigs);
+
+  /* ✅ GROUP STATE */
+  const [groupName, setGroupName] = useState("");
+  const [accountGroups, setAccountGroups] = useState<
+    { id: string; name: string; accountIds: number[] }[]
+  >([]);
 
   const [caption, setCaption] = useState("");
   const [hashtags, setHashtags] = useState("");
@@ -78,13 +87,10 @@ export function CreatePostStudio() {
 
   useEffect(() => {
     async function load() {
-      try {
-        setLoading(true);
-        const accountData = await fetchAccounts();
-        setAccounts(accountData.filter((a) => a.is_active));
-      } finally {
-        setLoading(false);
-      }
+      setLoading(true);
+      const data = await fetchAccounts();
+      setAccounts(data.filter((a) => a.is_active));
+      setLoading(false);
     }
     load();
   }, []);
@@ -95,13 +101,13 @@ export function CreatePostStudio() {
     if (!files) return;
 
     const upload = async () => {
-      const uploads = Array.from(files).map((file) => {
-        const formData = new FormData();
-        formData.append("file", file);
-        return uploadMedia(formData);
-      });
-
-      const uploaded = await Promise.all(uploads);
+      const uploaded = await Promise.all(
+        Array.from(files).map((file) => {
+          const fd = new FormData();
+          fd.append("file", file);
+          return uploadMedia(fd);
+        })
+      );
 
       setMedia(uploaded);
       setSelectedMediaIds(uploaded.map((m) => m.id));
@@ -159,12 +165,60 @@ export function CreatePostStudio() {
     });
   };
 
+  /* ---------------- GROUP LOGIC ---------------- */
+
+  const handleSaveGroup = () => {
+    if (!groupName.trim()) return;
+
+    const selectedIds = Object.values(selectedAccounts).flat();
+    if (selectedIds.length === 0) return;
+
+    setAccountGroups((prev) => [
+      ...prev,
+      {
+        id: Date.now().toString(),
+        name: groupName,
+        accountIds: selectedIds,
+      },
+    ]);
+
+    setGroupName("");
+  };
+
+  const handleApplyGroup = (groupId: string) => {
+    const group = accountGroups.find((g) => g.id === groupId);
+    if (!group) return;
+
+    const newSelected = createEmptySelectedAccounts();
+    const newPlatforms: PlatformName[] = [];
+
+    for (const platform of PLATFORM_ORDER) {
+      const accs = accountsByPlatform[platform];
+
+      const matched = accs
+        .filter((a) => group.accountIds.includes(a.id))
+        .map((a) => a.id);
+
+      if (matched.length) {
+        newSelected[platform] = matched;
+        newPlatforms.push(platform);
+      }
+    }
+
+    setSelectedAccounts(newSelected);
+    setSelectedPlatforms(newPlatforms);
+  };
+
+  const handleRemoveGroup = (groupId: string) => {
+    setAccountGroups((prev) => prev.filter((g) => g.id !== groupId));
+  };
+
   /* ---------------- DERIVED ---------------- */
 
   const accountsByPlatform = useMemo(() => {
-    return PLATFORM_ORDER.reduce((acc, platform) => {
-      acc[platform] = accounts.filter(
-        (a) => a.platform?.toLowerCase() === platform
+    return PLATFORM_ORDER.reduce((acc, p) => {
+      acc[p] = accounts.filter(
+        (a) => a.platform?.toLowerCase() === p
       );
       return acc;
     }, {} as Record<PlatformName, Account[]>);
@@ -172,11 +226,11 @@ export function CreatePostStudio() {
 
   const sidebarPlatforms = useMemo(
     () =>
-      PLATFORM_ORDER.map((platform) => ({
-        ...PLATFORM_META[platform],
-        accounts: accountsByPlatform[platform],
-        selectedAccountIds: selectedAccounts[platform],
-        selected: selectedPlatforms.includes(platform),
+      PLATFORM_ORDER.map((p) => ({
+        ...PLATFORM_META[p],
+        accounts: accountsByPlatform[p],
+        selectedAccountIds: selectedAccounts[p],
+        selected: selectedPlatforms.includes(p),
       })),
     [accountsByPlatform, selectedAccounts, selectedPlatforms]
   );
@@ -186,65 +240,35 @@ export function CreatePostStudio() {
   /* ---------------- UI ---------------- */
 
   if (loading) {
-    return (
-      <div className="flex h-full items-center justify-center text-sm text-gray-500">
-        Loading workspace...
-      </div>
-    );
+    return <div className="flex h-full items-center justify-center">Loading...</div>;
   }
 
   return (
-    <main className="flex flex-1 min-h-0 flex-col">
-      <div className="flex flex-1 min-h-0 gap-6 p-4">
+    <main className="flex h-full flex-col">
+      <div className="flex flex-1 gap-6 p-4">
 
-        {/* LEFT SIDEBAR ✅ FIXED */}
-        <div className="w-[260px] shrink-0 flex flex-col min-h-0">
-          <div className="flex-1 overflow-y-auto pr-1 rounded-2xl border bg-white shadow-sm">
-            <Sidebar
-              platforms={sidebarPlatforms}
-              totalSelectedAccounts={totalSelectedAccounts}
-              totalAccounts={accounts.length}
-              groupName=""
-              accountGroups={[]}
-              onGroupNameChange={() => {}}
-              onSaveGroup={() => {}}
-              onApplyGroup={() => {}}
-              onRemoveGroup={() => {}}
-              onSelectAll={handleSelectAll}
-              onPlatformToggle={handlePlatformToggle}
-              onSelectAllAccounts={handleSelectAllAccounts}
-              onAccountToggle={handleAccountToggle}
-            />
-          </div>
+        {/* LEFT */}
+        <div className="w-[260px] h-full overflow-y-auto border rounded-xl bg-white">
+          <Sidebar
+            platforms={sidebarPlatforms}
+            totalSelectedAccounts={totalSelectedAccounts}
+            totalAccounts={accounts.length}
+            groupName={groupName}
+            accountGroups={accountGroups}
+            onGroupNameChange={setGroupName}
+            onSaveGroup={handleSaveGroup}
+            onApplyGroup={handleApplyGroup}
+            onRemoveGroup={handleRemoveGroup}
+            onSelectAll={handleSelectAll}
+            onPlatformToggle={handlePlatformToggle}
+            onSelectAllAccounts={handleSelectAllAccounts}
+            onAccountToggle={handleAccountToggle}
+          />
         </div>
 
         {/* CENTER */}
-        <div className="flex flex-1 flex-col min-h-0 gap-4">
-
-          <div className="rounded-2xl border bg-white px-6 py-4 shadow-sm">
-            <h1 className="text-lg font-semibold">Create your post</h1>
-          </div>
-
-          <AnimatePresence>
-            {selectedPlatforms.length > 0 && (
-              <motion.div className="flex gap-2 overflow-x-auto rounded-xl border bg-white px-3 py-2">
-                {selectedPlatforms.map((p) => (
-                  <div key={p} className="flex items-center gap-2 px-3 py-1 border rounded-full text-xs">
-                    <PlatformLogo platform={p} className="h-3.5 w-3.5" />
-                    {p}
-                    <button onClick={() =>
-                      setSelectedPlatforms((prev) =>
-                        prev.filter((x) => x !== p)
-                      )
-                    }>✕</button>
-                  </div>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* EDITOR SCROLL FIX */}
-          <div className="flex-1 overflow-y-auto rounded-2xl border bg-white shadow-sm">
+        <div className="flex flex-1 flex-col gap-4">
+          <div className="flex-1 overflow-y-auto border rounded-xl bg-white">
             <PostEditor
               caption={caption}
               hashtags={hashtags}
@@ -264,7 +288,7 @@ export function CreatePostStudio() {
         </div>
 
         {/* RIGHT */}
-        <div className="w-[300px] shrink-0 rounded-2xl border bg-white px-4 py-4 shadow-sm overflow-y-auto">
+        <div className="w-[300px] border rounded-xl bg-white">
           <PlatformSettings
             selectedPlatforms={selectedPlatforms}
             selectedAccounts={selectedAccounts}
@@ -276,16 +300,6 @@ export function CreatePostStudio() {
             onToggleExpand={() => {}}
             onConfigChange={() => {}}
           />
-        </div>
-      </div>
-
-      {/* FOOTER */}
-      <div className="border-t bg-white px-6 py-3">
-        <div className="flex justify-end gap-3">
-          <button onClick={() => router.push("/")}>Cancel</button>
-          <button disabled={submitting}>
-            {submitting ? "Publishing..." : "Publish"}
-          </button>
         </div>
       </div>
     </main>
