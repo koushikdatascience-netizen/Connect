@@ -79,7 +79,7 @@ export function AppShellUx({ children }: { children: ReactNode }) {
         </div>
       ) : null}
 
-      <div className="mx-auto flex min-h-screen w-full max-w-[1440px] gap-4 px-4 pb-24 pt-5 lg:px-6 lg:pb-5">
+      <div className="mx-auto flex min-h-screen w-full max-w-[1440px] gap-4 px-3 pb-20 pt-5 sm:px-4 sm:pb-24 lg:px-6 lg:pb-5">
         <aside className="hidden w-[220px] shrink-0 lg:block">
           <div className="sticky top-5 flex h-[calc(100vh-2.5rem)] flex-col justify-between rounded-[28px] border border-[#2b2414] bg-[#0b0b0b] p-4 shadow-[0_24px_64px_rgba(0,0,0,0.42)]">
             <div>
@@ -108,7 +108,7 @@ export function AppShellUx({ children }: { children: ReactNode }) {
       </div>
 
       <nav className="fixed inset-x-4 bottom-4 z-40 rounded-[26px] border border-[#2b2414] bg-[rgba(10,10,10,0.96)] p-2 shadow-[0_18px_40px_rgba(0,0,0,0.3)] backdrop-blur lg:hidden">
-        <div className="grid grid-cols-5 gap-1">
+        <div className="grid grid-cols-3 gap-1">
           {navigation.map((item) => {
             const active = pathname === item.href || pathname?.startsWith(`${item.href}/`);
             return (

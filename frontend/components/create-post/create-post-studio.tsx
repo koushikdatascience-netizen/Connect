@@ -82,18 +82,26 @@ export function CreatePostStudio() {
 
   const [activePlatformTab, setActivePlatformTab] =
     useState<PlatformName | null>(null);
+  
 
   /* ---------------- LOAD ---------------- */
-
-  useEffect(() => {
-    async function load() {
-      setLoading(true);
+const [mobileTab, setMobileTab] = useState<"accounts" | "compose" | "settings">("compose");
+  // AFTER
+useEffect(() => {
+  async function load() {
+    setLoading(true);
+    try {
       const data = await fetchAccounts();
       setAccounts(data.filter((a) => a.is_active));
+    } catch (err) {
+      console.error("Failed to load accounts:", err);
+      // Still stop loading so the UI renders, just with no accounts
+    } finally {
       setLoading(false);
     }
-    load();
-  }, []);
+  }
+  load();
+}, []);
 
   /* ---------------- MEDIA ---------------- */
 
@@ -244,64 +252,88 @@ export function CreatePostStudio() {
   }
 
   return (
-    <main className="flex h-full flex-col">
-      <div className="flex flex-1 gap-6 p-4">
+  <main className="flex h-full flex-col">
 
-        {/* LEFT */}
-        <div className="w-[260px] h-full overflow-y-auto border rounded-xl bg-white">
-          <Sidebar
-            platforms={sidebarPlatforms}
-            totalSelectedAccounts={totalSelectedAccounts}
-            totalAccounts={accounts.length}
-            groupName={groupName}
-            accountGroups={accountGroups}
-            onGroupNameChange={setGroupName}
-            onSaveGroup={handleSaveGroup}
-            onApplyGroup={handleApplyGroup}
-            onRemoveGroup={handleRemoveGroup}
-            onSelectAll={handleSelectAll}
-            onPlatformToggle={handlePlatformToggle}
-            onSelectAllAccounts={handleSelectAllAccounts}
-            onAccountToggle={handleAccountToggle}
-          />
-        </div>
+    {/* MOBILE TAB BAR — hidden on desktop */}
+    <div className="flex border-b bg-white md:hidden">
+      {(["accounts", "compose", "settings"] as const).map((tab) => (
+        <button
+          key={tab}
+          type="button"
+          onClick={() => setMobileTab(tab)}
+          className={`flex-1 py-2.5 text-xs font-semibold capitalize transition-colors ${
+            mobileTab === tab
+              ? "border-b-2 border-[#ffd52a] text-[#8c6f00]"
+              : "text-ink-500"
+          }`}
+        >
+          {tab === "accounts" ? "Accounts" : tab === "compose" ? "Compose" : "Settings"}
+          {tab === "accounts" && totalSelectedAccounts > 0 && (
+            <span className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#ffd52a] text-[10px] font-bold text-ink-900">
+              {totalSelectedAccounts}
+            </span>
+          )}
+        </button>
+      ))}
+    </div>
 
-        {/* CENTER */}
-        <div className="flex flex-1 flex-col gap-4">
-          <div className="flex-1 overflow-y-auto border rounded-xl bg-white">
-            <PostEditor
-              caption={caption}
-              hashtags={hashtags}
-              mentions={mentions}
-              altText={altText}
-              media={media}
-              selectedMediaIds={selectedMediaIds}
-              selectedPlatforms={selectedPlatforms}
-              onCaptionChange={setCaption}
-              onHashtagsChange={setHashtags}
-              onMentionsChange={setMentions}
-              onAltTextChange={setAltText}
-              onMediaSelectionToggle={toggleMedia}
-              onFilesSelected={handleFilesSelected}
-            />
-          </div>
-        </div>
+    {/* PANELS */}
+    <div className="flex flex-1 overflow-hidden">
 
-        {/* RIGHT */}
-        <div className="w-[300px] border rounded-xl bg-white">
-          <PlatformSettings
-            selectedPlatforms={selectedPlatforms}
-            selectedAccounts={selectedAccounts}
-            platformConfigs={platformConfigs}
-            accountsByPlatform={accountsByPlatform}
-            expandedPlatforms={{}}
-            activePlatformTab={activePlatformTab}
-            onTabChange={setActivePlatformTab}
-            onToggleExpand={() => {}}
-            onConfigChange={() => {}}
-          />
-        </div>
+      {/* LEFT — Accounts */}
+      <div className={`w-full overflow-y-auto border-b bg-white md:block md:w-[260px] md:border-b-0 md:border-r ${mobileTab === "accounts" ? "block" : "hidden md:block"}`}>
+        <Sidebar
+          platforms={sidebarPlatforms}
+          totalSelectedAccounts={totalSelectedAccounts}
+          totalAccounts={accounts.length}
+          groupName={groupName}
+          accountGroups={accountGroups}
+          onGroupNameChange={setGroupName}
+          onSaveGroup={handleSaveGroup}
+          onApplyGroup={handleApplyGroup}
+          onRemoveGroup={handleRemoveGroup}
+          onSelectAll={handleSelectAll}
+          onPlatformToggle={handlePlatformToggle}
+          onSelectAllAccounts={handleSelectAllAccounts}
+          onAccountToggle={handleAccountToggle}
+        />
       </div>
-    </main>
-  );
+
+      {/* CENTER — Compose */}
+      <div className={`flex w-full flex-1 flex-col overflow-y-auto bg-white ${mobileTab === "compose" ? "flex" : "hidden md:flex"}`}>
+        <PostEditor
+          caption={caption}
+          hashtags={hashtags}
+          mentions={mentions}
+          altText={altText}
+          media={media}
+          selectedMediaIds={selectedMediaIds}
+          selectedPlatforms={selectedPlatforms}
+          onCaptionChange={setCaption}
+          onHashtagsChange={setHashtags}
+          onMentionsChange={setMentions}
+          onAltTextChange={setAltText}
+          onMediaSelectionToggle={toggleMedia}
+          onFilesSelected={handleFilesSelected}
+        />
+      </div>
+
+      {/* RIGHT — Settings */}
+      <div className={`w-full overflow-y-auto bg-white md:block md:w-[300px] md:border-l ${mobileTab === "settings" ? "block" : "hidden md:block"}`}>
+        <PlatformSettings
+          selectedPlatforms={selectedPlatforms}
+          selectedAccounts={selectedAccounts}
+          platformConfigs={platformConfigs}
+          accountsByPlatform={accountsByPlatform}
+          expandedPlatforms={{}}
+          activePlatformTab={activePlatformTab}
+          onTabChange={setActivePlatformTab}
+          onToggleExpand={() => {}}
+          onConfigChange={() => {}}
+        />
+      </div>
+
+    </div>
+  </main>
+);
 }

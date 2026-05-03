@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { DM_Sans, Space_Grotesk } from "next/font/google";
 
 import { AppShellUx } from "@/components/app-shell-ux";
@@ -22,6 +22,12 @@ const displayFont = Space_Grotesk({
 export const metadata: Metadata = {
   title: "SnapKey CRM | Social Publishing",
   description: "Social publishing module for SnapKey CRM.",
+};
+
+// Add this:
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({

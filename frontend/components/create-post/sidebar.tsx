@@ -170,16 +170,15 @@ export function Sidebar({
 
         <div className="flex gap-2">
           <input
-            value={groupName}
-            onChange={(event) => onGroupNameChange(event.target.value)}
-            placeholder="Group name..."
-            className="
-              h-9 flex-1 rounded-md border border-[#eee3d0]
-              bg-white/70 px-2 text-xs
-              outline-none transition-all duration-200
-              focus:ring-2 focus:ring-[#d4a94f]/40 focus:border-[#d4a94f]
-            "
-          />
+          value={groupName}
+          onChange={(event) => onGroupNameChange(event.target.value)}
+          placeholder="Group name..."
+          className="
+          h-9 min-w-0 flex-1 rounded-md border border-[#eee3d0]
+          bg-white/70 px-2 text-xs
+          focus:ring-2 focus:ring-[#d4a94f]/40 focus:border-[#d4a94f]
+    "
+        />
 
           <motion.button
             whileHover={{ scale: 1.05 }}
