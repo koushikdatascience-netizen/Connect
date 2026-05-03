@@ -338,11 +338,11 @@ export default function PostsClient() {
         <div className="flex-1 px-5 py-6 sm:px-8 space-y-6">
           {/* Page header */}
           <div className="fade-up">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <h1 className="font-display text-3xl font-semibold tracking-[-0.05em] text-ink-900 sm:text-4xl">Scheduled Posts</h1>
-                <p className="mt-2 text-sm leading-6 text-ink-600">
-                  Manage queued delivery, publish immediately, cancel safely, and inspect platform failures.
+                <h1 className="font-display text-2xl font-semibold tracking-[-0.05em] text-ink-900 sm:text-3xl lg:text-4xl">Scheduled Posts</h1>
+                <p className="mt-2 text-sm leading-6 text-ink-600 hidden sm:block">
+                Manage queued delivery, publish immediately, cancel safely, and inspect platform failures.
                 </p>
                 {lastUpdated && (
                   <p className="mt-1 text-xs text-ink-400">
