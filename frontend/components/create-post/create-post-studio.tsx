@@ -24,6 +24,89 @@ import { Account, MediaAsset, PlatformName } from "@/lib/types";
 
 /* ---------------- HELPERS ---------------- */
 
+/**
+ * Transforms a raw PlatformConfig (frontend camelCase keys) into the
+ * backend-expected platform_options shape for each platform.
+ *
+ * The backend reads e.g. options.get("title"), options.get("privacyStatus"),
+ * so keys must match what publish_to_youtube / publish_to_linkedin etc. expect.
+ */
+function buildPlatformOptions(platform: PlatformName, cfg: import("@/components/create-post/types").PlatformConfig): Record<string, unknown> {
+  switch (platform) {
+    case "youtube":
+      return {
+        youtube: {
+          title: cfg.youtubeTitle || null,
+          privacyStatus: cfg.youtubePrivacy,
+          categoryId: cfg.youtubeCategoryId || null,
+          tags: cfg.youtubeTags
+            ? cfg.youtubeTags.split(",").map((t) => t.trim()).filter(Boolean)
+            : [],
+          notifySubscribers: cfg.youtubeNotifySubscribers,
+          embeddable: cfg.youtubeEmbeddable,
+          license: cfg.youtubeLicense,
+          madeForKids: cfg.youtubeMadeForKids,
+          defaultLanguage: cfg.youtubeLanguage || null,
+        },
+      };
+    case "facebook":
+      return {
+        facebook: {
+          visibility: cfg.facebookVisibility,
+        },
+      };
+    case "instagram":
+      return {
+        instagram: {
+          caption_mode: cfg.instagramPostType === "reel" ? "reel" : undefined,
+          first_comment: cfg.instagramFirstCommentEnabled
+            ? cfg.instagramFirstComment || null
+            : null,
+        },
+      };
+    case "linkedin":
+      return {
+        linkedin: {
+          visibility: cfg.linkedinAudience,
+        },
+      };
+    case "twitter":
+      return {
+        twitter: {
+          reply_settings: cfg.twitterReplySettings,
+        },
+      };
+    case "blogger":
+      return {
+        blogger: {
+          title: cfg.bloggerTitle || null,
+          labels: cfg.bloggerLabels
+            ? cfg.bloggerLabels.split(",").map((l) => l.trim()).filter(Boolean)
+            : [],
+          isDraft: cfg.bloggerIsDraft,
+        },
+      };
+    case "google_business":
+      return {
+        google_business: {
+          topicType: cfg.googleBusinessTopicType,
+          callToActionUrl: cfg.googleBusinessCtaUrl || null,
+          actionType: cfg.googleBusinessCta !== "NONE" ? cfg.googleBusinessCta : null,
+        },
+      };
+    case "wordpress":
+      return {
+        wordpress: {
+          title: cfg.wordpressTitle || null,
+          status: cfg.wordpressStatus,
+          excerpt: cfg.wordpressExcerpt || null,
+        },
+      };
+    default:
+      return { [platform]: {} };
+  }
+}
+
 function createEmptySelectedAccounts(): SelectedAccountsMap {
   return {
     facebook: [],
@@ -78,7 +161,7 @@ export function CreatePostStudio() {
   const [platformConfigs, setPlatformConfigs] =
     useState<PlatformConfigMap>(createEmptyConfigs);
 
-  /* GROUP STATE */
+  /* ✅ GROUP STATE */
   const [groupName, setGroupName] = useState("");
   const [accountGroups, setAccountGroups] = useState<
     { id: string; name: string; accountIds: number[] }[]
@@ -90,7 +173,6 @@ export function CreatePostStudio() {
   const [altText, setAltText] = useState("");
 
   const [loading, setLoading] = useState(true);
-  const [uploadError, setUploadError] = useState<string | null>(null);
   const [mobileTab, setMobileTab] = useState<"accounts" | "compose" | "settings">("compose");
 
   const [activePlatformTab, setActivePlatformTab] =
@@ -123,25 +205,16 @@ export function CreatePostStudio() {
     if (!files) return;
 
     const upload = async () => {
-      setUploadError(null);
-      try {
-        const uploaded = await Promise.all(
-          Array.from(files).map((file) => {
-            const fd = new FormData();
-            fd.append("file", file);
-            return uploadMedia(fd);
-          })
-        );
+      const uploaded = await Promise.all(
+        Array.from(files).map((file) => {
+          const fd = new FormData();
+          fd.append("file", file);
+          return uploadMedia(fd);
+        })
+      );
 
-        // FIX: append to existing media instead of replacing
-        setMedia((prev) => [...prev, ...uploaded]);
-        setSelectedMediaIds((prev) => [...prev, ...uploaded.map((m) => m.id)]);
-      } catch (err) {
-        const message =
-          err instanceof Error ? err.message : "Upload failed. Please try again.";
-        setUploadError(message);
-        console.error("Media upload failed:", err);
-      }
+      setMedia(uploaded);
+      setSelectedMediaIds(uploaded.map((m) => m.id));
     };
 
     upload();
@@ -263,16 +336,6 @@ export function CreatePostStudio() {
 
     if (selectedPlatformList.length === 0) return;
 
-    // YouTube title guard
-    if (
-      selectedPlatformList.includes("youtube") &&
-      !platformConfigs.youtube.youtubeTitle.trim()
-    ) {
-      alert("Please enter a video title for YouTube before publishing.");
-      setActivePlatformTab("youtube");
-      return;
-    }
-
     const content = [
       caption.trim(),
       hashtags.trim()
@@ -323,7 +386,7 @@ export function CreatePostStudio() {
             content,
             scheduled_at: scheduledAt,
             media_ids: selectedMediaIds,
-            platform_options: { [platform]: cfg },
+            platform_options: buildPlatformOptions(platform, cfg),
           });
           return {
             platform,
@@ -448,7 +511,6 @@ export function CreatePostStudio() {
             media={media}
             selectedMediaIds={selectedMediaIds}
             selectedPlatforms={selectedPlatforms}
-            uploadError={uploadError}
             onCaptionChange={setCaption}
             onHashtagsChange={setHashtags}
             onMentionsChange={setMentions}
@@ -685,10 +747,8 @@ export function CreatePostStudio() {
                       <button
                         type="button"
                         onClick={() => {
-                          // FIX: snapshot results before clearing to avoid stale closure
-                          const results = resultsModal;
                           setResultsModal(null);
-                          if (results.some((r) => r.status === "success")) {
+                          if (resultsModal.some((r) => r.status === "success")) {
                             setCaption("");
                             setHashtags("");
                             setMentions("");

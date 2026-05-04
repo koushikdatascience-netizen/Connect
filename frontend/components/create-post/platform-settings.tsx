@@ -11,8 +11,6 @@ import { PlatformName } from "@/lib/types";
 
 /* ================= TYPES ================= */
 
-// FIX: removed unused props — selectedAccounts, accountsByPlatform,
-// expandedPlatforms, onToggleExpand — they were declared but never consumed.
 type Props = {
   selectedPlatforms: PlatformName[];
   platformConfigs: PlatformConfigMap;
@@ -257,15 +255,7 @@ function YouTubeSettings({ config, onChange }: { config: PlatformConfig; onChang
     <>
       <Section title="Video details">
         <Field label="Video title *" hint="Required for YouTube uploads.">
-          <input
-            value={config.youtubeTitle}
-            onChange={(e) => onChange("youtubeTitle", e.target.value)}
-            placeholder="My awesome video"
-            className={`${inputCls} ${!config.youtubeTitle.trim() ? "border-red-300 focus:border-red-400 focus:ring-red-100" : ""}`}
-          />
-          {!config.youtubeTitle.trim() && (
-            <p className="text-[11px] text-red-500 mt-1">Title is required for YouTube.</p>
-          )}
+          <input value={config.youtubeTitle} onChange={(e) => onChange("youtubeTitle", e.target.value)} placeholder="My awesome video" className={inputCls} />
         </Field>
         <Field label="Tags" hint="Comma-separated keywords to help with discovery.">
           <input value={config.youtubeTags} onChange={(e) => onChange("youtubeTags", e.target.value)} placeholder="marketing, tutorial, tips" className={inputCls} />
