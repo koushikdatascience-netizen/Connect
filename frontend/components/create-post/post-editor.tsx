@@ -11,6 +11,7 @@ type Props = {
   media: MediaAsset[];
   selectedMediaIds: number[];
   selectedPlatforms: PlatformName[];
+  uploadError: string | null;
 
   onCaptionChange: (v: string) => void;
   onHashtagsChange: (v: string) => void;
@@ -29,6 +30,7 @@ export function PostEditor({
   media,
   selectedMediaIds,
   selectedPlatforms,
+  uploadError,
   onCaptionChange,
   onHashtagsChange,
   onMentionsChange,
@@ -51,7 +53,10 @@ export function PostEditor({
         "
       >
         <div className="flex items-center justify-between">
-          <label className="text-[11px] font-semibold uppercase tracking-wider text-[#9b7b3f]">
+          <label
+            htmlFor="post-caption"
+            className="text-[11px] font-semibold uppercase tracking-wider text-[#9b7b3f]"
+          >
             Caption
           </label>
 
@@ -61,6 +66,7 @@ export function PostEditor({
         </div>
 
         <textarea
+          id="post-caption"
           value={caption}
           onChange={(e) => onCaptionChange(e.target.value)}
           placeholder="Write your post caption..."
@@ -81,6 +87,7 @@ export function PostEditor({
         className="grid grid-cols-2 gap-3"
       >
         <input
+          aria-label="Hashtags"
           value={hashtags}
           onChange={(e) => onHashtagsChange(e.target.value)}
           placeholder="#hashtags"
@@ -92,6 +99,7 @@ export function PostEditor({
         />
 
         <input
+          aria-label="Mentions"
           value={mentions}
           onChange={(e) => onMentionsChange(e.target.value)}
           placeholder="@mentions"
@@ -143,9 +151,15 @@ export function PostEditor({
             type="file"
             multiple
             hidden
+            aria-label="Upload media files"
             onChange={(e) => onFilesSelected(e.target.files)}
           />
         </label>
+
+        {/* UPLOAD ERROR */}
+        {uploadError && (
+          <p className="mt-2 text-xs text-red-500">{uploadError}</p>
+        )}
 
         {/* MEDIA GRID */}
         {media.length > 0 && (
@@ -158,6 +172,15 @@ export function PostEditor({
                   key={m.id}
                   whileHover={{ scale: 1.05 }}
                   onClick={() => onMediaSelectionToggle(m.id)}
+                  role="checkbox"
+                  aria-checked={selected}
+                  aria-label={`Media item ${m.id}`}
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === " " || e.key === "Enter") {
+                      onMediaSelectionToggle(m.id);
+                    }
+                  }}
                   className={`
                     relative cursor-pointer overflow-hidden rounded-xl border
                     transition-all duration-200
@@ -168,6 +191,7 @@ export function PostEditor({
                 >
                   <img
                     src={m.file_url}
+                    alt={m.alt_text ?? `Uploaded media ${m.id}`}
                     className="h-24 w-full object-cover"
                   />
 
@@ -195,6 +219,7 @@ export function PostEditor({
         "
       >
         <input
+          aria-label="Alt text for media"
           value={altText}
           onChange={(e) => onAltTextChange(e.target.value)}
           placeholder="Alt text (optional)"

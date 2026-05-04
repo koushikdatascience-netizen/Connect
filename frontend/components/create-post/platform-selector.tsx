@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PlatformLogo } from "@/components/platform-logo";
 import { SidebarPlatform } from "@/components/create-post/types";
+import { PLATFORM_META } from "@/components/create-post/constants";
 
 /* 🎨 PLATFORM STYLES */
 const platformStyles: Record<string, string> = {
@@ -45,6 +46,9 @@ export function PlatformSelector({
 
   const style = platformStyles[platform.id] || "";
 
+  // FIX: use the human-readable label from PLATFORM_META instead of raw id
+  const platformLabel = PLATFORM_META[platform.id]?.label ?? platform.id;
+
   return (
     <motion.div
       layout
@@ -78,6 +82,7 @@ export function PlatformSelector({
           checked={platform.selected}
           onChange={(e) => onPlatformToggle(e.target.checked)}
           onClick={(e) => e.stopPropagation()}
+          aria-label={`Select ${platformLabel}`}
           className="h-4 w-4 accent-[#d4a94f]"
         />
 
@@ -86,9 +91,9 @@ export function PlatformSelector({
           <PlatformLogo platform={platform.id} className="h-4 w-4" />
         </div>
 
-        {/* NAME */}
-        <div className="flex-1 text-sm font-medium capitalize text-[#2a2116]">
-          {platform.id}
+        {/* NAME — FIX: use label, not raw id */}
+        <div className="flex-1 text-sm font-medium text-[#2a2116]">
+          {platformLabel}
         </div>
 
         {/* COUNT */}
@@ -101,10 +106,12 @@ export function PlatformSelector({
         {/* EXPAND */}
         {hasAccounts && (
           <button
+            type="button"
             onClick={(e) => {
               e.stopPropagation();
               setExpanded((v) => !v);
             }}
+            aria-label={expanded ? `Collapse ${platformLabel}` : `Expand ${platformLabel}`}
             className="text-xs text-gray-500 hover:text-black"
           >
             {expanded ? "−" : "+"}
@@ -132,6 +139,7 @@ export function PlatformSelector({
                     {selectedCount}/{platform.accounts.length}
                   </span>
                   <button
+                    type="button"
                     onClick={() => onSelectAllAccounts(!allSelected)}
                     className="hover:text-black"
                   >
@@ -169,10 +177,21 @@ export function PlatformSelector({
                       className="h-3.5 w-3.5 accent-[#d4a94f]"
                     />
 
-                    <img
-                      src={acc.profile_picture_url || ""}
-                      className="h-6 w-6 rounded-full object-cover"
-                    />
+                    {/* FIX: fallback avatar when profile_picture_url is null */}
+                    {acc.profile_picture_url ? (
+                      <img
+                        src={acc.profile_picture_url}
+                        alt={acc.account_name}
+                        className="h-6 w-6 rounded-full object-cover flex-shrink-0"
+                      />
+                    ) : (
+                      <div
+                        aria-hidden="true"
+                        className="h-6 w-6 rounded-full bg-[#e8dfc8] flex items-center justify-center flex-shrink-0 text-[10px] font-semibold text-[#9b7b3f]"
+                      >
+                        {acc.account_name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
 
                     <span className="text-xs truncate text-[#2a2116]">
                       {acc.account_name}
