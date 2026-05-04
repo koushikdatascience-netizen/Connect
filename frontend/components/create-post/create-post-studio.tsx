@@ -181,6 +181,7 @@ export function CreatePostStudio() {
   /* ---------------- SUBMIT STATE ---------------- */
   const [submitting, setSubmitting] = useState(false);
   const [resultsModal, setResultsModal] = useState<PostResult[] | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   /* ---------------- LOAD ---------------- */
 
@@ -205,16 +206,21 @@ export function CreatePostStudio() {
     if (!files) return;
 
     const upload = async () => {
-      const uploaded = await Promise.all(
-        Array.from(files).map((file) => {
-          const fd = new FormData();
-          fd.append("file", file);
-          return uploadMedia(fd);
-        })
-      );
+      try {
+        setUploadError(null);
+        const uploaded = await Promise.all(
+          Array.from(files).map((file) => {
+            const fd = new FormData();
+            fd.append("file", file);
+            return uploadMedia(fd);
+          })
+        );
 
-      setMedia(uploaded);
-      setSelectedMediaIds(uploaded.map((m) => m.id));
+        setMedia(uploaded);
+        setSelectedMediaIds(uploaded.map((m) => m.id));
+      } catch (err) {
+        setUploadError(err instanceof Error ? err.message : "Upload failed.");
+      }
     };
 
     upload();
@@ -517,6 +523,7 @@ export function CreatePostStudio() {
             onAltTextChange={setAltText}
             onMediaSelectionToggle={toggleMedia}
             onFilesSelected={handleFilesSelected}
+            uploadError={uploadError}
           />
         </div>
 
