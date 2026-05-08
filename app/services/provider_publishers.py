@@ -303,6 +303,16 @@ def _raise_provider_error(
             403: "YouTube upload rejected. Please check video requirements and permissions.",
             429: "YouTube rate limit exceeded. Please wait a few minutes and try again.",
         },
+        "blogger": {
+            401: "Your Blogger connection has expired. Please reconnect your Blogger account.",
+            403: "Blogger rejected the post. Please check your Blogger permissions and content.",
+            429: "Blogger rate limit exceeded. Please wait a few minutes and try again.",
+        },
+        "google_business": {
+            401: "Your Google Business connection has expired. Please reconnect your Google Business account.",
+            403: "Google Business rejected the post. Please check your profile permissions and content.",
+            429: "Google Business rate limit exceeded. Please wait a few minutes and try again.",
+        },
     }
 
     if isinstance(payload, dict):
@@ -662,7 +672,7 @@ def _refresh_google_access_token(account: SocialAccount) -> str:
     return access_token
 
 
-def _get_youtube_access_token(account: SocialAccount) -> str:
+def _get_google_access_token(account: SocialAccount) -> str:
     token_expiry = getattr(account, "token_expiry", None)
     if token_expiry:
         if token_expiry.tzinfo is None:
@@ -670,6 +680,10 @@ def _get_youtube_access_token(account: SocialAccount) -> str:
         if token_expiry <= datetime.now(timezone.utc) + timedelta(minutes=1):
             return _refresh_google_access_token(account)
     return decrypt_token(account.encrypted_token)
+
+
+def _get_youtube_access_token(account: SocialAccount) -> str:
+    return _get_google_access_token(account)
 
 
 
@@ -720,9 +734,11 @@ def publish_to_provider(
         youtube_access_token = _get_youtube_access_token(account)
         return publish_to_youtube(post, account, youtube_access_token, options.get("youtube", {}), normalized_media)
     if post.platform == "blogger":
-        return publish_to_blogger(post, account, access_token, options.get("blogger", {}), normalized_media)
+        blogger_access_token = _get_google_access_token(account)
+        return publish_to_blogger(post, account, blogger_access_token, options.get("blogger", {}), normalized_media)
     if post.platform == "google_business":
-        return publish_to_google_business(post, account, access_token, options.get("google_business", {}), normalized_media)
+        business_access_token = _get_google_access_token(account)
+        return publish_to_google_business(post, account, business_access_token, options.get("google_business", {}), normalized_media)
     if post.platform == "wordpress":
         return publish_to_wordpress(post, account, access_token, options.get("wordpress", {}), normalized_media)
 

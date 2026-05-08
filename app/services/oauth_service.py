@@ -59,7 +59,8 @@ def save_social_account(
             account.account_type = account_type
             account.profile_picture_url = profile_picture_url
             account.encrypted_token = encrypted_access
-            account.encrypted_refresh_token = encrypted_refresh
+            if encrypted_refresh:
+                account.encrypted_refresh_token = encrypted_refresh
             account.token_expiry = expiry
             account.is_active = True
 
