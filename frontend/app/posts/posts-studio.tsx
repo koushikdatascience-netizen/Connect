@@ -36,8 +36,14 @@ function platformTone(platform: string) {
   return "bg-[#fff3d7] text-[#8a6a18]";
 }
 
-// FIX: construct the correct public URL for a posted post based on platform + ID.
+// Build live post URLs carefully. Instagram media IDs are not public shortcodes,
+// so a working URL must come from a stored full URL/permalink instead of guessing.
 function getLivePostUrl(post: Post): string | null {
+  const cachedPermalink = post.platform_options?.["_published_permalink"];
+  if (typeof cachedPermalink === "string" && cachedPermalink.trim()) {
+    return cachedPermalink;
+  }
+
   if (!post.platform_post_id) return null;
 
   // If the stored ID is already a full URL, use it directly
@@ -56,7 +62,7 @@ function getLivePostUrl(post: Post): string | null {
     case "facebook":
       return `https://www.facebook.com/${encodeURIComponent(post.platform_post_id)}`;
     case "instagram":
-      return `https://www.instagram.com/p/${encodeURIComponent(post.platform_post_id)}/`;
+      return null;
     case "blogger":
     case "wordpress":
       if (post.platform_post_id.includes("http")) return post.platform_post_id;

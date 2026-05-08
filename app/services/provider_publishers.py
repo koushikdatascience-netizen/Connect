@@ -2087,6 +2087,50 @@ def fetch_provider_live_metrics(
     raise UnsupportedPublishError(f"Live metrics are not supported for platform '{platform}'.")
 
 
+def resolve_published_permalink(
+    post: ScheduledPost,
+    account: SocialAccount,
+    provider_post_id: Optional[str],
+) -> Optional[str]:
+    """
+    Best-effort resolver for a public permalink right after publishing.
+
+    We keep the provider ID in `platform_post_id` for future API calls, and cache
+    any resolved public URL separately in post metadata.
+    """
+    if not provider_post_id:
+        return None
+
+    if str(provider_post_id).startswith(("http://", "https://")):
+        return str(provider_post_id)
+
+    if post.platform == "instagram":
+        try:
+            access_token = decrypt_token(account.encrypted_token)
+            response = requests.get(
+                f"https://graph.facebook.com/v18.0/{provider_post_id}",
+                params={
+                    "fields": "permalink",
+                    "access_token": access_token,
+                },
+                timeout=30,
+            )
+            if response.ok:
+                permalink = response.json().get("permalink")
+                if isinstance(permalink, str) and permalink.strip():
+                    return permalink.strip()
+            else:
+                logger.warning(
+                    "instagram.permalink_lookup_failed status=%s body=%s",
+                    response.status_code,
+                    response.text[:300],
+                )
+        except Exception as exc:
+            logger.warning("instagram.permalink_lookup_error id=%s error=%s", provider_post_id, exc)
+
+    return None
+
+
 # ============================================================================
 # PUBLISHER INSTANCES (Must be after class definitions)
 # ============================================================================

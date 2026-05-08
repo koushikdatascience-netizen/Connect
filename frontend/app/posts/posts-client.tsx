@@ -10,6 +10,15 @@ import { Account, NormalizedPostMetrics, Post, PostLiveMetricsResponse } from "@
 
 type FilterStatus = "all" | "scheduled" | "posted" | "failed" | "cancelled";
 
+const PLATFORMS_WITH_LIVE_METRICS = new Set([
+  "youtube",
+  "twitter",
+  "x",
+  "linkedin",
+  "facebook",
+  "instagram",
+]);
+
 function formatDate(value?: string | null, options?: Intl.DateTimeFormatOptions) {
   if (!value) return "Not scheduled";
   try {
@@ -51,11 +60,17 @@ function normalizeMetrics(response?: PostLiveMetricsResponse | null): Normalized
   };
 }
 
-// FIX: Corrected URL construction for all platforms.
-// - Instagram now uses instagram.com (was incorrectly using facebook.com)
-// - google_business has no public post URL, returns null intentionally
-// - blogger/wordpress with numeric IDs return null (no way to construct URL without blog domain)
+// Build live post URLs carefully.
+// - Instagram requires a real permalink from the provider metrics API. The stored
+//   platform_post_id is typically the Meta media ID, not the public shortcode.
+// - google_business has no stable public post URL.
+// - blogger/wordpress with numeric IDs return null unless a full URL was stored.
 function getLivePostUrl(post: Post, metrics?: PostLiveMetricsResponse | null) {
+  const cachedPermalink = post.platform_options?.["_published_permalink"];
+  if (typeof cachedPermalink === "string" && cachedPermalink.trim()) {
+    return cachedPermalink;
+  }
+
   // Priority 1: use permalink from metrics API if available
   const permalink = metrics?.metrics?.permalink;
   if (typeof permalink === "string" && permalink.trim()) {
@@ -83,8 +98,8 @@ function getLivePostUrl(post: Post, metrics?: PostLiveMetricsResponse | null) {
     case "facebook":
       return `https://www.facebook.com/${encodeURIComponent(post.platform_post_id)}`;
     case "instagram":
-      // FIX: Instagram uses instagram.com/p/<shortcode>, not facebook.com
-      return `https://www.instagram.com/p/${encodeURIComponent(post.platform_post_id)}/`;
+      // Don't guess with the IG media ID; only a real permalink is reliable.
+      return null;
     case "blogger":
     case "wordpress":
       // Numeric post IDs can't form a URL without the blog's domain.
@@ -184,7 +199,10 @@ export default function PostsClient() {
 
   async function loadMetricsForPosts(postItems: Post[]) {
     const eligiblePosts = postItems.filter(
-      (post) => post.status === "posted" && post.platform_post_id,
+      (post) =>
+        post.status === "posted" &&
+        post.platform_post_id &&
+        PLATFORMS_WITH_LIVE_METRICS.has(post.platform),
     );
 
     if (!eligiblePosts.length) {

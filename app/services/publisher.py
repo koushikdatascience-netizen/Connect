@@ -8,7 +8,7 @@ from app.models.media_asset import MediaAsset
 from app.models.post_media import PostMedia
 from app.models.scheduled_post import ScheduledPost
 from app.models.social_account import SocialAccount
-from app.services.provider_publishers import PublishError, publish_to_provider
+from app.services.provider_publishers import PublishError, publish_to_provider, resolve_published_permalink
 
 logger = get_logger("app.publisher")
 
@@ -104,10 +104,15 @@ def publish_post(post_id: int, tenant_id: str, request_id: Optional[str] = "N/A"
         db.commit()
 
         provider_post_id = publish_to_provider(post, account, media_assets)
+        resolved_permalink = resolve_published_permalink(post, account, provider_post_id)
 
         post.status = "posted"
         post.posted_at = datetime.utcnow()
         post.platform_post_id = provider_post_id
+        if resolved_permalink:
+            platform_options = dict(post.platform_options or {})
+            platform_options["_published_permalink"] = resolved_permalink
+            post.platform_options = platform_options
         post.updated_at = datetime.utcnow()
         
         log_event(
@@ -118,6 +123,7 @@ def publish_post(post_id: int, tenant_id: str, request_id: Optional[str] = "N/A"
             extra={
                 "post_id": post_id,
                 "provider_post_id": provider_post_id,
+                "published_permalink": resolved_permalink,
                 "media_count": len(media_assets),
             }
         )
