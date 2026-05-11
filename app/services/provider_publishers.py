@@ -981,7 +981,11 @@ class FacebookPublisher(BasePublisher):
         )
         if not response.ok:
             _raise_provider_error("facebook", response)
-        return response.json().get("post_id") or response.json().get("id") or account.platform_account_id
+
+        payload = response.json()
+        # Facebook photo publish can return both a feed post_id and a photo object id.
+        # Remote deletion is more reliable against the actual object id, so prefer that.
+        return payload.get("id") or payload.get("post_id") or account.platform_account_id
 
     def _publish_single_video(
         self,
@@ -2124,7 +2128,7 @@ def delete_provider_post(
             _raise_provider_error("youtube", response, retryable=False)
         return True
 
-    if platform in {"facebook", "instagram"}:
+    if platform == "facebook":
         access_token = decrypt_token(account.encrypted_token)
         response = requests.delete(
             f"https://graph.facebook.com/v18.0/{quote(post.platform_post_id, safe='')}",
@@ -2132,7 +2136,42 @@ def delete_provider_post(
             timeout=30,
         )
         if not response.ok:
-            _raise_provider_error(platform, response, retryable=False)
+            fallback_object_id = None
+            try:
+                lookup_response = requests.get(
+                    f"https://graph.facebook.com/v18.0/{quote(post.platform_post_id, safe='')}",
+                    params={
+                        "fields": "object_id",
+                        "access_token": access_token,
+                    },
+                    timeout=30,
+                )
+                if lookup_response.ok:
+                    fallback_object_id = lookup_response.json().get("object_id")
+            except Exception:
+                fallback_object_id = None
+
+            if fallback_object_id and str(fallback_object_id) != str(post.platform_post_id):
+                retry_response = requests.delete(
+                    f"https://graph.facebook.com/v18.0/{quote(str(fallback_object_id), safe='')}",
+                    params={"access_token": access_token},
+                    timeout=30,
+                )
+                if retry_response.ok:
+                    return True
+
+            _raise_provider_error("facebook", response, retryable=False)
+        return True
+
+    if platform == "instagram":
+        access_token = decrypt_token(account.encrypted_token)
+        response = requests.delete(
+            f"https://graph.facebook.com/v18.0/{quote(post.platform_post_id, safe='')}",
+            params={"access_token": access_token},
+            timeout=30,
+        )
+        if not response.ok:
+            _raise_provider_error("instagram", response, retryable=False)
         return True
 
     if platform == "twitter":
