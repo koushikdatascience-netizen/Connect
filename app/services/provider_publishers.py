@@ -2103,6 +2103,66 @@ def fetch_provider_live_metrics(
     raise UnsupportedPublishError(f"Live metrics are not supported for platform '{platform}'.")
 
 
+def delete_provider_post(
+    post: ScheduledPost,
+    account: SocialAccount,
+) -> bool:
+    if not post.platform_post_id:
+        raise UnsupportedPublishError("This post does not have a provider post ID yet, so it cannot be deleted remotely.")
+
+    platform = post.platform
+
+    if platform == "youtube":
+        access_token = _get_youtube_access_token(account)
+        response = requests.delete(
+            "https://www.googleapis.com/youtube/v3/videos",
+            headers={"Authorization": f"Bearer {access_token}"},
+            params={"id": post.platform_post_id},
+            timeout=30,
+        )
+        if not response.ok:
+            _raise_provider_error("youtube", response, retryable=False)
+        return True
+
+    if platform in {"facebook", "instagram"}:
+        access_token = decrypt_token(account.encrypted_token)
+        response = requests.delete(
+            f"https://graph.facebook.com/v18.0/{quote(post.platform_post_id, safe='')}",
+            params={"access_token": access_token},
+            timeout=30,
+        )
+        if not response.ok:
+            _raise_provider_error(platform, response, retryable=False)
+        return True
+
+    if platform == "twitter":
+        access_token = decrypt_token(account.encrypted_token)
+        response = requests.delete(
+            f"https://api.twitter.com/2/tweets/{quote(post.platform_post_id, safe='')}",
+            headers=_twitter_json_headers(access_token),
+            timeout=30,
+        )
+        if not response.ok:
+            _raise_provider_error("twitter", response, retryable=False)
+        return True
+
+    if platform == "linkedin":
+        access_token = decrypt_token(account.encrypted_token)
+        encoded_urn = quote(post.platform_post_id, safe="")
+        response = requests.delete(
+            f"https://api.linkedin.com/rest/posts/{encoded_urn}",
+            headers=_linkedin_headers(access_token, content_type="application/json"),
+            timeout=30,
+        )
+        if not response.ok:
+            _raise_provider_error("linkedin", response, retryable=False)
+        return True
+
+    raise UnsupportedPublishError(
+        f"Remote deletion is not supported for published {platform.replace('_', ' ').title()} posts yet. Delete it directly on the platform, then remove it from SocialSync if needed."
+    )
+
+
 def resolve_published_permalink(
     post: ScheduledPost,
     account: SocialAccount,

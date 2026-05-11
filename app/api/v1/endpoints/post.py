@@ -7,6 +7,7 @@ from app.schemas.post import (
     PostAnalyticsSummary,
     PostCreate,
     PostCreateResponse,
+    PostDeleteResponse,
     PostFailureRead,
     PostLiveMetricsResponse,
     PostPlatformAnalytics,
@@ -26,7 +27,12 @@ from app.crud.post import (
 )
 from app.utils.deps import get_db, get_tenant
 from app.models.social_account import SocialAccount
-from app.services.provider_publishers import PublishError, UnsupportedPublishError, fetch_provider_live_metrics
+from app.services.provider_publishers import (
+    PublishError,
+    UnsupportedPublishError,
+    delete_provider_post,
+    fetch_provider_live_metrics,
+)
 from app.worker.celery_app import celery_app
 from app.core.logging import get_logger
 
@@ -360,18 +366,64 @@ def edit_post(
     return {"post_id": post.id, "status": post.status, "task_id": task.id if task else None}
 
 
-@router.delete("/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{post_id}", response_model=PostDeleteResponse)
 def delete_single_post(
     post_id: int,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant),
 ):
+    post = get_post(db, tenant_id, post_id)
+    if not post:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Post not found",
+        )
+
+    remote_deleted = False
+    message = "Post deleted from SocialSync."
+
+    if post.status == "posted":
+        account = (
+            db.query(SocialAccount)
+            .filter(
+                SocialAccount.id == post.social_account_id,
+                SocialAccount.tenant_id == tenant_id,
+            )
+            .first()
+        )
+        if not account:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Connected account for this post was not found.",
+            )
+
+        try:
+            remote_deleted = delete_provider_post(post, account)
+            message = "Post deleted from the platform and removed from SocialSync."
+        except UnsupportedPublishError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=str(exc),
+            ) from exc
+        except PublishError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(exc),
+            ) from exc
+
     deleted = delete_post(db, tenant_id, post_id)
     if not deleted:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Post not found",
         )
+
+    return {
+        "post_id": post_id,
+        "local_deleted": True,
+        "remote_deleted": remote_deleted,
+        "message": message,
+    }
 
 
 @router.post("/{post_id}/publish-now", response_model=PostCreateResponse)

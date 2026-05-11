@@ -46,6 +46,13 @@ class PostCreateResponse(BaseModel):
     task_id: Optional[str] = None
 
 
+class PostDeleteResponse(BaseModel):
+    post_id: int
+    local_deleted: bool
+    remote_deleted: bool
+    message: str
+
+
 class PostAnalyticsSummary(BaseModel):
     total_posts: int
     queued_posts: int

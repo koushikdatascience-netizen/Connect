@@ -282,7 +282,7 @@ export function cancelPost(postId: number) {
 }
 
 export async function deletePost(postId: number) {
-  await apiFetch<null>(`/api/v1/posts/${postId}`, {
+  return apiFetch<{ post_id: number; local_deleted: boolean; remote_deleted: boolean; message: string }>(`/api/v1/posts/${postId}`, {
     method: "DELETE",
   });
 }

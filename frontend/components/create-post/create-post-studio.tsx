@@ -8,10 +8,13 @@ import {
   PLATFORM_META,
   PLATFORM_ORDER,
   createDefaultPlatformConfig,
+  PLATFORM_LABELS,
 } from "@/components/create-post/constants";
 import { PlatformSettings } from "@/components/create-post/platform-settings";
+import { MediaEditModal } from "@/components/create-post/media-edit-modal";
 import { PostEditor } from "@/components/create-post/post-editor";
 import { Sidebar } from "@/components/create-post/sidebar";
+import { buildDraftContent, getPlatformValidation } from "@/components/create-post/validation";
 import { PlatformLogo } from "@/components/platform-logo";
 
 import {
@@ -153,6 +156,7 @@ export function CreatePostStudio() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [media, setMedia] = useState<MediaAsset[]>([]);
   const [selectedMediaIds, setSelectedMediaIds] = useState<number[]>([]);
+  const [editedMediaIds, setEditedMediaIds] = useState<number[]>([]);
 
   const [selectedPlatforms, setSelectedPlatforms] = useState<PlatformName[]>([]);
   const [selectedAccounts, setSelectedAccounts] =
@@ -182,6 +186,8 @@ export function CreatePostStudio() {
   const [submitting, setSubmitting] = useState(false);
   const [resultsModal, setResultsModal] = useState<PostResult[] | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [mediaEditorAsset, setMediaEditorAsset] = useState<MediaAsset | null>(null);
+  const [savingEditedMedia, setSavingEditedMedia] = useState(false);
 
   /* ---------------- LOAD ---------------- */
 
@@ -212,12 +218,19 @@ export function CreatePostStudio() {
           Array.from(files).map((file) => {
             const fd = new FormData();
             fd.append("file", file);
+            if (altText.trim()) {
+              fd.append("alt_text", altText.trim());
+            }
             return uploadMedia(fd);
           })
         );
 
-        setMedia(uploaded);
-        setSelectedMediaIds(uploaded.map((m) => m.id));
+        setMedia((current) => [...uploaded, ...current]);
+        setSelectedMediaIds((current) => [
+          ...uploaded.map((item) => item.id),
+          ...current.filter((id) => !uploaded.some((item) => item.id === id)),
+        ]);
+        setAltText("");
       } catch (err) {
         setUploadError(err instanceof Error ? err.message : "Upload failed.");
       }
@@ -230,6 +243,56 @@ export function CreatePostStudio() {
     setSelectedMediaIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
+  };
+
+  const handleOpenMediaEditor = (asset: MediaAsset) => {
+    setMediaEditorAsset(asset);
+    setUploadError(null);
+  };
+
+  const handleSaveEditedMedia = async ({
+    blob,
+    altText: nextAltText,
+    fileName,
+    mimeType,
+  }: {
+    blob: Blob;
+    altText: string;
+    fileName: string;
+    mimeType: string;
+  }) => {
+    if (!mediaEditorAsset) {
+      return;
+    }
+
+    setSavingEditedMedia(true);
+    setUploadError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", new File([blob], fileName, { type: mimeType }));
+      if (nextAltText) {
+        formData.append("alt_text", nextAltText);
+      }
+
+      const uploaded = await uploadMedia(formData);
+
+      setMedia((current) => [uploaded, ...current]);
+      setSelectedMediaIds((current) => {
+        const withoutOriginal = current.filter((id) => id !== mediaEditorAsset.id);
+        return [uploaded.id, ...withoutOriginal.filter((id) => id !== uploaded.id)];
+      });
+      setEditedMediaIds((current) =>
+        current.includes(uploaded.id) ? current : [uploaded.id, ...current]
+      );
+      setMediaEditorAsset(null);
+    } catch (error) {
+      setUploadError(
+        error instanceof Error ? error.message : "Unable to save edited media.",
+      );
+    } finally {
+      setSavingEditedMedia(false);
+    }
   };
 
   /* ---------------- PLATFORM ---------------- */
@@ -336,33 +399,13 @@ export function CreatePostStudio() {
   /* ---------------- SUBMIT ---------------- */
 
   const handleSubmit = async () => {
-    const selectedPlatformList = PLATFORM_ORDER.filter(
-      (p) => selectedPlatforms.includes(p) && selectedAccounts[p].length > 0
-    );
-
     if (selectedPlatformList.length === 0) return;
+    if (blockingValidationItems.length > 0) {
+      setUploadError(blockingValidationItems[0].message);
+      return;
+    }
 
-    const content = [
-      caption.trim(),
-      hashtags.trim()
-        ? hashtags
-            .split(",")
-            .map((h) => h.trim())
-            .filter(Boolean)
-            .map((h) => (h.startsWith("#") ? h : `#${h}`))
-            .join(" ")
-        : "",
-      mentions.trim()
-        ? mentions
-            .split(",")
-            .map((m) => m.trim())
-            .filter(Boolean)
-            .map((m) => (m.startsWith("@") ? m : `@${m}`))
-            .join(" ")
-        : "",
-    ]
-      .filter(Boolean)
-      .join("\n\n");
+    const content = draftContent;
 
     setSubmitting(true);
 
@@ -426,6 +469,52 @@ export function CreatePostStudio() {
     }, {} as Record<PlatformName, Account[]>);
   }, [accounts]);
 
+  const selectedAssets = useMemo(
+    () => media.filter((asset) => selectedMediaIds.includes(asset.id)),
+    [media, selectedMediaIds]
+  );
+
+  const draftContent = useMemo(
+    () => buildDraftContent(caption, hashtags, mentions),
+    [caption, hashtags, mentions]
+  );
+
+  const selectedPlatformList = useMemo(
+    () =>
+      PLATFORM_ORDER.filter(
+        (platform) =>
+          selectedPlatforms.includes(platform) &&
+          selectedAccounts[platform].length > 0
+      ),
+    [selectedAccounts, selectedPlatforms]
+  );
+
+  const platformValidation = useMemo(
+    () =>
+      selectedPlatformList.reduce((acc, platform) => {
+        acc[platform] = getPlatformValidation(
+          platform,
+          platformConfigs[platform],
+          selectedAssets,
+          draftContent
+        );
+        return acc;
+      }, {} as Record<PlatformName, { valid: boolean; message: string }>),
+    [draftContent, platformConfigs, selectedAssets, selectedPlatformList]
+  );
+
+  const blockingValidationItems = useMemo(
+    () =>
+      selectedPlatformList
+        .filter((platform) => !platformValidation[platform]?.valid)
+        .map((platform) => ({
+          platform,
+          label: PLATFORM_LABELS[platform],
+          message: platformValidation[platform].message,
+        })),
+    [platformValidation, selectedPlatformList]
+  );
+
   const sidebarPlatforms = useMemo(
     () =>
       PLATFORM_ORDER.map((p) => ({
@@ -438,6 +527,10 @@ export function CreatePostStudio() {
   );
 
   const totalSelectedAccounts = Object.values(selectedAccounts).flat().length;
+  const canSubmit =
+    totalSelectedAccounts > 0 &&
+    !submitting &&
+    blockingValidationItems.length === 0;
 
   /* ---------------- UI ---------------- */
 
@@ -516,13 +609,16 @@ export function CreatePostStudio() {
             altText={altText}
             media={media}
             selectedMediaIds={selectedMediaIds}
+            editedMediaIds={editedMediaIds}
             selectedPlatforms={selectedPlatforms}
+            editingMediaId={mediaEditorAsset?.id ?? null}
             onCaptionChange={setCaption}
             onHashtagsChange={setHashtags}
             onMentionsChange={setMentions}
             onAltTextChange={setAltText}
             onMediaSelectionToggle={toggleMedia}
             onFilesSelected={handleFilesSelected}
+            onEditMedia={handleOpenMediaEditor}
             uploadError={uploadError}
           />
         </div>
@@ -549,10 +645,27 @@ export function CreatePostStudio() {
 
       </div>
 
+      <MediaEditModal
+        asset={mediaEditorAsset}
+        open={Boolean(mediaEditorAsset)}
+        saving={savingEditedMedia}
+        selectedPlatforms={selectedPlatforms}
+        onClose={() => {
+          if (!savingEditedMedia) {
+            setMediaEditorAsset(null);
+          }
+        }}
+        onSave={handleSaveEditedMedia}
+      />
+
       {/* POST BUTTON BAR */}
       <div className="flex items-center justify-between border-t border-[#eadfcb] bg-[#fffef9] px-5 py-3 shadow-[0_-4px_18px_rgba(180,144,34,0.08)]">
         <div className="text-xs text-[#9b7b3f]">
-          {totalSelectedAccounts > 0
+          {blockingValidationItems.length > 0
+            ? `${blockingValidationItems.length} platform requirement${
+                blockingValidationItems.length === 1 ? "" : "s"
+              } still need attention`
+            : totalSelectedAccounts > 0
             ? `Publishing to ${totalSelectedAccounts} account${
                 totalSelectedAccounts !== 1 ? "s" : ""
               } across ${selectedPlatforms.length} platform${
@@ -563,7 +676,7 @@ export function CreatePostStudio() {
         <motion.button
           type="button"
           onClick={() => void handleSubmit()}
-          disabled={submitting || totalSelectedAccounts === 0 || !caption.trim()}
+          disabled={!canSubmit}
           whileHover={{ scale: submitting ? 1 : 1.03 }}
           whileTap={{ scale: 0.97 }}
           className="relative flex items-center gap-2.5 rounded-full bg-[#ffd52a] px-7 py-2.5 text-sm font-bold text-[#09090e] shadow-[0_6px_22px_rgba(255,213,42,0.35)] transition-all disabled:cursor-not-allowed disabled:opacity-50"
@@ -593,6 +706,25 @@ export function CreatePostStudio() {
           )}
         </motion.button>
       </div>
+
+      {blockingValidationItems.length > 0 && (
+        <div className="border-t border-[#f1dacd] bg-[#fff8f2] px-5 py-4">
+          <div className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#b25a4f]">
+            Fix Before Publishing
+          </div>
+          <div className="grid gap-2">
+            {blockingValidationItems.map((item) => (
+              <div
+                key={item.platform}
+                className="rounded-2xl border border-[#f0d2ca] bg-white px-4 py-3 text-sm text-[#7c3f36]"
+              >
+                <span className="font-semibold text-[#5b271f]">{item.label}:</span>{" "}
+                {item.message}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* RESULTS MODAL */}
       <AnimatePresence>
