@@ -401,15 +401,15 @@ def delete_single_post(
             remote_deleted = delete_provider_post(post, account)
             message = "Post deleted from the platform and removed from SocialSync."
         except UnsupportedPublishError as exc:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=str(exc),
-            ) from exc
+            message = (
+                "Post removed from SocialSync, but remote deletion is not supported for "
+                f"this platform yet: {exc}"
+            )
         except PublishError as exc:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=str(exc),
-            ) from exc
+            message = (
+                "Post removed from SocialSync, but the platform copy could not be deleted: "
+                f"{exc}"
+            )
 
     deleted = delete_post(db, tenant_id, post_id)
     if not deleted:
