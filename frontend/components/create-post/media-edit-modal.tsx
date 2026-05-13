@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 import { PLATFORM_LABELS } from "@/components/create-post/constants";
@@ -32,6 +32,7 @@ type RenderSettings = {
   aspect: CropAspect;
   freeWidth: number;
   freeHeight: number;
+  freeCropBox: FreeCropBox;
 };
 
 type Preset = {
@@ -47,6 +48,14 @@ type PreviewMeta = {
   width: number;
   height: number;
   mimeType: string;
+};
+
+// Normalised 0-1 coords relative to the rendered image box
+type FreeCropBox = {
+  x: number; // left edge
+  y: number; // top edge
+  w: number; // width
+  h: number; // height
 };
 
 const ASPECT_OPTIONS: { id: CropAspect; label: string; hint: string }[] = [
@@ -198,13 +207,9 @@ function createEditedCanvas(
   let cropHeight: number;
 
   if (settings.aspect === "free") {
-    // freeWidth/freeHeight are 0.3–1.0 fractions of the source dimensions
-    // zoom is applied on top as a separate scale-in
-    cropWidth = (sourceWidth * settings.freeWidth) / settings.zoom;
-    cropHeight = (sourceHeight * settings.freeHeight) / settings.zoom;
-    // clamp so crop can never exceed source
-    cropWidth = clamp(cropWidth, 10, sourceWidth);
-    cropHeight = clamp(cropHeight, 10, sourceHeight);
+    // freeCropBox is 0-1 relative to the rendered preview — map to source pixel space
+    cropWidth = clamp(settings.freeCropBox.w * sourceWidth, 10, sourceWidth);
+    cropHeight = clamp(settings.freeCropBox.h * sourceHeight, 10, sourceHeight);
   } else {
     const aspectRatio = getAspectRatio(settings.aspect, sourceWidth, sourceHeight);
     let baseCropWidth = sourceWidth;
@@ -223,13 +228,21 @@ function createEditedCanvas(
   cropWidth = clamp(cropWidth, 1, sourceWidth);
   cropHeight = clamp(cropHeight, 1, sourceHeight);
 
-  const maxOffsetX = Math.max((sourceWidth - cropWidth) / 2, 0);
-  const maxOffsetY = Math.max((sourceHeight - cropHeight) / 2, 0);
-  const centerX = sourceWidth / 2 + settings.panX * maxOffsetX;
-  const centerY = sourceHeight / 2 + settings.panY * maxOffsetY;
+  let sourceX: number;
+  let sourceY: number;
 
-  const sourceX = clamp(centerX - cropWidth / 2, 0, sourceWidth - cropWidth);
-  const sourceY = clamp(centerY - cropHeight / 2, 0, sourceHeight - cropHeight);
+  if (settings.aspect === "free") {
+    // Use the exact drag box position
+    sourceX = clamp(settings.freeCropBox.x * sourceWidth, 0, sourceWidth - cropWidth);
+    sourceY = clamp(settings.freeCropBox.y * sourceHeight, 0, sourceHeight - cropHeight);
+  } else {
+    const maxOffsetX = Math.max((sourceWidth - cropWidth) / 2, 0);
+    const maxOffsetY = Math.max((sourceHeight - cropHeight) / 2, 0);
+    const centerX = sourceWidth / 2 + settings.panX * maxOffsetX;
+    const centerY = sourceHeight / 2 + settings.panY * maxOffsetY;
+    sourceX = clamp(centerX - cropWidth / 2, 0, sourceWidth - cropWidth);
+    sourceY = clamp(centerY - cropHeight / 2, 0, sourceHeight - cropHeight);
+  }
 
   const scale = Math.min(1, longestEdgeLimit / Math.max(cropWidth, cropHeight));
   const outputWidth = Math.max(1, Math.round(cropWidth * scale));
@@ -291,6 +304,10 @@ export function MediaEditModal({
   const [panY, setPanY] = useState(0);
   const [freeWidth, setFreeWidth] = useState(1);
   const [freeHeight, setFreeHeight] = useState(1);
+  const [freeCropBox, setFreeCropBox] = useState<FreeCropBox>({ x: 0.1, y: 0.1, w: 0.8, h: 0.8 });
+  const [isDraggingCrop, setIsDraggingCrop] = useState(false);
+  const dragStartRef = useRef<{ clientX: number; clientY: number } | null>(null);
+  const previewContainerRef = useRef<HTMLDivElement>(null);
   const [aspect, setAspect] = useState<CropAspect>("original");
   const [compareOriginal, setCompareOriginal] = useState(false);
   const [activePresetId, setActivePresetId] = useState<string | null>(null);
@@ -335,7 +352,85 @@ export function MediaEditModal({
   function resetFreeCrop() {
     setFreeWidth(1);
     setFreeHeight(1);
+    setFreeCropBox({ x: 0.1, y: 0.1, w: 0.8, h: 0.8 });
   }
+
+  // Convert freeCropBox (0-1 relative to rendered img) → freeWidth/freeHeight (0.3-1 fractions)
+  // whenever the box changes while in free mode
+  useEffect(() => {
+    if (aspect !== "free") return;
+    setFreeWidth(clamp(freeCropBox.w, 0.3, 1));
+    setFreeHeight(clamp(freeCropBox.h, 0.3, 1));
+  }, [freeCropBox, aspect]);
+
+  const handleCropMouseDown = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (aspect !== "free" || compareOriginal) return;
+      e.preventDefault();
+      const rect = e.currentTarget.getBoundingClientRect();
+      const startX = (e.clientX - rect.left) / rect.width;
+      const startY = (e.clientY - rect.top) / rect.height;
+      dragStartRef.current = { clientX: e.clientX, clientY: e.clientY };
+      setIsDraggingCrop(true);
+      markEditedMode();
+      setActivePresetId(null);
+
+      const onMove = (me: MouseEvent) => {
+        const curX = (me.clientX - rect.left) / rect.width;
+        const curY = (me.clientY - rect.top) / rect.height;
+        const x = clamp(Math.min(startX, curX), 0, 1);
+        const y = clamp(Math.min(startY, curY), 0, 1);
+        const w = clamp(Math.abs(curX - startX), 0.05, 1 - x);
+        const h = clamp(Math.abs(curY - startY), 0.05, 1 - y);
+        setFreeCropBox({ x, y, w, h });
+      };
+
+      const onUp = () => {
+        setIsDraggingCrop(false);
+        dragStartRef.current = null;
+        window.removeEventListener("mousemove", onMove);
+        window.removeEventListener("mouseup", onUp);
+      };
+
+      window.addEventListener("mousemove", onMove);
+      window.addEventListener("mouseup", onUp);
+    },
+    [aspect, compareOriginal],
+  );
+
+  const handleCropTouchStart = useCallback(
+    (e: React.TouchEvent<HTMLDivElement>) => {
+      if (aspect !== "free" || compareOriginal) return;
+      const touch = e.touches[0];
+      const rect = e.currentTarget.getBoundingClientRect();
+      const startX = (touch.clientX - rect.left) / rect.width;
+      const startY = (touch.clientY - rect.top) / rect.height;
+      setIsDraggingCrop(true);
+      markEditedMode();
+      setActivePresetId(null);
+
+      const onMove = (te: TouchEvent) => {
+        const t = te.touches[0];
+        const curX = (t.clientX - rect.left) / rect.width;
+        const curY = (t.clientY - rect.top) / rect.height;
+        const x = clamp(Math.min(startX, curX), 0, 1);
+        const y = clamp(Math.min(startY, curY), 0, 1);
+        const w = clamp(Math.abs(curX - startX), 0.05, 1 - x);
+        const h = clamp(Math.abs(curY - startY), 0.05, 1 - y);
+        setFreeCropBox({ x, y, w, h });
+      };
+
+      const onEnd = () => {
+        setIsDraggingCrop(false);
+        window.removeEventListener("touchmove", onMove);
+        window.removeEventListener("touchend", onEnd);
+      };
+
+      window.addEventListener("touchmove", onMove, { passive: true });
+      window.addEventListener("touchend", onEnd);
+    },
+    [aspect, compareOriginal],
+  );
 
   useEffect(() => {
     if (!open || !asset) {
@@ -414,7 +509,7 @@ export function MediaEditModal({
       try {
         const canvas = createEditedCanvas(
           sourceImage,
-          { rotation, zoom, panX, panY, aspect, freeWidth, freeHeight },
+          { rotation, zoom, panX, panY, aspect, freeWidth, freeHeight, freeCropBox },
           900,
         );
         const blob = await canvasToBlob(
@@ -458,7 +553,7 @@ export function MediaEditModal({
         URL.revokeObjectURL(nextPreviewUrl);
       }
     };
-  }, [open, asset, sourceBlob, sourceImage, rotation, zoom, panX, panY, aspect, freeWidth, freeHeight]);
+  }, [open, asset, sourceBlob, sourceImage, rotation, zoom, panX, panY, aspect, freeWidth, freeHeight, freeCropBox]);
 
   useEffect(() => {
     return () => {
@@ -525,7 +620,7 @@ export function MediaEditModal({
     const mimeType = getOutputMimeType(asset, sourceBlob);
     const canvas = createEditedCanvas(
       sourceImage,
-      { rotation, zoom, panX, panY, aspect, freeWidth, freeHeight },
+      { rotation, zoom, panX, panY, aspect, freeWidth, freeHeight, freeCropBox },
       1600,
     );
     const blob = await canvasToBlob(canvas, mimeType, mimeType === "image/jpeg" ? 0.92 : undefined);
@@ -635,7 +730,12 @@ export function MediaEditModal({
 
                 {/* image preview area — fills remaining height */}
                 <div className="min-h-0 flex-1 px-4 pb-3 sm:px-5">
-                  <div className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-xl border border-white/70 bg-[linear-gradient(180deg,#f7ecdb_0%,#f4e7d5_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
+                  <div
+                    ref={previewContainerRef}
+                    onMouseDown={handleCropMouseDown}
+                    onTouchStart={handleCropTouchStart}
+                    className={`relative flex h-full w-full items-center justify-center overflow-hidden rounded-xl border border-white/70 bg-[linear-gradient(180deg,#f7ecdb_0%,#f4e7d5_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] ${aspect === "free" && !compareOriginal ? "cursor-crosshair" : ""}`}
+                  >
                     {loading ? (
                       <div className="text-sm text-[#7c6f57]">Loading image editor...</div>
                     ) : error ? (
@@ -649,12 +749,65 @@ export function MediaEditModal({
                             src={compareOriginal ? asset.file_url : previewUrl ?? asset.file_url}
                             alt={altText || asset.alt_text || "Edited preview"}
                             className="max-h-full max-w-full object-contain"
-                            style={{ display: "block" }}
+                            style={{ display: "block", pointerEvents: "none", userSelect: "none" }}
                           />
                         ) : (
                           <div className="text-sm text-[#7c6f57]">Preparing preview...</div>
                         )}
-                        <div className="pointer-events-none absolute inset-3 rounded-xl border border-dashed border-white/55 shadow-[0_0_0_999px_rgba(17,24,39,0.06)]" />
+
+                        {/* Free crop drag overlay */}
+                        {aspect === "free" && !compareOriginal && (
+                          <>
+                            {/* dark surround */}
+                            <div className="pointer-events-none absolute inset-0 bg-[rgba(0,0,0,0.45)]" />
+                            {/* crop window cutout via box-shadow trick */}
+                            <div
+                              className="pointer-events-none absolute border-2 border-[#ffd52a] shadow-[0_0_0_9999px_rgba(0,0,0,0.45)]"
+                              style={{
+                                left: `${freeCropBox.x * 100}%`,
+                                top: `${freeCropBox.y * 100}%`,
+                                width: `${freeCropBox.w * 100}%`,
+                                height: `${freeCropBox.h * 100}%`,
+                              }}
+                            >
+                              {/* rule-of-thirds grid */}
+                              <div className="absolute inset-0 grid grid-cols-3 grid-rows-3">
+                                {Array.from({ length: 9 }).map((_, i) => (
+                                  <div key={i} className="border border-white/20" />
+                                ))}
+                              </div>
+                              {/* corner handles */}
+                              {[
+                                "top-0 left-0 -translate-x-0.5 -translate-y-0.5",
+                                "top-0 right-0 translate-x-0.5 -translate-y-0.5",
+                                "bottom-0 left-0 -translate-x-0.5 translate-y-0.5",
+                                "bottom-0 right-0 translate-x-0.5 translate-y-0.5",
+                              ].map((pos, i) => (
+                                <div
+                                  key={i}
+                                  className={`absolute h-3 w-3 rounded-sm bg-[#ffd52a] ${pos}`}
+                                />
+                              ))}
+                              {/* size hint */}
+                              <div className="absolute -bottom-6 left-0 whitespace-nowrap rounded-full bg-[#111827]/80 px-2 py-0.5 text-[10px] font-semibold text-white">
+                                {Math.round(freeCropBox.w * 100)}% × {Math.round(freeCropBox.h * 100)}%
+                              </div>
+                            </div>
+                            {/* instruction hint when not dragging */}
+                            {!isDraggingCrop && (
+                              <div className="pointer-events-none absolute inset-x-0 top-2 flex justify-center">
+                                <div className="rounded-full bg-[#111827]/70 px-3 py-1 text-[11px] font-medium text-white">
+                                  Click &amp; drag to set crop area
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        )}
+
+                        {aspect !== "free" && (
+                          <div className="pointer-events-none absolute inset-3 rounded-xl border border-dashed border-white/55 shadow-[0_0_0_999px_rgba(17,24,39,0.06)]" />
+                        )}
+
                         {renderingPreview && !compareOriginal && (
                           <div className="absolute inset-x-3 bottom-3 rounded-full bg-[#111827]/72 px-3 py-1.5 text-center text-xs font-medium text-white">
                             Refreshing preview...
@@ -736,56 +889,22 @@ export function MediaEditModal({
                       </div>
 
                       {aspect === "free" && (
-                        <div className="rounded-2xl border border-[#eadfcb] bg-white px-4 py-4">
-                          <div className="mb-3">
-                            <div className="text-xs font-semibold uppercase tracking-wide text-[#9b7b3f]">
-                              Free Crop Size
+                        <div className="rounded-2xl border border-[#d4a94f] bg-[#fffbef] px-4 py-3">
+                          <div className="flex items-start gap-3">
+                            <div className="mt-0.5 text-lg">✂️</div>
+                            <div>
+                              <div className="text-xs font-semibold text-[#7d5c0f]">
+                                Drag to crop on the preview
+                              </div>
+                              <p className="mt-0.5 text-xs text-[#9b7b3f]">
+                                Click and drag anywhere on the image to draw your crop area. The yellow box shows exactly what will be saved.
+                              </p>
+                              {freeCropBox && (
+                                <p className="mt-1.5 text-[11px] font-medium text-[#4b5563]">
+                                  Current crop: {Math.round(freeCropBox.w * 100)}% wide × {Math.round(freeCropBox.h * 100)}% tall
+                                </p>
+                              )}
                             </div>
-                            <p className="mt-1 text-xs text-[#6b7280]">
-                              Narrow the crop width and height independently.
-                            </p>
-                          </div>
-
-                          <div className="space-y-4">
-                            <label className="block">
-                              <div className="mb-2 flex items-center justify-between text-xs font-medium text-[#4b5563]">
-                                <span>Crop width</span>
-                                <span>{Math.round(freeWidth * 100)}%</span>
-                              </div>
-                              <input
-                                type="range"
-                                min="0.3"
-                                max="1"
-                                step="0.01"
-                                value={freeWidth}
-                                onChange={(event) => {
-                                  markEditedMode();
-                                  setFreeWidth(Number(event.target.value));
-                                  setActivePresetId(null);
-                                }}
-                                className="w-full accent-[#d4a94f]"
-                              />
-                            </label>
-
-                            <label className="block">
-                              <div className="mb-2 flex items-center justify-between text-xs font-medium text-[#4b5563]">
-                                <span>Crop height</span>
-                                <span>{Math.round(freeHeight * 100)}%</span>
-                              </div>
-                              <input
-                                type="range"
-                                min="0.3"
-                                max="1"
-                                step="0.01"
-                                value={freeHeight}
-                                onChange={(event) => {
-                                  markEditedMode();
-                                  setFreeHeight(Number(event.target.value));
-                                  setActivePresetId(null);
-                                }}
-                                className="w-full accent-[#d4a94f]"
-                              />
-                            </label>
                           </div>
                         </div>
                       )}
