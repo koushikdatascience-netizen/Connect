@@ -42,10 +42,13 @@ type FreeCropBox = {
   h: number; 
 };
 
-type PreviewMeta = {
-  width: number;
-  height: number;
-  mimeType: string;
+type Preset = {
+  id: string;
+  label: string;
+  description: string;
+  aspect: CropAspect;
+  zoom?: number;
+  recommendedFor?: PlatformName[];
 };
 
 const ASPECT_OPTIONS: { id: CropAspect; label: string }[] = [
@@ -55,6 +58,30 @@ const ASPECT_OPTIONS: { id: CropAspect; label: string }[] = [
   { id: "portrait", label: "4:5" },
   { id: "landscape", label: "16:9" },
   { id: "story", label: "9:16" },
+];
+
+const QUICK_PRESETS: Preset[] = [
+  {
+    id: "feed",
+    label: "Instagram Feed",
+    description: "Best for Instagram & FB posts.",
+    aspect: "portrait",
+    recommendedFor: ["instagram", "facebook"],
+  },
+  {
+    id: "story",
+    label: "Story / Reel",
+    description: "Vertical mobile framing.",
+    aspect: "story",
+    recommendedFor: ["instagram", "facebook", "youtube"],
+  },
+  {
+    id: "youtube",
+    label: "YouTube Wide",
+    description: "Standard 16:9 cinematic.",
+    aspect: "landscape",
+    recommendedFor: ["youtube"],
+  },
 ];
 
 function clamp(value: number, min: number, max: number) {
@@ -67,15 +94,12 @@ function formatBytes(bytes?: number | null) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function canvasToBlob(canvas: HTMLCanvasElement, mimeType: string, quality?: number) {
+function canvasToBlob(canvas: HTMLCanvasElement, mimeType: string) {
   return new Promise<Blob>((resolve, reject) => {
     canvas.toBlob((blob) => {
-      if (!blob) {
-        reject(new Error("Unable to render."));
-        return;
-      }
-      resolve(blob);
-    }, mimeType, quality);
+      if (!blob) reject(new Error("Render failed"));
+      else resolve(blob);
+    }, mimeType, 0.92);
   });
 }
 
@@ -86,28 +110,22 @@ async function loadImageFromUrl(url: string) {
   const image = new Image();
   image.src = objectUrl;
   await new Promise((res) => (image.onload = res));
-  return { image, sourceBlob: blob, sourceUrl: objectUrl };
-}
-
-function createRotatedCanvas(image: HTMLImageElement, rotation: number) {
-  const norm = ((rotation % 360) + 360) % 360;
-  const swap = norm === 90 || norm === 270;
-  const canvas = document.createElement("canvas");
-  canvas.width = swap ? image.naturalHeight : image.naturalWidth;
-  canvas.height = swap ? image.naturalWidth : image.naturalHeight;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("Context failed");
-  ctx.translate(canvas.width / 2, canvas.height / 2);
-  ctx.rotate((norm * Math.PI) / 180);
-  ctx.drawImage(image, -image.naturalWidth / 2, -image.naturalHeight / 2);
-  return canvas;
+  return { image, sourceUrl: objectUrl };
 }
 
 function createEditedCanvas(image: HTMLImageElement, settings: RenderSettings, limit: number) {
-  const rotated = createRotatedCanvas(image, settings.rotation);
-  const sW = rotated.width;
-  const sH = rotated.height;
+  const norm = ((settings.rotation % 360) + 360) % 360;
+  const swap = norm === 90 || norm === 270;
+  const rotCanvas = document.createElement("canvas");
+  rotCanvas.width = swap ? image.naturalHeight : image.naturalWidth;
+  rotCanvas.height = swap ? image.naturalWidth : image.naturalHeight;
+  const ctx = rotCanvas.getContext("2d")!;
+  ctx.translate(rotCanvas.width / 2, rotCanvas.height / 2);
+  ctx.rotate((norm * Math.PI) / 180);
+  ctx.drawImage(image, -image.naturalWidth / 2, -image.naturalHeight / 2);
 
+  const sW = rotCanvas.width;
+  const sH = rotCanvas.height;
   let cW: number, cH: number, sX: number, sY: number;
 
   if (settings.aspect === "free") {
@@ -116,7 +134,8 @@ function createEditedCanvas(image: HTMLImageElement, settings: RenderSettings, l
     sX = clamp(settings.freeCropBox.x * sW, 0, sW - cW);
     sY = clamp(settings.freeCropBox.y * sH, 0, sH - cH);
   } else {
-    const ratio = settings.aspect === "square" ? 1 : settings.aspect === "portrait" ? 0.8 : settings.aspect === "landscape" ? 1.777 : settings.aspect === "story" ? 0.5625 : sW / sH;
+    const ratios = { square: 1, portrait: 0.8, landscape: 1.777, story: 0.5625, original: sW / sH, free: 1 };
+    const ratio = ratios[settings.aspect];
     let bW = sW, bH = sH;
     if (sW / sH > ratio) bW = sH * ratio; else bH = sW / ratio;
     cW = bW / settings.zoom;
@@ -126,19 +145,14 @@ function createEditedCanvas(image: HTMLImageElement, settings: RenderSettings, l
   }
 
   const scale = Math.min(1, limit / Math.max(cW, cH));
-  const outW = Math.max(1, Math.round(cW * scale));
-  const outH = Math.max(1, Math.round(cH * scale));
   const out = document.createElement("canvas");
-  out.width = outW; out.height = outH;
-  const outCtx = out.getContext("2d");
-  if (!outCtx) throw new Error("Render failed");
-  outCtx.drawImage(rotated, sX, sY, cW, cH, 0, 0, outW, outH);
+  out.width = cW * scale; out.height = cH * scale;
+  out.getContext("2d")!.drawImage(rotCanvas, sX, sY, cW, cH, 0, 0, out.width, out.height);
   return out;
 }
 
 export function MediaEditModal({ asset, open, saving, selectedPlatforms, onClose, onSave }: Props) {
   const [sourceImage, setSourceImage] = useState<HTMLImageElement | null>(null);
-  const [sourceBlob, setSourceBlob] = useState<Blob | null>(null);
   const [sourceUrl, setSourceUrl] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [altText, setAltText] = useState("");
@@ -154,8 +168,8 @@ export function MediaEditModal({ asset, open, saving, selectedPlatforms, onClose
   
   const freeBoxRef = useRef(freeCropBox);
   useEffect(() => { freeBoxRef.current = freeCropBox; }, [freeCropBox]);
-
   const imgRef = useRef<HTMLImageElement>(null);
+
   const getImgRect = useCallback(() => imgRef.current?.getBoundingClientRect() ?? null, []);
   const clientToImg = useCallback((cX: number, cY: number, r: DOMRect) => ({
     x: clamp((cX - r.left) / r.width, 0, 1),
@@ -163,17 +177,13 @@ export function MediaEditModal({ asset, open, saving, selectedPlatforms, onClose
   }), []);
 
   const handleDrag = (clientX: number, clientY: number, startPos: { x: number, y: number }, initialBox: FreeCropBox, mode: string) => {
-    const r = getImgRect();
-    if (!r) return;
+    const r = getImgRect(); if (!r) return;
     const cur = clientToImg(clientX, clientY, r);
-    const dx = cur.x - startPos.x;
-    const dy = cur.y - startPos.y;
+    const dx = cur.x - startPos.x; const dy = cur.y - startPos.y;
 
     setFreeCropBox(() => {
       const b = initialBox;
       if (mode === "move") return { ...b, x: clamp(b.x + dx, 0, 1 - b.w), y: clamp(b.y + dy, 0, 1 - b.h) };
-      if (mode === "new") return { x: Math.min(startPos.x, cur.x), y: Math.min(startPos.y, cur.y), w: clamp(Math.abs(cur.x - startPos.x), 0.05, 1), h: clamp(Math.abs(cur.y - startPos.y), 0.05, 1) };
-      
       let nb = { ...b };
       if (mode.includes("n")) { const ny = clamp(b.y + dy, 0, b.y + b.h - 0.05); nb.y = ny; nb.h = b.y + b.h - ny; }
       if (mode.includes("s")) nb.h = clamp(b.h + dy, 0.05, 1 - b.y);
@@ -188,13 +198,11 @@ export function MediaEditModal({ asset, open, saving, selectedPlatforms, onClose
     const r = getImgRect(); if (!r) return;
     const startPos = clientToImg(clientX, clientY, r);
     const b = freeBoxRef.current;
-    const isEdge = (p: number, edge: number) => Math.abs(p - edge) < 0.05;
-    let mode = "new";
-    if (startPos.x >= b.x && startPos.x <= b.x + b.w && startPos.y >= b.y && startPos.y <= b.y + b.h) mode = "move";
-    if (isEdge(startPos.y, b.y)) mode = "n";
-    if (isEdge(startPos.y, b.y + b.h)) mode = mode === "n" ? mode : "s";
-    if (isEdge(startPos.x, b.x)) mode += "w";
-    if (isEdge(startPos.x, b.x + b.w)) mode += "e";
+    let mode = (startPos.x >= b.x && startPos.x <= b.x + b.w && startPos.y >= b.y && startPos.y <= b.y + b.h) ? "move" : "new";
+    if (Math.abs(startPos.y - b.y) < 0.04) mode = "n";
+    else if (Math.abs(startPos.y - (b.y + b.h)) < 0.04) mode = "s";
+    if (Math.abs(startPos.x - b.x) < 0.04) mode += "w";
+    else if (Math.abs(startPos.x - (b.x + b.w)) < 0.04) mode += "e";
 
     setIsDragging(true);
     const onMove = (e: MouseEvent) => handleDrag(e.clientX, e.clientY, startPos, { ...b }, mode);
@@ -207,71 +215,79 @@ export function MediaEditModal({ asset, open, saving, selectedPlatforms, onClose
     if (!open || !asset) return;
     setLoading(true);
     loadImageFromUrl(asset.file_url).then(res => {
-      setSourceImage(res.image); setSourceBlob(res.sourceBlob); setSourceUrl(res.sourceUrl);
+      setSourceImage(res.image); setSourceUrl(res.sourceUrl);
       setAltText(asset.alt_text ?? ""); setLoading(false);
     });
   }, [asset, open]);
 
   useEffect(() => {
     if (!open || !sourceImage) return;
-    const mime = asset?.mime_type === "image/png" ? "image/png" : "image/jpeg";
     const canvas = createEditedCanvas(sourceImage, { rotation, zoom, panX, panY, aspect, freeWidth: 1, freeHeight: 1, freeCropBox }, 900);
-    canvasToBlob(canvas, mime, 0.9).then(blob => {
+    canvasToBlob(canvas, asset?.mime_type || "image/jpeg").then(blob => {
       const url = URL.createObjectURL(blob);
       setPreviewUrl(prev => { if (prev) URL.revokeObjectURL(prev); return url; });
     });
   }, [rotation, zoom, panX, panY, aspect, freeCropBox, sourceImage, open]);
 
-  async function handleSave() {
-    if (!asset || !sourceImage) return;
-    const mime = asset.mime_type === "image/png" ? "image/png" : "image/jpeg";
-    const canvas = createEditedCanvas(sourceImage, { rotation, zoom, panX, panY, aspect, freeWidth: 1, freeHeight: 1, freeCropBox }, 1600);
-    const blob = await canvasToBlob(canvas, mime, 0.92);
-    await onSave({ blob, altText: altText.trim(), fileName: `edited-${asset.id}.${mime === "image/png" ? 'png' : 'jpg'}`, mimeType: mime });
-  }
-
   return (
     <AnimatePresence>
       {open && asset && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-2 sm:p-3 backdrop-blur-md">
-          <motion.div initial={{ scale: 0.98, y: 10 }} animate={{ scale: 1, y: 0 }} className="flex h-[95vh] w-full max-w-7xl flex-col overflow-hidden rounded-[24px] bg-[#f8f2e8] border border-[#d8ccb5] shadow-2xl">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[70] flex items-center justify-center bg-black/75 p-2 sm:p-4 backdrop-blur-md">
+          <motion.div initial={{ scale: 0.98 }} animate={{ scale: 1 }} className="flex h-[95vh] w-full max-w-7xl flex-col overflow-hidden rounded-[24px] bg-[#f8f2e8] border border-[#d8ccb5] shadow-2xl">
             
-            <div className="flex items-center justify-between border-b border-[#eadfcb] px-6 py-4 bg-white/60">
+            <div className="flex items-center justify-between border-b border-[#eadfcb] px-6 py-4 bg-white/70">
               <div>
                 <h2 className="text-lg font-bold text-gray-900">Media Polish Studio</h2>
                 <p className="text-xs font-semibold text-amber-800">{asset.width_px}x{asset.height_px} | {formatBytes(asset.file_size_bytes)}</p>
               </div>
-              <button onClick={onClose} className="rounded-full bg-white px-5 py-2 text-sm font-bold border border-gray-200 hover:shadow-sm">Close</button>
+              <button onClick={onClose} className="rounded-full bg-white px-6 py-2 text-sm font-bold border border-gray-200 hover:bg-gray-50 transition-colors">Close</button>
             </div>
 
             <div className="flex flex-1 overflow-hidden lg:flex-row flex-col">
-              <div className="relative flex-1 bg-[#f1e7d6] flex items-center justify-center p-2 lg:p-4 overflow-hidden">
+              <div className="relative flex-1 bg-[#f1e7d6] flex items-center justify-center p-3 lg:p-6 overflow-hidden">
                 <div className="relative max-h-full max-w-full" onMouseDown={(e) => startInteraction(e.clientX, e.clientY)}>
-                  {previewUrl && (
-                    <img ref={imgRef} src={compareOriginal ? asset.file_url : previewUrl} className="max-h-[75vh] object-contain shadow-2xl select-none pointer-events-none rounded-lg" alt="Preview" />
-                  )}
+                  {previewUrl && <img ref={imgRef} src={compareOriginal ? asset.file_url : previewUrl} className="max-h-[78vh] object-contain shadow-2xl rounded-lg pointer-events-none" alt="Preview" />}
                   {aspect === "free" && !compareOriginal && (
                     <div className="absolute border-2 border-yellow-400 shadow-[0_0_0_9999px_rgba(0,0,0,0.5)] pointer-events-none"
                       style={{ left: `${freeCropBox.x * 100}%`, top: `${freeCropBox.y * 100}%`, width: `${freeCropBox.w * 100}%`, height: `${freeCropBox.h * 100}%` }}>
-                      <div className="grid h-full w-full grid-cols-3 grid-rows-3 opacity-20">
-                        {Array.from({ length: 9 }).map((_, i) => <div key={i} className="border border-white" />)}
-                      </div>
-                      <div className="absolute -left-1.5 -top-1.5 h-4 w-4 bg-yellow-400 rounded-sm" />
-                      <div className="absolute -right-1.5 -top-1.5 h-4 w-4 bg-yellow-400 rounded-sm" />
-                      <div className="absolute -left-1.5 -bottom-1.5 h-4 w-4 bg-yellow-400 rounded-sm" />
-                      <div className="absolute -right-1.5 -bottom-1.5 h-4 w-4 bg-yellow-400 rounded-sm" />
+                      <div className="grid h-full w-full grid-cols-3 grid-rows-3 opacity-20"><div className="border border-white col-span-3 row-span-3" /></div>
+                      <div className="absolute -left-2 -top-2 h-5 w-5 bg-yellow-400 rounded-full border-2 border-white" />
+                      <div className="absolute -right-2 -top-2 h-5 w-5 bg-yellow-400 rounded-full border-2 border-white" />
+                      <div className="absolute -left-2 -bottom-2 h-5 w-5 bg-yellow-400 rounded-full border-2 border-white" />
+                      <div className="absolute -right-2 -bottom-2 h-5 w-5 bg-yellow-400 rounded-full border-2 border-white" />
                     </div>
                   )}
                 </div>
               </div>
 
-              <div className="w-full lg:w-85 border-l border-[#eadfcb] bg-white p-6 overflow-y-auto space-y-6">
+              <div className="w-full lg:w-[380px] border-l border-[#eadfcb] bg-white p-6 overflow-y-auto space-y-8">
+                {/* Platform Presets */}
                 <section>
-                  <label className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Crop Presets</label>
-                  <div className="mt-3 grid grid-cols-2 gap-2">
+                  <label className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Recommended for your platforms</label>
+                  <div className="mt-3 space-y-3">
+                    {QUICK_PRESETS.map((p) => {
+                      const isRecommended = p.recommendedFor?.some(r => selectedPlatforms.includes(r));
+                      return (
+                        <button key={p.id} onClick={() => { setAspect(p.aspect); setZoom(1.1); }}
+                          className={`w-full p-4 text-left rounded-2xl border-2 transition-all ${aspect === p.aspect ? 'border-amber-500 bg-amber-50' : 'border-gray-100 hover:border-gray-200'}`}>
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-sm text-gray-900">{p.label}</span>
+                            {isRecommended && <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold">MATCH</span>}
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">{p.description}</p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </section>
+
+                {/* Manual Aspects */}
+                <section>
+                  <label className="text-[11px] font-bold uppercase tracking-widest text-gray-400">All Aspects</label>
+                  <div className="mt-3 grid grid-cols-3 gap-2">
                     {ASPECT_OPTIONS.map(opt => (
                       <button key={opt.id} onClick={() => setAspect(opt.id)}
-                        className={`px-3 py-2.5 text-xs font-bold rounded-xl border transition-all ${aspect === opt.id ? 'bg-amber-100 border-amber-500 text-amber-900' : 'bg-gray-50 border-gray-100 text-gray-600 hover:border-gray-300'}`}>
+                        className={`py-2.5 text-xs font-bold rounded-xl border transition-all ${aspect === opt.id ? 'bg-black text-white border-black' : 'bg-gray-50 border-gray-100 text-gray-600 hover:border-gray-300'}`}>
                         {opt.label}
                       </button>
                     ))}
@@ -281,21 +297,21 @@ export function MediaEditModal({ asset, open, saving, selectedPlatforms, onClose
                 <section>
                   <label className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Quick Tools</label>
                   <div className="mt-3 flex gap-2">
-                    <button onClick={() => setRotation(r => (r + 90) % 360)} className="flex-1 py-2.5 text-xs font-bold border rounded-xl hover:bg-gray-50 transition-all">Rotate 90°</button>
-                    <button onClick={() => setCompareOriginal(!compareOriginal)} className={`flex-1 py-2.5 text-xs font-bold border rounded-xl transition-all ${compareOriginal ? 'bg-blue-50 border-blue-500 text-blue-700' : 'hover:bg-gray-50'}`}>Compare</button>
+                    <button onClick={() => setRotation(r => (r + 90) % 360)} className="flex-1 py-3 text-xs font-bold border rounded-xl hover:bg-gray-50 transition-all">Rotate 90°</button>
+                    <button onMouseDown={() => setCompareOriginal(true)} onMouseUp={() => setCompareOriginal(false)} className="flex-1 py-3 text-xs font-bold border rounded-xl hover:bg-gray-50">Hold to Compare</button>
                   </div>
                 </section>
 
                 <section>
                   <label className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Alt Text</label>
                   <textarea value={altText} onChange={e => setAltText(e.target.value)}
-                    className="mt-2 w-full p-4 text-sm border-gray-100 border rounded-2xl focus:ring-2 focus:ring-amber-500 bg-gray-50 outline-none transition-all"
-                    placeholder="Describe this image..." rows={3} />
+                    className="mt-2 w-full p-4 text-sm border-gray-100 border rounded-2xl focus:ring-2 focus:ring-amber-500 bg-gray-50 outline-none min-h-[100px]"
+                    placeholder="Describe for accessibility..." />
                 </section>
 
-                <button disabled={saving || loading} onClick={handleSave}
-                  className="w-full py-4 bg-gray-900 text-white text-sm font-bold rounded-2xl hover:bg-black disabled:opacity-30 shadow-lg shadow-gray-200 transition-all active:scale-[0.98]">
-                  {saving ? "Processing..." : "Apply Changes"}
+                <button disabled={saving || loading} onClick={() => createEditedCanvas(sourceImage!, { rotation, zoom, panX, panY, aspect, freeWidth: 1, freeHeight: 1, freeCropBox }, 1600).toBlob(b => onSave({ blob: b!, altText, fileName: 'edit.jpg', mimeType: 'image/jpeg' }))}
+                  className="w-full py-5 bg-amber-500 text-white text-sm font-black rounded-2xl hover:bg-amber-600 disabled:opacity-30 shadow-xl shadow-amber-100 transition-all active:scale-[0.97]">
+                  {saving ? "Saving Changes..." : "Apply All Changes"}
                 </button>
               </div>
             </div>
