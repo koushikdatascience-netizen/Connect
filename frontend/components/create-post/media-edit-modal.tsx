@@ -308,6 +308,20 @@ export function MediaEditModal({
   const [isDraggingCrop, setIsDraggingCrop] = useState(false);
   const dragStartRef = useRef<{ clientX: number; clientY: number } | null>(null);
   const previewContainerRef = useRef<HTMLDivElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
+
+  // Get the rendered image's bounding rect (not the container — image is object-contain so there's letterbox space)
+  function getImgRect(): DOMRect | null {
+    return imgRef.current?.getBoundingClientRect() ?? null;
+  }
+
+  // Convert a client point to 0-1 coords relative to the rendered image
+  function clientToImg(clientX: number, clientY: number, imgRect: DOMRect) {
+    return {
+      x: clamp((clientX - imgRect.left) / imgRect.width, 0, 1),
+      y: clamp((clientY - imgRect.top) / imgRect.height, 0, 1),
+    };
+  }
   const [aspect, setAspect] = useState<CropAspect>("original");
   const [compareOriginal, setCompareOriginal] = useState(false);
   const [activePresetId, setActivePresetId] = useState<string | null>(null);
@@ -366,23 +380,31 @@ export function MediaEditModal({
   const handleCropMouseDown = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
       if (aspect !== "free" || compareOriginal) return;
+      const imgRect = getImgRect();
+      if (!imgRect) return;
       e.preventDefault();
-      const rect = e.currentTarget.getBoundingClientRect();
-      const startX = (e.clientX - rect.left) / rect.width;
-      const startY = (e.clientY - rect.top) / rect.height;
+
+      const start = clientToImg(e.clientX, e.clientY, imgRect);
       dragStartRef.current = { clientX: e.clientX, clientY: e.clientY };
       setIsDraggingCrop(true);
       markEditedMode();
       setActivePresetId(null);
 
       const onMove = (me: MouseEvent) => {
-        const curX = (me.clientX - rect.left) / rect.width;
-        const curY = (me.clientY - rect.top) / rect.height;
-        const x = clamp(Math.min(startX, curX), 0, 1);
-        const y = clamp(Math.min(startY, curY), 0, 1);
-        const w = clamp(Math.abs(curX - startX), 0.05, 1 - x);
-        const h = clamp(Math.abs(curY - startY), 0.05, 1 - y);
-        setFreeCropBox({ x, y, w, h });
+        // re-read imgRect on each move in case of scroll/resize
+        const r = imgRef.current?.getBoundingClientRect();
+        if (!r) return;
+        const cur = clientToImg(me.clientX, me.clientY, r);
+        const x = Math.min(start.x, cur.x);
+        const y = Math.min(start.y, cur.y);
+        const w = Math.max(Math.abs(cur.x - start.x), 0.05);
+        const h = Math.max(Math.abs(cur.y - start.y), 0.05);
+        setFreeCropBox({
+          x: clamp(x, 0, 1 - 0.05),
+          y: clamp(y, 0, 1 - 0.05),
+          w: clamp(w, 0.05, 1 - clamp(x, 0, 1)),
+          h: clamp(h, 0.05, 1 - clamp(y, 0, 1)),
+        });
       };
 
       const onUp = () => {
@@ -401,23 +423,29 @@ export function MediaEditModal({
   const handleCropTouchStart = useCallback(
     (e: React.TouchEvent<HTMLDivElement>) => {
       if (aspect !== "free" || compareOriginal) return;
+      const imgRect = getImgRect();
+      if (!imgRect) return;
       const touch = e.touches[0];
-      const rect = e.currentTarget.getBoundingClientRect();
-      const startX = (touch.clientX - rect.left) / rect.width;
-      const startY = (touch.clientY - rect.top) / rect.height;
+      const start = clientToImg(touch.clientX, touch.clientY, imgRect);
       setIsDraggingCrop(true);
       markEditedMode();
       setActivePresetId(null);
 
       const onMove = (te: TouchEvent) => {
+        const r = imgRef.current?.getBoundingClientRect();
+        if (!r) return;
         const t = te.touches[0];
-        const curX = (t.clientX - rect.left) / rect.width;
-        const curY = (t.clientY - rect.top) / rect.height;
-        const x = clamp(Math.min(startX, curX), 0, 1);
-        const y = clamp(Math.min(startY, curY), 0, 1);
-        const w = clamp(Math.abs(curX - startX), 0.05, 1 - x);
-        const h = clamp(Math.abs(curY - startY), 0.05, 1 - y);
-        setFreeCropBox({ x, y, w, h });
+        const cur = clientToImg(t.clientX, t.clientY, r);
+        const x = Math.min(start.x, cur.x);
+        const y = Math.min(start.y, cur.y);
+        const w = Math.max(Math.abs(cur.x - start.x), 0.05);
+        const h = Math.max(Math.abs(cur.y - start.y), 0.05);
+        setFreeCropBox({
+          x: clamp(x, 0, 1 - 0.05),
+          y: clamp(y, 0, 1 - 0.05),
+          w: clamp(w, 0.05, 1 - clamp(x, 0, 1)),
+          h: clamp(h, 0.05, 1 - clamp(y, 0, 1)),
+        });
       };
 
       const onEnd = () => {
@@ -745,63 +773,64 @@ export function MediaEditModal({
                     ) : (
                       <>
                         {(compareOriginal ? asset.file_url : previewUrl) ? (
-                          <img
-                            src={compareOriginal ? asset.file_url : previewUrl ?? asset.file_url}
-                            alt={altText || asset.alt_text || "Edited preview"}
-                            className="max-h-full max-w-full object-contain"
-                            style={{ display: "block", pointerEvents: "none", userSelect: "none" }}
-                          />
+                          <div className="relative inline-block max-h-full max-w-full">
+                            <img
+                              ref={imgRef}
+                              src={compareOriginal ? asset.file_url : previewUrl ?? asset.file_url}
+                              alt={altText || asset.alt_text || "Edited preview"}
+                              className="block max-h-full max-w-full"
+                              style={{ pointerEvents: "none", userSelect: "none", display: "block" }}
+                            />
+                            {/* Free crop drag overlay — sits exactly over the rendered image */}
+                            {aspect === "free" && !compareOriginal && (
+                              <>
+                                <div className="pointer-events-none absolute inset-0 bg-[rgba(0,0,0,0.45)]" />
+                                <div
+                                  className="pointer-events-none absolute border-2 border-[#ffd52a] shadow-[0_0_0_9999px_rgba(0,0,0,0.45)]"
+                                  style={{
+                                    left: `${freeCropBox.x * 100}%`,
+                                    top: `${freeCropBox.y * 100}%`,
+                                    width: `${freeCropBox.w * 100}%`,
+                                    height: `${freeCropBox.h * 100}%`,
+                                  }}
+                                >
+                                  {/* rule-of-thirds grid */}
+                                  <div className="absolute inset-0 grid grid-cols-3 grid-rows-3">
+                                    {Array.from({ length: 9 }).map((_, i) => (
+                                      <div key={i} className="border border-white/20" />
+                                    ))}
+                                  </div>
+                                  {/* corner handles */}
+                                  {[
+                                    "-top-1 -left-1",
+                                    "-top-1 -right-1",
+                                    "-bottom-1 -left-1",
+                                    "-bottom-1 -right-1",
+                                  ].map((pos, i) => (
+                                    <div
+                                      key={i}
+                                      className={`absolute h-3 w-3 rounded-sm bg-[#ffd52a] ${pos}`}
+                                    />
+                                  ))}
+                                  {/* size hint */}
+                                  <div className="absolute -bottom-6 left-0 whitespace-nowrap rounded-full bg-[#111827]/80 px-2 py-0.5 text-[10px] font-semibold text-white">
+                                    {Math.round(freeCropBox.w * 100)}% × {Math.round(freeCropBox.h * 100)}%
+                                  </div>
+                                </div>
+                              </>
+                            )}
+                          </div>
                         ) : (
                           <div className="text-sm text-[#7c6f57]">Preparing preview...</div>
                         )}
 
-                        {/* Free crop drag overlay */}
-                        {aspect === "free" && !compareOriginal && (
-                          <>
-                            {/* dark surround */}
-                            <div className="pointer-events-none absolute inset-0 bg-[rgba(0,0,0,0.45)]" />
-                            {/* crop window cutout via box-shadow trick */}
-                            <div
-                              className="pointer-events-none absolute border-2 border-[#ffd52a] shadow-[0_0_0_9999px_rgba(0,0,0,0.45)]"
-                              style={{
-                                left: `${freeCropBox.x * 100}%`,
-                                top: `${freeCropBox.y * 100}%`,
-                                width: `${freeCropBox.w * 100}%`,
-                                height: `${freeCropBox.h * 100}%`,
-                              }}
-                            >
-                              {/* rule-of-thirds grid */}
-                              <div className="absolute inset-0 grid grid-cols-3 grid-rows-3">
-                                {Array.from({ length: 9 }).map((_, i) => (
-                                  <div key={i} className="border border-white/20" />
-                                ))}
-                              </div>
-                              {/* corner handles */}
-                              {[
-                                "top-0 left-0 -translate-x-0.5 -translate-y-0.5",
-                                "top-0 right-0 translate-x-0.5 -translate-y-0.5",
-                                "bottom-0 left-0 -translate-x-0.5 translate-y-0.5",
-                                "bottom-0 right-0 translate-x-0.5 translate-y-0.5",
-                              ].map((pos, i) => (
-                                <div
-                                  key={i}
-                                  className={`absolute h-3 w-3 rounded-sm bg-[#ffd52a] ${pos}`}
-                                />
-                              ))}
-                              {/* size hint */}
-                              <div className="absolute -bottom-6 left-0 whitespace-nowrap rounded-full bg-[#111827]/80 px-2 py-0.5 text-[10px] font-semibold text-white">
-                                {Math.round(freeCropBox.w * 100)}% × {Math.round(freeCropBox.h * 100)}%
-                              </div>
+                        {/* instruction hint — outside the img wrapper, inside the container */}
+                        {aspect === "free" && !compareOriginal && !isDraggingCrop && (
+                          <div className="pointer-events-none absolute inset-x-0 top-2 flex justify-center">
+                            <div className="rounded-full bg-[#111827]/70 px-3 py-1 text-[11px] font-medium text-white">
+                              Click &amp; drag on image to set crop area
                             </div>
-                            {/* instruction hint when not dragging */}
-                            {!isDraggingCrop && (
-                              <div className="pointer-events-none absolute inset-x-0 top-2 flex justify-center">
-                                <div className="rounded-full bg-[#111827]/70 px-3 py-1 text-[11px] font-medium text-white">
-                                  Click &amp; drag to set crop area
-                                </div>
-                              </div>
-                            )}
-                          </>
+                          </div>
                         )}
 
                         {aspect !== "free" && (
