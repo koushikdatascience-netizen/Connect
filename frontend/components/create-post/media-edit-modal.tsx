@@ -306,6 +306,7 @@ export function MediaEditModal({
   const [freeHeight, setFreeHeight] = useState(1);
   const [freeCropBox, setFreeCropBox] = useState<FreeCropBox>({ x: 0.1, y: 0.1, w: 0.8, h: 0.8 });
   const [isDraggingCrop, setIsDraggingCrop] = useState(false);
+  const [cropCursor, setCropCursor] = useState("crosshair");
   const dragStartRef = useRef<{ clientX: number; clientY: number } | null>(null);
   const previewContainerRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
@@ -377,45 +378,102 @@ export function MediaEditModal({
     setFreeHeight(clamp(freeCropBox.h, 0.3, 1));
   }, [freeCropBox, aspect]);
 
+  // Detect what part of the crop box was hit
+  // Returns: "move" | "nw"|"ne"|"sw"|"se" | "new"
+  function hitTest(p: { x: number; y: number }, box: FreeCropBox): "move" | "nw" | "ne" | "sw" | "se" | "new" {
+    const HANDLE = 0.04; // corner handle size in 0-1 coords
+    const { x, y, w, h } = box;
+    const inBox = p.x >= x && p.x <= x + w && p.y >= y && p.y <= y + h;
+    if (!inBox) return "new";
+    if (p.x <= x + HANDLE && p.y <= y + HANDLE) return "nw";
+    if (p.x >= x + w - HANDLE && p.y <= y + HANDLE) return "ne";
+    if (p.x <= x + HANDLE && p.y >= y + h - HANDLE) return "sw";
+    if (p.x >= x + w - HANDLE && p.y >= y + h - HANDLE) return "se";
+    return "move";
+  }
+
   const handleCropMouseDown = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
       if (aspect !== "free" || compareOriginal) return;
       const imgRect = getImgRect();
       if (!imgRect) return;
       e.preventDefault();
-
-      const start = clientToImg(e.clientX, e.clientY, imgRect);
-      dragStartRef.current = { clientX: e.clientX, clientY: e.clientY };
-      setIsDraggingCrop(true);
       markEditedMode();
       setActivePresetId(null);
 
-      const onMove = (me: MouseEvent) => {
-        // re-read imgRect on each move in case of scroll/resize
-        const r = imgRef.current?.getBoundingClientRect();
-        if (!r) return;
-        const cur = clientToImg(me.clientX, me.clientY, r);
-        const x = Math.min(start.x, cur.x);
-        const y = Math.min(start.y, cur.y);
-        const w = Math.max(Math.abs(cur.x - start.x), 0.05);
-        const h = Math.max(Math.abs(cur.y - start.y), 0.05);
-        setFreeCropBox({
-          x: clamp(x, 0, 1 - 0.05),
-          y: clamp(y, 0, 1 - 0.05),
-          w: clamp(w, 0.05, 1 - clamp(x, 0, 1)),
-          h: clamp(h, 0.05, 1 - clamp(y, 0, 1)),
-        });
-      };
+      const start = clientToImg(e.clientX, e.clientY, imgRect);
 
-      const onUp = () => {
-        setIsDraggingCrop(false);
-        dragStartRef.current = null;
-        window.removeEventListener("mousemove", onMove);
-        window.removeEventListener("mouseup", onUp);
-      };
+      // snapshot current box at drag start
+      let snapshot: FreeCropBox = { x: 0.1, y: 0.1, w: 0.8, h: 0.8 };
+      setFreeCropBox((prev) => { snapshot = prev; return prev; });
 
-      window.addEventListener("mousemove", onMove);
-      window.addEventListener("mouseup", onUp);
+      // small delay to let state flush before reading snapshot
+      requestAnimationFrame(() => {
+        const mode = hitTest(start, snapshot);
+        setIsDraggingCrop(true);
+
+        const onMove = (me: MouseEvent) => {
+          const r = imgRef.current?.getBoundingClientRect();
+          if (!r) return;
+          const cur = clientToImg(me.clientX, me.clientY, r);
+          const dx = cur.x - start.x;
+          const dy = cur.y - start.y;
+
+          setFreeCropBox(() => {
+            const b = snapshot;
+            if (mode === "new") {
+              const nx = Math.min(start.x, cur.x);
+              const ny = Math.min(start.y, cur.y);
+              const nw = Math.max(Math.abs(cur.x - start.x), 0.02);
+              const nh = Math.max(Math.abs(cur.y - start.y), 0.02);
+              return {
+                x: clamp(nx, 0, 0.98),
+                y: clamp(ny, 0, 0.98),
+                w: clamp(nw, 0.02, 1 - clamp(nx, 0, 1)),
+                h: clamp(nh, 0.02, 1 - clamp(ny, 0, 1)),
+              };
+            }
+            if (mode === "move") {
+              return {
+                x: clamp(b.x + dx, 0, 1 - b.w),
+                y: clamp(b.y + dy, 0, 1 - b.h),
+                w: b.w,
+                h: b.h,
+              };
+            }
+            // resize by corner
+            let { x: bx, y: by, w: bw, h: bh } = b;
+            if (mode === "nw") {
+              const nx = clamp(bx + dx, 0, bx + bw - 0.02);
+              const ny = clamp(by + dy, 0, by + bh - 0.02);
+              return { x: nx, y: ny, w: bx + bw - nx, h: by + bh - ny };
+            }
+            if (mode === "ne") {
+              const ny = clamp(by + dy, 0, by + bh - 0.02);
+              return { x: bx, y: ny, w: clamp(bw + dx, 0.02, 1 - bx), h: by + bh - ny };
+            }
+            if (mode === "sw") {
+              const nx = clamp(bx + dx, 0, bx + bw - 0.02);
+              return { x: nx, y: by, w: bx + bw - nx, h: clamp(bh + dy, 0.02, 1 - by) };
+            }
+            // se
+            return {
+              x: bx, y: by,
+              w: clamp(bw + dx, 0.02, 1 - bx),
+              h: clamp(bh + dy, 0.02, 1 - by),
+            };
+          });
+        };
+
+        const onUp = () => {
+          setIsDraggingCrop(false);
+          window.removeEventListener("mousemove", onMove);
+          window.removeEventListener("mouseup", onUp);
+        };
+
+        window.addEventListener("mousemove", onMove);
+        window.addEventListener("mouseup", onUp);
+      });
     },
     [aspect, compareOriginal],
   );
@@ -427,35 +485,66 @@ export function MediaEditModal({
       if (!imgRect) return;
       const touch = e.touches[0];
       const start = clientToImg(touch.clientX, touch.clientY, imgRect);
-      setIsDraggingCrop(true);
       markEditedMode();
       setActivePresetId(null);
 
-      const onMove = (te: TouchEvent) => {
-        const r = imgRef.current?.getBoundingClientRect();
-        if (!r) return;
-        const t = te.touches[0];
-        const cur = clientToImg(t.clientX, t.clientY, r);
-        const x = Math.min(start.x, cur.x);
-        const y = Math.min(start.y, cur.y);
-        const w = Math.max(Math.abs(cur.x - start.x), 0.05);
-        const h = Math.max(Math.abs(cur.y - start.y), 0.05);
-        setFreeCropBox({
-          x: clamp(x, 0, 1 - 0.05),
-          y: clamp(y, 0, 1 - 0.05),
-          w: clamp(w, 0.05, 1 - clamp(x, 0, 1)),
-          h: clamp(h, 0.05, 1 - clamp(y, 0, 1)),
-        });
-      };
+      let snapshot: FreeCropBox = { x: 0.1, y: 0.1, w: 0.8, h: 0.8 };
+      setFreeCropBox((prev) => { snapshot = prev; return prev; });
 
-      const onEnd = () => {
-        setIsDraggingCrop(false);
-        window.removeEventListener("touchmove", onMove);
-        window.removeEventListener("touchend", onEnd);
-      };
+      requestAnimationFrame(() => {
+        const mode = hitTest(start, snapshot);
+        setIsDraggingCrop(true);
 
-      window.addEventListener("touchmove", onMove, { passive: true });
-      window.addEventListener("touchend", onEnd);
+        const onMove = (te: TouchEvent) => {
+          const r = imgRef.current?.getBoundingClientRect();
+          if (!r) return;
+          const t = te.touches[0];
+          const cur = clientToImg(t.clientX, t.clientY, r);
+          const dx = cur.x - start.x;
+          const dy = cur.y - start.y;
+
+          setFreeCropBox(() => {
+            const b = snapshot;
+            if (mode === "new") {
+              const nx = Math.min(start.x, cur.x);
+              const ny = Math.min(start.y, cur.y);
+              return {
+                x: clamp(nx, 0, 0.98),
+                y: clamp(ny, 0, 0.98),
+                w: clamp(Math.abs(cur.x - start.x), 0.02, 1 - clamp(nx, 0, 1)),
+                h: clamp(Math.abs(cur.y - start.y), 0.02, 1 - clamp(ny, 0, 1)),
+              };
+            }
+            if (mode === "move") {
+              return { x: clamp(b.x + dx, 0, 1 - b.w), y: clamp(b.y + dy, 0, 1 - b.h), w: b.w, h: b.h };
+            }
+            let { x: bx, y: by, w: bw, h: bh } = b;
+            if (mode === "nw") {
+              const nx = clamp(bx + dx, 0, bx + bw - 0.02);
+              const ny = clamp(by + dy, 0, by + bh - 0.02);
+              return { x: nx, y: ny, w: bx + bw - nx, h: by + bh - ny };
+            }
+            if (mode === "ne") {
+              const ny = clamp(by + dy, 0, by + bh - 0.02);
+              return { x: bx, y: ny, w: clamp(bw + dx, 0.02, 1 - bx), h: by + bh - ny };
+            }
+            if (mode === "sw") {
+              const nx = clamp(bx + dx, 0, bx + bw - 0.02);
+              return { x: nx, y: by, w: bx + bw - nx, h: clamp(bh + dy, 0.02, 1 - by) };
+            }
+            return { x: bx, y: by, w: clamp(bw + dx, 0.02, 1 - bx), h: clamp(bh + dy, 0.02, 1 - by) };
+          });
+        };
+
+        const onEnd = () => {
+          setIsDraggingCrop(false);
+          window.removeEventListener("touchmove", onMove);
+          window.removeEventListener("touchend", onEnd);
+        };
+
+        window.addEventListener("touchmove", onMove, { passive: true });
+        window.addEventListener("touchend", onEnd);
+      });
     },
     [aspect, compareOriginal],
   );
@@ -762,7 +851,22 @@ export function MediaEditModal({
                     ref={previewContainerRef}
                     onMouseDown={handleCropMouseDown}
                     onTouchStart={handleCropTouchStart}
-                    className={`relative flex h-full w-full items-center justify-center overflow-hidden rounded-xl border border-white/70 bg-[linear-gradient(180deg,#f7ecdb_0%,#f4e7d5_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] ${aspect === "free" && !compareOriginal ? "cursor-crosshair" : ""}`}
+                    onMouseMove={(e) => {
+                      if (aspect !== "free" || compareOriginal || isDraggingCrop) return;
+                      const r = imgRef.current?.getBoundingClientRect();
+                      if (!r) return;
+                      const p = clientToImg(e.clientX, e.clientY, r);
+                      let snapshot: FreeCropBox = { x: 0.1, y: 0.1, w: 0.8, h: 0.8 };
+                      setFreeCropBox((prev) => { snapshot = prev; return prev; });
+                      const mode = hitTest(p, snapshot);
+                      const cursors: Record<string, string> = {
+                        new: "crosshair", move: "move",
+                        nw: "nw-resize", ne: "ne-resize", sw: "sw-resize", se: "se-resize",
+                      };
+                      setCropCursor(cursors[mode] ?? "crosshair");
+                    }}
+                    className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-xl border border-white/70 bg-[linear-gradient(180deg,#f7ecdb_0%,#f4e7d5_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]"
+                    style={{ cursor: aspect === "free" && !compareOriginal ? cropCursor : "default" }}
                   >
                     {loading ? (
                       <div className="text-sm text-[#7c6f57]">Loading image editor...</div>
