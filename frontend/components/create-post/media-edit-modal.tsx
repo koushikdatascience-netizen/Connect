@@ -198,8 +198,13 @@ function createEditedCanvas(
   let cropHeight: number;
 
   if (settings.aspect === "free") {
+    // freeWidth/freeHeight are 0.3–1.0 fractions of the source dimensions
+    // zoom is applied on top as a separate scale-in
     cropWidth = (sourceWidth * settings.freeWidth) / settings.zoom;
     cropHeight = (sourceHeight * settings.freeHeight) / settings.zoom;
+    // clamp so crop can never exceed source
+    cropWidth = clamp(cropWidth, 10, sourceWidth);
+    cropHeight = clamp(cropHeight, 10, sourceHeight);
   } else {
     const aspectRatio = getAspectRatio(settings.aspect, sourceWidth, sourceHeight);
     let baseCropWidth = sourceWidth;
@@ -540,16 +545,16 @@ export function MediaEditModal({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[70] flex items-stretch justify-center bg-[rgba(8,10,18,0.68)] p-2 backdrop-blur-md sm:p-4"
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-[rgba(8,10,18,0.68)] p-2 backdrop-blur-md sm:p-4"
         >
           <motion.div
             initial={{ opacity: 0, y: 20, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 12, scale: 0.98 }}
             transition={{ type: "spring", stiffness: 260, damping: 24 }}
-            className="flex h-full max-h-[96vh] w-full max-w-7xl flex-col overflow-hidden rounded-[26px] border border-[#d8ccb5] bg-[#f8f2e8] shadow-[0_28px_90px_rgba(15,20,30,0.25)] sm:rounded-[32px]"
+            className="flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-[26px] border border-[#d8ccb5] bg-[#f8f2e8] shadow-[0_28px_90px_rgba(15,20,30,0.25)] sm:rounded-[32px]"
           >
-            <div className="flex flex-col gap-4 border-b border-[#eadfcb] bg-[linear-gradient(135deg,#fff7e8_0%,#f6eddc_100%)] px-4 py-4 sm:px-6 sm:py-5 lg:flex-row lg:items-start lg:justify-between">
+            <div className="flex flex-col gap-3 border-b border-[#eadfcb] bg-[linear-gradient(135deg,#fff7e8_0%,#f6eddc_100%)] px-4 py-3 sm:px-6 sm:py-4 lg:flex-row lg:items-start lg:justify-between">
               <div className="min-w-0">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#9b7b3f]">
                   Media Polish Studio
@@ -575,9 +580,9 @@ export function MediaEditModal({
               </button>
             </div>
 
-            <div className="grid flex-1 gap-0 overflow-hidden lg:grid-cols-[minmax(0,1.25fr)_380px] xl:grid-cols-[minmax(0,1.4fr)_430px]">
-              <div className="flex min-h-[280px] flex-col border-b border-[#eadfcb] bg-[radial-gradient(circle_at_top,_rgba(255,213,42,0.16),_transparent_46%),linear-gradient(180deg,#fffaf2_0%,#f1e7d6_100%)] lg:border-b-0 lg:border-r">
-                <div className="flex flex-col gap-3 px-4 py-4 sm:px-6">
+            <div className="grid min-h-0 flex-1 overflow-y-auto overflow-x-hidden lg:overflow-hidden lg:grid-cols-[minmax(0,1.25fr)_360px] xl:grid-cols-[minmax(0,1.4fr)_400px]">
+              <div className="flex h-[46vh] min-h-0 flex-col overflow-hidden border-b border-[#eadfcb] bg-[radial-gradient(circle_at_top,_rgba(255,213,42,0.16),_transparent_46%),linear-gradient(180deg,#fffaf2_0%,#f1e7d6_100%)] lg:h-auto lg:border-b-0 lg:border-r">
+                <div className="flex flex-col gap-2 px-4 py-3 sm:px-5 sm:py-4">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <div className="text-xs font-semibold uppercase tracking-[0.22em] text-[#9b7b3f]">
@@ -628,8 +633,8 @@ export function MediaEditModal({
                   </div>
                 </div>
 
-                <div className="flex flex-1 items-center justify-center px-4 pb-4 sm:px-6 sm:pb-6">
-                  <div className="relative flex h-full min-h-[250px] w-full items-center justify-center overflow-hidden rounded-[24px] border border-white/70 bg-[linear-gradient(180deg,#f7ecdb_0%,#f4e7d5_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] sm:min-h-[320px] sm:rounded-[28px]">
+                <div className="min-h-0 flex-1 px-4 pb-4 sm:px-6 sm:pb-5">
+                  <div className="relative flex h-full min-h-[200px] w-full items-center justify-center overflow-hidden rounded-[20px] border border-white/70 bg-[linear-gradient(180deg,#f7ecdb_0%,#f4e7d5_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] sm:rounded-[24px]">
                     {loading ? (
                       <div className="text-sm text-[#7c6f57]">Loading image editor...</div>
                     ) : error ? (
@@ -642,7 +647,7 @@ export function MediaEditModal({
                           <img
                             src={compareOriginal ? asset.file_url : previewUrl ?? asset.file_url}
                             alt={altText || asset.alt_text || "Edited preview"}
-                            className="h-full w-full object-contain"
+                            className="max-h-full max-w-full object-contain"
                           />
                         ) : (
                           <div className="text-sm text-[#7c6f57]">Preparing preview...</div>
