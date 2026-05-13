@@ -545,60 +545,61 @@ export function MediaEditModal({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[70] flex items-center justify-center bg-[rgba(8,10,18,0.68)] p-2 backdrop-blur-md sm:p-4"
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-[rgba(8,10,18,0.68)] p-2 backdrop-blur-md sm:p-3"
         >
           <motion.div
             initial={{ opacity: 0, y: 20, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 12, scale: 0.98 }}
             transition={{ type: "spring", stiffness: 260, damping: 24 }}
-            className="flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-[26px] border border-[#d8ccb5] bg-[#f8f2e8] shadow-[0_28px_90px_rgba(15,20,30,0.25)] sm:rounded-[32px]"
+            style={{ height: "min(90vh, 800px)" }}
+            className="flex w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-[#d8ccb5] bg-[#f8f2e8] shadow-[0_28px_90px_rgba(15,20,30,0.25)] sm:rounded-[28px]"
           >
-            <div className="flex flex-col gap-3 border-b border-[#eadfcb] bg-[linear-gradient(135deg,#fff7e8_0%,#f6eddc_100%)] px-4 py-3 sm:px-6 sm:py-4 lg:flex-row lg:items-start lg:justify-between">
+            {/* ── Header ── */}
+            <div className="flex shrink-0 items-start justify-between gap-4 border-b border-[#eadfcb] bg-[linear-gradient(135deg,#fff7e8_0%,#f6eddc_100%)] px-4 py-3 sm:px-6">
               <div className="min-w-0">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#9b7b3f]">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#9b7b3f]">
                   Media Polish Studio
                 </p>
-                <h2 className="mt-1 text-lg font-semibold text-[#111827] sm:text-xl">
+                <h2 className="mt-0.5 text-base font-semibold text-[#111827] sm:text-lg">
                   Shape this image like a publish-ready social asset
                 </h2>
-                <p className="mt-1 text-sm text-[#6b7280]">
-                  Use presets, free crop, rotation, and compare mode before saving a fresh edited copy.
-                </p>
                 {imageSummary && (
-                  <p className="mt-3 text-xs font-medium text-[#8b7354]">{imageSummary}</p>
+                  <p className="mt-0.5 text-xs font-medium text-[#8b7354]">{imageSummary}</p>
                 )}
               </div>
               <button
                 type="button"
                 onClick={onClose}
                 disabled={saving}
-                className="self-end rounded-full border border-[#e6dccb] bg-white/80 px-4 py-2 text-sm font-semibold text-[#5f6675] transition-colors hover:bg-white hover:text-[#111827] disabled:cursor-not-allowed disabled:opacity-50"
+                className="shrink-0 rounded-full border border-[#e6dccb] bg-white/80 px-4 py-1.5 text-sm font-semibold text-[#5f6675] transition-colors hover:bg-white hover:text-[#111827] disabled:cursor-not-allowed disabled:opacity-50"
                 aria-label="Close media editor"
               >
                 Close
               </button>
             </div>
 
-            <div className="grid min-h-0 flex-1 overflow-y-auto overflow-x-hidden lg:overflow-hidden lg:grid-cols-[minmax(0,1.25fr)_360px] xl:grid-cols-[minmax(0,1.4fr)_400px]">
-              <div className="flex h-[46vh] min-h-0 flex-col overflow-hidden border-b border-[#eadfcb] bg-[radial-gradient(circle_at_top,_rgba(255,213,42,0.16),_transparent_46%),linear-gradient(180deg,#fffaf2_0%,#f1e7d6_100%)] lg:h-auto lg:border-b-0 lg:border-r">
-                <div className="flex flex-col gap-2 px-4 py-3 sm:px-5 sm:py-4">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            {/* ── Body: two columns on lg, stacked + scrollable on mobile ── */}
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
+
+              {/* LEFT — preview (fixed height on mobile, fills height on desktop) */}
+              <div className="flex h-[42vh] shrink-0 flex-col border-b border-[#eadfcb] bg-[radial-gradient(circle_at_top,_rgba(255,213,42,0.16),_transparent_46%),linear-gradient(180deg,#fffaf2_0%,#f1e7d6_100%)] lg:h-auto lg:min-h-0 lg:flex-1 lg:border-b-0 lg:border-r">
+                {/* preview toolbar */}
+                <div className="shrink-0 px-4 py-2 sm:px-5">
+                  <div className="flex items-center justify-between gap-2">
                     <div>
-                      <div className="text-xs font-semibold uppercase tracking-[0.22em] text-[#9b7b3f]">
+                      <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#9b7b3f]">
                         Live Preview
                       </div>
-                      <p className="mt-1 text-sm text-[#6b7280]">
-                        {compareOriginal
-                          ? "Showing the original upload for a quick before-and-after check."
-                          : "Showing the edited output exactly as it will be re-uploaded."}
+                      <p className="text-xs text-[#6b7280]">
+                        {compareOriginal ? "Original upload." : "Edited output."}
                       </p>
                     </div>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex gap-2">
                       <button
                         type="button"
                         onClick={() => setCompareOriginal((current) => !current)}
-                        className={`rounded-full border px-4 py-2 text-xs font-semibold transition-colors ${
+                        className={`rounded-full border px-3 py-1.5 text-[11px] font-semibold transition-colors ${
                           compareOriginal
                             ? "border-[#c58f38] bg-[#ffd86a] text-[#4d3300]"
                             : "border-[#e0d5c2] bg-white/80 text-[#5f6675] hover:border-[#c58f38] hover:text-[#1f2937]"
@@ -609,32 +610,32 @@ export function MediaEditModal({
                       <button
                         type="button"
                         onClick={resetAdjustments}
-                        className="rounded-full border border-[#e0d5c2] bg-white/80 px-4 py-2 text-xs font-semibold text-[#5f6675] transition-colors hover:border-[#c58f38] hover:text-[#1f2937]"
+                        className="rounded-full border border-[#e0d5c2] bg-white/80 px-3 py-1.5 text-[11px] font-semibold text-[#5f6675] transition-colors hover:border-[#c58f38] hover:text-[#1f2937]"
                       >
                         Reset
                       </button>
                     </div>
                   </div>
-
-                  <div className="flex flex-wrap gap-2">
+                  <div className="mt-1.5 flex flex-wrap gap-1.5">
                     {uniquePlatforms.slice(0, 4).map((platform) => (
                       <span
                         key={platform}
-                        className="rounded-full bg-[rgba(17,24,39,0.72)] px-3 py-1.5 text-[11px] font-semibold text-white"
+                        className="rounded-full bg-[rgba(17,24,39,0.72)] px-2.5 py-1 text-[10px] font-semibold text-white"
                       >
                         {PLATFORM_LABELS[platform]}
                       </span>
                     ))}
                     {previewMeta && !compareOriginal && (
-                      <span className="rounded-full bg-white/90 px-3 py-1.5 text-[11px] font-semibold text-[#5f6675]">
+                      <span className="rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-semibold text-[#5f6675]">
                         Output {previewMeta.width} x {previewMeta.height}
                       </span>
                     )}
                   </div>
                 </div>
 
-                <div className="min-h-0 flex-1 px-4 pb-4 sm:px-6 sm:pb-5">
-                  <div className="relative flex h-full min-h-[200px] w-full items-center justify-center overflow-hidden rounded-[20px] border border-white/70 bg-[linear-gradient(180deg,#f7ecdb_0%,#f4e7d5_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] sm:rounded-[24px]">
+                {/* image preview area — fills remaining height */}
+                <div className="min-h-0 flex-1 px-4 pb-3 sm:px-5">
+                  <div className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-xl border border-white/70 bg-[linear-gradient(180deg,#f7ecdb_0%,#f4e7d5_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
                     {loading ? (
                       <div className="text-sm text-[#7c6f57]">Loading image editor...</div>
                     ) : error ? (
@@ -648,15 +649,14 @@ export function MediaEditModal({
                             src={compareOriginal ? asset.file_url : previewUrl ?? asset.file_url}
                             alt={altText || asset.alt_text || "Edited preview"}
                             className="max-h-full max-w-full object-contain"
+                            style={{ display: "block" }}
                           />
                         ) : (
                           <div className="text-sm text-[#7c6f57]">Preparing preview...</div>
                         )}
-
-                        <div className="pointer-events-none absolute inset-4 rounded-[20px] border border-dashed border-white/55 shadow-[0_0_0_999px_rgba(17,24,39,0.08)] sm:inset-6 sm:rounded-[26px]" />
-
+                        <div className="pointer-events-none absolute inset-3 rounded-xl border border-dashed border-white/55 shadow-[0_0_0_999px_rgba(17,24,39,0.06)]" />
                         {renderingPreview && !compareOriginal && (
-                          <div className="absolute inset-x-4 bottom-4 rounded-full bg-[#111827]/72 px-4 py-2 text-center text-xs font-medium text-white shadow-lg">
+                          <div className="absolute inset-x-3 bottom-3 rounded-full bg-[#111827]/72 px-3 py-1.5 text-center text-xs font-medium text-white">
                             Refreshing preview...
                           </div>
                         )}
@@ -666,8 +666,9 @@ export function MediaEditModal({
                 </div>
               </div>
 
-              <div className="flex min-h-0 flex-col bg-[#fbf7ef]">
-                <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6">
+              {/* RIGHT — controls panel, independently scrollable */}
+              <div className="flex w-full shrink-0 flex-col overflow-hidden bg-[#fbf7ef] lg:w-[360px] xl:w-[400px]">
+                <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-5">
                   <div className="space-y-5">
                     <section className="space-y-3">
                       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
@@ -945,13 +946,13 @@ export function MediaEditModal({
                   </div>
                 </div>
 
-                <div className="border-t border-[#eadfcb] bg-white/80 px-4 py-4 sm:px-6">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="shrink-0 border-t border-[#eadfcb] bg-white/80 px-4 py-3 sm:px-5">
+                  <div className="flex items-center justify-between gap-3">
                     <button
                       type="button"
                       onClick={onClose}
                       disabled={saving}
-                      className="rounded-full border border-[#d9cfbf] px-5 py-2.5 text-sm font-semibold text-[#4b5563] transition-colors hover:border-[#bca47a] hover:text-[#1f2937] disabled:cursor-not-allowed disabled:opacity-50"
+                      className="rounded-full border border-[#d9cfbf] px-5 py-2 text-sm font-semibold text-[#4b5563] transition-colors hover:border-[#bca47a] hover:text-[#1f2937] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       Cancel
                     </button>
@@ -959,7 +960,7 @@ export function MediaEditModal({
                       type="button"
                       onClick={() => void handleSave()}
                       disabled={!canSave || saving}
-                      className="rounded-full bg-[#ffd52a] px-6 py-2.5 text-sm font-bold text-[#09090e] shadow-[0_8px_26px_rgba(255,213,42,0.28)] transition-colors hover:bg-[#ffe566] disabled:cursor-not-allowed disabled:opacity-50"
+                      className="rounded-full bg-[#ffd52a] px-6 py-2 text-sm font-bold text-[#09090e] shadow-[0_8px_26px_rgba(255,213,42,0.28)] transition-colors hover:bg-[#ffe566] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {saving ? "Saving edited copy..." : "Save edited copy"}
                     </button>
