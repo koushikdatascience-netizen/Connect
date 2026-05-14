@@ -26,6 +26,80 @@ jobs:
 
             cd ~/Connect
 
+            restart_backend_services() {
+              echo "Ensuring database and Redis are running..."
+              docker compose up -d db redis
+
+              echo "Building backend images..."
+              docker compose build backend worker beat
+
+              echo "Running database migrations in backend container..."
+              docker compose run --rm -e RUN_MIGRATIONS=false backend uv run alembic upgrade head
+
+              echo "Starting backend services..."
+              docker compose up -d backend worker beat
+            }
+
+            restart_frontend_service() {
+              echo "Reloading frontend..."
+              if pm2 describe socialsync-frontend >/dev/null 2>&1; then
+                pm2 reload socialsync-frontend --update-env || pm2 restart socialsync-frontend --update-env
+              else
+                pm2 start npm --name socialsync-frontend --cwd ~/Connect/frontend -- start
+              fi
+            }
+
+            load_frontend_env() {
+              FRONTEND_ENV_FILE=""
+              if [ -f ~/Connect/frontend/.env.production.local ]; then
+                FRONTEND_ENV_FILE=~/Connect/frontend/.env.production.local
+              elif [ -f ~/Connect/frontend/.env.production ]; then
+                FRONTEND_ENV_FILE=~/Connect/frontend/.env.production
+              elif [ -f ~/Connect/frontend/.env.local ]; then
+                FRONTEND_ENV_FILE=~/Connect/frontend/.env.local
+              fi
+
+              if [ -z "$FRONTEND_ENV_FILE" ]; then
+                echo "Frontend env file not found. Expected frontend/.env.production.local, frontend/.env.production, or frontend/.env.local"
+                return 1
+              fi
+
+              echo "Loading frontend env from $FRONTEND_ENV_FILE"
+              set -a
+              . "$FRONTEND_ENV_FILE"
+              set +a
+
+              if [ -z "${NEXT_PUBLIC_API_BASE_URL:-}" ]; then
+                echo "NEXT_PUBLIC_API_BASE_URL is required for frontend production builds."
+                return 1
+              fi
+
+              if [ -z "${NEXT_PUBLIC_TENANT_ID:-}" ]; then
+                echo "NEXT_PUBLIC_TENANT_ID is required for frontend production builds."
+                return 1
+              fi
+            }
+
+            rollback_deploy() {
+              echo "Rolling back to $PREV_COMMIT..."
+              git reset --hard "$PREV_COMMIT"
+
+              echo "Restoring backend containers..."
+              restart_backend_services
+
+              echo "Rebuilding frontend from previous commit..."
+              cd frontend
+              rm -rf .next
+              load_frontend_env
+              npm ci
+              npm run build
+              cd ..
+
+              restart_frontend_service
+              pm2 save
+              echo "Rollback done"
+            }
+
             echo "Saving current commit..."
             PREV_COMMIT=$(git rev-parse HEAD)
             echo "Previous: $PREV_COMMIT"
@@ -42,37 +116,17 @@ jobs:
               . "$HOME/.local/bin/env"
             fi
 
-            if ! command -v uv >/dev/null 2>&1; then
-              echo "uv is not installed on the server."
+            if ! command -v docker >/dev/null 2>&1; then
+              echo "docker is not installed on the server."
               exit 1
             fi
 
-            echo "Syncing backend dependencies..."
-            uv sync
-
-            echo "Running database migrations..."
-            uv run alembic upgrade head
-
-            export PORT=8000
-
-            echo "Restarting backend services..."
-            if pm2 describe socialsync-api >/dev/null 2>&1; then
-              pm2 restart socialsync-api --update-env
-            else
-              pm2 start ./start-backend.sh --name socialsync-api --interpreter bash --cwd ~/Connect --update-env
+            if ! docker compose version >/dev/null 2>&1; then
+              echo "docker compose is not available on the server."
+              exit 1
             fi
 
-            if pm2 describe socialsync-worker >/dev/null 2>&1; then
-              pm2 restart socialsync-worker --update-env
-            else
-              pm2 start ./start-worker.sh --name socialsync-worker --interpreter bash --cwd ~/Connect --update-env
-            fi
-
-            if pm2 describe socialsync-beat >/dev/null 2>&1; then
-              pm2 restart socialsync-beat --update-env
-            else
-              pm2 start ./start-beat.sh --name socialsync-beat --interpreter bash --cwd ~/Connect --update-env
-            fi
+            restart_backend_services
 
             echo "Waiting for backend..."
             for i in $(seq 1 30); do
@@ -82,7 +136,8 @@ jobs:
               fi
               if [ "$i" -eq 30 ]; then
                 echo "Backend failed health check"
-                pm2 logs socialsync-api --lines 80
+                docker compose logs backend --tail 80 || true
+                rollback_deploy
                 exit 1
               fi
               sleep 2
@@ -91,16 +146,12 @@ jobs:
             echo "Building frontend..."
             cd frontend
             rm -rf .next
-            npm install
+            load_frontend_env
+            npm ci
             npm run build
             cd ..
 
-            echo "Reloading frontend..."
-            if pm2 describe socialsync-frontend > /dev/null 2>&1; then
-              pm2 reload socialsync-frontend --update-env || pm2 restart socialsync-frontend --update-env
-            else
-              pm2 start npm --name socialsync-frontend --cwd ~/Connect/frontend -- start
-            fi
+            restart_frontend_service
 
             echo "Waiting for frontend..."
             sleep 5
@@ -108,36 +159,7 @@ jobs:
             echo "Running health checks..."
             if ! curl -fsS http://127.0.0.1:3000 > /dev/null; then
               echo "Frontend failed!"
-
-              echo "Rolling back..."
-              git reset --hard "$PREV_COMMIT"
-
-              echo "Restoring backend dependencies..."
-              uv sync
-              uv run alembic upgrade head || true
-
-              if pm2 describe socialsync-api >/dev/null 2>&1; then
-                pm2 restart socialsync-api --update-env
-              fi
-              if pm2 describe socialsync-worker >/dev/null 2>&1; then
-                pm2 restart socialsync-worker --update-env
-              fi
-              if pm2 describe socialsync-beat >/dev/null 2>&1; then
-                pm2 restart socialsync-beat --update-env
-              fi
-
-              cd frontend
-              npm install
-              npm run build
-              cd ..
-
-              if pm2 describe socialsync-frontend > /dev/null 2>&1; then
-                pm2 reload socialsync-frontend --update-env || pm2 restart socialsync-frontend --update-env
-              else
-                pm2 start npm --name socialsync-frontend --cwd ~/Connect/frontend -- start
-              fi
-
-              echo "Rollback done"
+              rollback_deploy
               exit 1
             fi
 
