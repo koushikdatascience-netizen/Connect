@@ -45,7 +45,11 @@ jobs:
             cd ..
 
             echo "♻️ Reloading PM2 (zero downtime)..."
-            pm2 reload socialsync-frontend || pm2 restart socialsync-frontend
+            if pm2 describe socialsync-frontend > /dev/null 2>&1; then
+              pm2 reload socialsync-frontend --update-env || pm2 restart socialsync-frontend --update-env
+            else
+              pm2 start npm --name socialsync-frontend --cwd ~/Connect/frontend -- start
+            fi
 
             echo "⏳ Waiting for app..."
             sleep 5
@@ -63,7 +67,11 @@ jobs:
               npm run build
               cd ..
 
-              pm2 reload socialsync-frontend || pm2 restart socialsync-frontend
+              if pm2 describe socialsync-frontend > /dev/null 2>&1; then
+                pm2 reload socialsync-frontend --update-env || pm2 restart socialsync-frontend --update-env
+              else
+                pm2 start npm --name socialsync-frontend --cwd ~/Connect/frontend -- start
+              fi
 
               echo "✅ Rollback done"
               exit 1
