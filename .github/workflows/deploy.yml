@@ -1,4 +1,4 @@
-name: 🚀 Deploy (Zero Downtime + Rollback)
+name: Deploy (Backend + Frontend)
 
 on:
   push:
@@ -10,57 +10,121 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 🔐 Deploy via SSH
+      - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_PORT }}
-
           script: |
             set -e
 
             echo "===================================="
-            echo "🚀 DEPLOY STARTED"
+            echo "DEPLOY STARTED"
             echo "===================================="
 
             cd ~/Connect
 
-            echo "📌 Saving current commit..."
+            echo "Saving current commit..."
             PREV_COMMIT=$(git rev-parse HEAD)
             echo "Previous: $PREV_COMMIT"
 
-            echo "📥 Pull latest code..."
+            echo "Pull latest code..."
             git fetch origin
             git reset --hard origin/main
 
-            echo "📦 FRONTEND BUILD..."
-            cd frontend
+            echo "Preparing backend environment..."
+            if [ -f "$HOME/.cargo/env" ]; then
+              . "$HOME/.cargo/env"
+            fi
+            if [ -f "$HOME/.local/bin/env" ]; then
+              . "$HOME/.local/bin/env"
+            fi
 
+            if ! command -v uv >/dev/null 2>&1; then
+              echo "uv is not installed on the server."
+              exit 1
+            fi
+
+            echo "Syncing backend dependencies..."
+            uv sync
+
+            echo "Running database migrations..."
+            uv run alembic upgrade head
+
+            export PORT=8000
+
+            echo "Restarting backend services..."
+            if pm2 describe socialsync-api >/dev/null 2>&1; then
+              pm2 restart socialsync-api --update-env
+            else
+              pm2 start ./start-backend.sh --name socialsync-api --interpreter bash --cwd ~/Connect --update-env
+            fi
+
+            if pm2 describe socialsync-worker >/dev/null 2>&1; then
+              pm2 restart socialsync-worker --update-env
+            else
+              pm2 start ./start-worker.sh --name socialsync-worker --interpreter bash --cwd ~/Connect --update-env
+            fi
+
+            if pm2 describe socialsync-beat >/dev/null 2>&1; then
+              pm2 restart socialsync-beat --update-env
+            else
+              pm2 start ./start-beat.sh --name socialsync-beat --interpreter bash --cwd ~/Connect --update-env
+            fi
+
+            echo "Waiting for backend..."
+            for i in $(seq 1 30); do
+              if curl -fsS http://127.0.0.1:8000/api/v1/health >/dev/null; then
+                echo "Backend is healthy"
+                break
+              fi
+              if [ "$i" -eq 30 ]; then
+                echo "Backend failed health check"
+                pm2 logs socialsync-api --lines 80
+                exit 1
+              fi
+              sleep 2
+            done
+
+            echo "Building frontend..."
+            cd frontend
             rm -rf .next
             npm install
             npm run build
-
             cd ..
 
-            echo "♻️ Reloading PM2 (zero downtime)..."
+            echo "Reloading frontend..."
             if pm2 describe socialsync-frontend > /dev/null 2>&1; then
               pm2 reload socialsync-frontend --update-env || pm2 restart socialsync-frontend --update-env
             else
               pm2 start npm --name socialsync-frontend --cwd ~/Connect/frontend -- start
             fi
 
-            echo "⏳ Waiting for app..."
+            echo "Waiting for frontend..."
             sleep 5
 
-            echo "🩺 Health check..."
+            echo "Running health checks..."
+            if ! curl -fsS http://127.0.0.1:3000 > /dev/null; then
+              echo "Frontend failed!"
 
-            if ! curl -fsS http://localhost:3000 > /dev/null; then
-              echo "❌ Frontend failed!"
+              echo "Rolling back..."
+              git reset --hard "$PREV_COMMIT"
 
-              echo "🔴 Rolling back..."
-              git reset --hard $PREV_COMMIT
+              echo "Restoring backend dependencies..."
+              uv sync
+              uv run alembic upgrade head || true
+
+              if pm2 describe socialsync-api >/dev/null 2>&1; then
+                pm2 restart socialsync-api --update-env
+              fi
+              if pm2 describe socialsync-worker >/dev/null 2>&1; then
+                pm2 restart socialsync-worker --update-env
+              fi
+              if pm2 describe socialsync-beat >/dev/null 2>&1; then
+                pm2 restart socialsync-beat --update-env
+              fi
 
               cd frontend
               npm install
@@ -73,13 +137,13 @@ jobs:
                 pm2 start npm --name socialsync-frontend --cwd ~/Connect/frontend -- start
               fi
 
-              echo "✅ Rollback done"
+              echo "Rollback done"
               exit 1
             fi
 
-            echo "💾 Saving PM2..."
+            echo "Saving PM2..."
             pm2 save
 
             echo "===================================="
-            echo "✅ DEPLOY SUCCESS"
+            echo "DEPLOY SUCCESS"
             echo "===================================="
