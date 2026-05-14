@@ -158,6 +158,45 @@ def fetch_normalized_post_metrics(post: ScheduledPost, account) -> tuple[Dict[st
     return normalize_provider_metrics(post.platform, raw_metrics), raw_metrics
 
 
+def seed_post_snapshot(
+    db: Session,
+    tenant_id: str,
+    post: ScheduledPost,
+    account,
+    *,
+    snapshot_at: Optional[datetime] = None,
+):
+    """
+    Create a zeroed analytics snapshot immediately after publish.
+
+    This makes a freshly posted item appear in analytics right away, even if
+    the provider does not return live metrics until a later sync window.
+    """
+    subject = get_or_create_post_subject(db, tenant_id, post, account)
+    normalized_metrics = {
+        "likes": 0,
+        "comments": 0,
+        "shares": 0,
+        "saves": 0,
+        "impressions": 0,
+        "reach": 0,
+        "views": 0,
+        "clicks": 0,
+        "engagements": 0,
+    }
+    snapshot = create_snapshot(
+        db,
+        tenant_id,
+        subject,
+        normalized_metrics=normalized_metrics,
+        raw_metrics={},
+        snapshot_at=snapshot_at,
+        fetch_status="pending",
+        fetch_message="Initial snapshot seeded at publish time. Live metrics will populate on the next sync.",
+    )
+    return subject, snapshot
+
+
 def sync_post_snapshot(db: Session, tenant_id: str, post: ScheduledPost, *, snapshot_at: Optional[datetime] = None):
     account = get_social_account(db, tenant_id, post.social_account_id)
     if not account:

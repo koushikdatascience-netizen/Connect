@@ -19,7 +19,7 @@ celery_app.conf.task_routes = {
 celery_app.conf.beat_schedule = {
     "sync-analytics-snapshots-hourly": {
         "task": "app.worker.tasks.sync_analytics_snapshots_task",
-        "schedule": crontab(minute=15, hour="*/6"),
+        "schedule": crontab(minute=15),
     }
 }
 
