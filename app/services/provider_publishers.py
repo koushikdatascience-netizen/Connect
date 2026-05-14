@@ -2040,16 +2040,36 @@ def fetch_provider_live_metrics(
     if platform == "linkedin":
         encoded_urn = quote(post.platform_post_id, safe="")
         response = requests.get(
-            f"https://api.linkedin.com/rest/socialActions/{encoded_urn}",
+            f"https://api.linkedin.com/rest/socialMetadata/{encoded_urn}",
             headers=_linkedin_headers(access_token, content_type="application/json"),
             timeout=30,
         )
         if not response.ok:
             _raise_provider_error("linkedin-metrics", response, retryable=False)
         payload = response.json()
+        reaction_summaries = payload.get("reactionSummaries") or []
+        reaction_total = 0
+        if isinstance(reaction_summaries, list):
+            for item in reaction_summaries:
+                if isinstance(item, dict):
+                    reaction_total += int(item.get("count") or item.get("total") or item.get("value") or 0)
+        elif isinstance(reaction_summaries, dict):
+            for item in reaction_summaries.values():
+                if isinstance(item, dict):
+                    reaction_total += int(item.get("count") or item.get("total") or item.get("value") or 0)
+                else:
+                    reaction_total += int(item or 0)
+        comment_summary = payload.get("commentSummary") or payload.get("commentsSummary") or {}
         return {
-            "likes": int(payload.get("likesSummary", {}).get("totalLikes", 0)),
-            "comments": int(payload.get("commentsSummary", {}).get("totalFirstLevelComments", 0)),
+            "likes": reaction_total,
+            "comments": int(
+                comment_summary.get("count")
+                or comment_summary.get("total")
+                or comment_summary.get("totalFirstLevelComments")
+                or 0
+            ),
+            "reactionSummaries": reaction_summaries,
+            "commentSummary": comment_summary,
         }
 
     if platform == "facebook":

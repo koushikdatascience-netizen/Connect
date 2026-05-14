@@ -1,6 +1,10 @@
 """Celery tasks with structured logging and request ID tracing."""
 
+from typing import Optional
+
 from app.core.logging import get_logger, log_event
+from app.db.database import SessionLocal, reset_tenant_context
+from app.services.analytics_service import sync_all_tenants_analytics, sync_tenant_analytics
 from app.services.publisher import publish_post
 from app.worker.celery_app import celery_app
 
@@ -73,3 +77,42 @@ def healthcheck_task():
         extra={"message": "healthcheck task consumed by worker"},
     )
     return {"status": "ok"}
+
+
+@celery_app.task(name="app.worker.tasks.sync_analytics_snapshots_task")
+def sync_analytics_snapshots_task(tenant_id: Optional[str] = None):
+    """Refresh analytics snapshots for one tenant or all tenants."""
+    db = SessionLocal()
+    try:
+        if tenant_id:
+            result = sync_tenant_analytics(db, tenant_id)
+            return {
+                "tenant_id": tenant_id,
+                "sync_run_id": result.id,
+                "status": result.status,
+                "objects_seen": result.objects_seen,
+                "objects_synced": result.objects_synced,
+                "error_count": result.error_count,
+            }
+
+        results = sync_all_tenants_analytics(db)
+        return {
+            "tenants_processed": len(results),
+            "results": [
+                {
+                    "tenant_id": item.tenant_id,
+                    "sync_run_id": item.id,
+                    "status": item.status,
+                    "objects_seen": item.objects_seen,
+                    "objects_synced": item.objects_synced,
+                    "error_count": item.error_count,
+                }
+                for item in results
+            ],
+        }
+    finally:
+        try:
+            reset_tenant_context(db)
+        except Exception:
+            db.rollback()
+        db.close()

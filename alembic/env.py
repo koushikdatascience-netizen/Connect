@@ -10,7 +10,15 @@ from app.core.config import get_settings
 from app.db.base import Base
 
 # import all models so metadata is populated for autogenerate
-from app.models import media_asset, post_media, scheduled_post, social_account
+from app.models import (
+    analytics_metric_snapshot,
+    analytics_subject,
+    analytics_sync_run,
+    media_asset,
+    post_media,
+    scheduled_post,
+    social_account,
+)
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

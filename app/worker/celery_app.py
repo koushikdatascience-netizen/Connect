@@ -1,6 +1,7 @@
 import os
 
 from celery import Celery
+from celery.schedules import crontab
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
 
@@ -14,6 +15,12 @@ celery_app = Celery(
 celery_app.conf.task_default_queue = "default"
 celery_app.conf.task_routes = {
     "app.worker.tasks.*": {"queue": "default"}
+}
+celery_app.conf.beat_schedule = {
+    "sync-analytics-snapshots-hourly": {
+        "task": "app.worker.tasks.sync_analytics_snapshots_task",
+        "schedule": crontab(minute=15, hour="*/6"),
+    }
 }
 
 # Enable task events for Flower monitoring

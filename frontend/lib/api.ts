@@ -1,6 +1,13 @@
 import {
   Account,
   AccountStatusResponse,
+  AnalyticsHeatmapCell,
+  AnalyticsOverviewResponse,
+  AnalyticsPlatformBreakdownItem,
+  AnalyticsSyncResponse,
+  AnalyticsTimeseriesResponse,
+  AnalyticsTopPostItem,
+  AnalyticsWordCloudItem,
   MediaAsset,
   Post,
   PostLiveMetricsResponse,
@@ -128,6 +135,25 @@ export function getTenantId() {
   return getRuntimeTenantId();
 }
 
+function buildAnalyticsQuery(params?: {
+  startDate?: string;
+  endDate?: string;
+  platforms?: string[];
+  socialAccountId?: number | null;
+  postId?: number | null;
+  limit?: number | null;
+}) {
+  const searchParams = new URLSearchParams();
+  if (params?.startDate) searchParams.set("start_date", params.startDate);
+  if (params?.endDate) searchParams.set("end_date", params.endDate);
+  if (params?.platforms?.length) searchParams.set("platforms", params.platforms.join(","));
+  if (params?.socialAccountId) searchParams.set("social_account_id", String(params.socialAccountId));
+  if (params?.postId) searchParams.set("post_id", String(params.postId));
+  if (params?.limit) searchParams.set("limit", String(params.limit));
+  const query = searchParams.toString();
+  return query ? `?${query}` : "";
+}
+
 export function fetchSession() {
   return apiFetch<{
     authenticated: boolean;
@@ -230,6 +256,67 @@ export function fetchPosts() {
 
 export function fetchPostMetrics(postId: number) {
   return apiFetch<PostLiveMetricsResponse>(`/api/v1/posts/${postId}/metrics`);
+}
+
+export function fetchAnalyticsOverview(params?: {
+  startDate?: string;
+  endDate?: string;
+  platforms?: string[];
+  socialAccountId?: number | null;
+  postId?: number | null;
+}) {
+  return apiFetch<AnalyticsOverviewResponse>(`/api/v1/analytics/overview${buildAnalyticsQuery(params)}`);
+}
+
+export function fetchAnalyticsTimeseries(params?: {
+  startDate?: string;
+  endDate?: string;
+  platforms?: string[];
+  socialAccountId?: number | null;
+  postId?: number | null;
+}) {
+  return apiFetch<AnalyticsTimeseriesResponse>(`/api/v1/analytics/timeseries${buildAnalyticsQuery(params)}`);
+}
+
+export function fetchAnalyticsPlatformBreakdown(params?: {
+  startDate?: string;
+  endDate?: string;
+  platforms?: string[];
+  socialAccountId?: number | null;
+}) {
+  return apiFetch<AnalyticsPlatformBreakdownItem[]>(`/api/v1/analytics/platform-breakdown${buildAnalyticsQuery(params)}`);
+}
+
+export function fetchAnalyticsTopPosts(params?: {
+  startDate?: string;
+  endDate?: string;
+  platforms?: string[];
+  limit?: number | null;
+}) {
+  return apiFetch<AnalyticsTopPostItem[]>(`/api/v1/analytics/top-posts${buildAnalyticsQuery(params)}`);
+}
+
+export function fetchAnalyticsHeatmap(params?: {
+  startDate?: string;
+  endDate?: string;
+  platforms?: string[];
+}) {
+  return apiFetch<AnalyticsHeatmapCell[]>(`/api/v1/analytics/heatmap/posting-times${buildAnalyticsQuery(params)}`);
+}
+
+export function fetchAnalyticsTopics(params?: {
+  startDate?: string;
+  endDate?: string;
+  limit?: number | null;
+}) {
+  return apiFetch<AnalyticsWordCloudItem[]>(`/api/v1/analytics/topics${buildAnalyticsQuery(params)}`);
+}
+
+export function syncAnalyticsSnapshots(platforms?: string[]) {
+  const query = buildAnalyticsQuery({ platforms });
+  return apiFetch<AnalyticsSyncResponse>(`/api/v1/analytics/sync${query}`, {
+    method: "POST",
+  });
 }
 
 export function createPost(payload: {

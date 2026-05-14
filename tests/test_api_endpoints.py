@@ -291,6 +291,41 @@ class TestPostEndpoints:
         assert "status" in payload
 
 
+class TestAnalyticsEndpoints:
+    def test_analytics_overview(self, client: httpx.Client) -> None:
+        response = client.get("/api/v1/analytics/overview")
+        _assert_ok(response)
+        payload = response.json()
+        assert "totals" in payload
+        assert "deltas" in payload
+        assert "engagements" in payload["totals"]
+
+    def test_analytics_timeseries(self, client: httpx.Client) -> None:
+        response = client.get("/api/v1/analytics/timeseries")
+        _assert_ok(response)
+        payload = response.json()
+        assert payload["interval"] == "daily"
+        assert isinstance(payload["points"], list)
+
+    def test_analytics_platform_breakdown(self, client: httpx.Client) -> None:
+        response = client.get("/api/v1/analytics/platform-breakdown")
+        _assert_ok(response)
+        payload = response.json()
+        assert isinstance(payload, list)
+
+    def test_analytics_top_posts(self, client: httpx.Client) -> None:
+        response = client.get("/api/v1/analytics/top-posts")
+        _assert_ok(response)
+        payload = response.json()
+        assert isinstance(payload, list)
+
+    def test_analytics_topics(self, client: httpx.Client) -> None:
+        response = client.get("/api/v1/analytics/topics")
+        _assert_ok(response)
+        payload = response.json()
+        assert isinstance(payload, list)
+
+
 class TestOAuthLoginEndpoints:
     @pytest.mark.parametrize(
         "provider_path",
@@ -317,4 +352,3 @@ class TestOAuthLoginEndpoints:
             f"Response body: {response.text}"
         )
         assert "location" in response.headers
-
