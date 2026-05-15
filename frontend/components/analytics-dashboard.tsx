@@ -1,6 +1,8 @@
 "use client";
 
 import { startTransition, useDeferredValue, useEffect, useMemo, useState } from "react";
+import { FaFacebookF, FaInstagram, FaLinkedinIn, FaYoutube } from "react-icons/fa";
+import { RiTwitterXFill } from "react-icons/ri";
 
 import { ErrorNotice } from "@/components/error-notice";
 import {
@@ -47,6 +49,21 @@ const TIME_RANGES = [
   { id: "90d", label: "90D", days: 90 },
 ];
 const ANALYTICS_PLATFORMS: PlatformName[] = ["instagram", "facebook", "twitter", "youtube", "linkedin"];
+
+function PlatformIcon({
+  platform,
+  className = "",
+}: {
+  platform: string;
+  className?: string;
+}) {
+  if (platform === "instagram") return <FaInstagram className={className} aria-hidden="true" />;
+  if (platform === "facebook") return <FaFacebookF className={className} aria-hidden="true" />;
+  if (platform === "twitter") return <RiTwitterXFill className={className} aria-hidden="true" />;
+  if (platform === "youtube") return <FaYoutube className={className} aria-hidden="true" />;
+  if (platform === "linkedin") return <FaLinkedinIn className={className} aria-hidden="true" />;
+  return null;
+}
 
 function isoDateDaysAgo(days: number) {
   const value = new Date();
@@ -106,7 +123,7 @@ function ChartCard({
   className?: string;
 }) {
   return (
-    <section className={`rounded-[28px] border border-[#eadfcf] bg-[linear-gradient(180deg,rgba(255,252,245,0.98),rgba(248,243,232,0.96))] p-4 shadow-[0_18px_40px_rgba(108,84,24,0.08)] sm:p-5 ${className}`}>
+    <section className={`rounded-[28px] border border-[#eadfcf] bg-[linear-gradient(180deg,rgba(255,252,245,0.98),rgba(248,243,232,0.96))] p-4 shadow-[0_18px_40px_rgba(108,84,24,0.08)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_24px_48px_rgba(108,84,24,0.14)] sm:p-5 ${className}`}>
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
           <h2 className="font-display text-2xl font-semibold tracking-[-0.05em] text-[#171311]">{title}</h2>
@@ -214,10 +231,18 @@ function RadialShare({ items }: { items: AnalyticsPlatformBreakdownItem[] }) {
 
       <div className="grid gap-3 sm:grid-cols-2">
         {items.map((item) => (
-          <div key={item.platform} className="rounded-[22px] border border-[#efe4d2] bg-white/70 p-4">
+          <div key={item.platform} className="group rounded-[22px] border border-[#efe4d2] bg-white/70 p-4 transition duration-300 hover:-translate-y-1 hover:border-white hover:bg-white/88 hover:shadow-[0_18px_32px_rgba(96,73,20,0.12)]">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <span className="h-3 w-3 rounded-full" style={{ backgroundColor: PLATFORM_COLORS[item.platform]?.strong ?? "#8c7b66" }} />
+                <span
+                  className="flex h-9 w-9 items-center justify-center rounded-full transition duration-300 group-hover:scale-110"
+                  style={{
+                    backgroundColor: PLATFORM_COLORS[item.platform]?.soft ?? "rgba(0,0,0,0.06)",
+                    color: PLATFORM_COLORS[item.platform]?.strong ?? "#8c7b66",
+                  }}
+                >
+                  <PlatformIcon platform={item.platform} className="text-sm" />
+                </span>
                 <div className="font-semibold text-[#171311]">{PLATFORM_LABELS[item.platform] ?? item.platform}</div>
               </div>
               <div className="rounded-full px-2 py-1 text-[11px] font-semibold" style={{ backgroundColor: PLATFORM_COLORS[item.platform]?.soft ?? "rgba(0,0,0,0.06)", color: PLATFORM_COLORS[item.platform]?.strong ?? "#171311" }}>
@@ -487,6 +512,7 @@ export function AnalyticsDashboard() {
     value: platform,
     label: PLATFORM_LABELS[platform],
   }));
+  const featuredPlatforms = ANALYTICS_PLATFORMS.slice(0, 5);
 
   async function handleSyncNow() {
     setSyncing(true);
@@ -525,6 +551,25 @@ export function AnalyticsDashboard() {
               <p className="mt-3 max-w-2xl text-sm leading-6 text-[#615541] sm:text-[15px]">
                 Cross-network performance is now aggregated from real provider metrics snapshots, giving you a live report layer instead of only scheduler stats.
               </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {featuredPlatforms.map((platform) => (
+                  <div
+                    key={platform}
+                    className="group inline-flex items-center gap-2 rounded-full border border-white/65 bg-white/65 px-3 py-2 text-xs font-semibold text-[#5f533f] shadow-[0_10px_18px_rgba(125,94,33,0.08)] transition duration-300 hover:-translate-y-0.5 hover:border-[#e2ca80] hover:bg-white/85 hover:shadow-[0_16px_24px_rgba(125,94,33,0.16)]"
+                  >
+                    <span
+                      className="flex h-7 w-7 items-center justify-center rounded-full transition duration-300 group-hover:scale-110"
+                      style={{
+                        backgroundColor: PLATFORM_COLORS[platform].soft,
+                        color: PLATFORM_COLORS[platform].strong,
+                      }}
+                    >
+                      <PlatformIcon platform={platform} className="text-sm" />
+                    </span>
+                    {PLATFORM_LABELS[platform]}
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap xl:justify-end">
@@ -558,13 +603,14 @@ export function AnalyticsDashboard() {
                     key={platform.value}
                     type="button"
                     onClick={() => togglePlatform(platform.value)}
-                    className="rounded-full border px-4 py-2 text-sm font-semibold transition"
+                    className="group inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_22px_rgba(109,84,23,0.12)]"
                     style={{
                       borderColor: active ? PLATFORM_COLORS[platform.value].strong : "#e3d8c8",
                       backgroundColor: active ? PLATFORM_COLORS[platform.value].soft : "rgba(255,255,255,0.68)",
                       color: active ? PLATFORM_COLORS[platform.value].strong : "#5d523f",
                     }}
                   >
+                          <PlatformIcon platform={platform.value} className="text-sm transition duration-300 group-hover:scale-110" />
                     {platform.label}
                   </button>
                 );
@@ -591,7 +637,7 @@ export function AnalyticsDashboard() {
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {metricCards.map((card) => (
-            <section key={card.label} className="rounded-[26px] border border-[#eadfcf] bg-white/80 p-4 shadow-[0_14px_34px_rgba(107,83,20,0.08)]">
+            <section key={card.label} className="rounded-[26px] border border-[#eadfcf] bg-white/80 p-4 shadow-[0_14px_34px_rgba(107,83,20,0.08)] transition duration-300 hover:-translate-y-1 hover:border-[#e3c98b] hover:shadow-[0_20px_40px_rgba(107,83,20,0.16)]">
               <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#7d725e]">{card.label}</div>
               <div className="mt-4 font-display text-4xl font-semibold tracking-[-0.05em] text-[#171311]">{loading ? "..." : card.value}</div>
               <div className={`mt-2 text-sm font-semibold ${toneForDelta(card.delta ?? 0)}`}>
@@ -644,16 +690,20 @@ export function AnalyticsDashboard() {
                 </thead>
                 <tbody>
                   {filteredTopPosts.map((post) => (
-                    <tr key={post.post_id} className="border-b border-[#f1e7d7] align-top last:border-0">
+                    <tr key={post.post_id} className="group border-b border-[#f1e7d7] align-top transition duration-300 hover:bg-white/60 last:border-0">
                       <td className="py-4 pr-4">
-                        <div className="max-w-[340px]">
+                        <div className="max-w-[340px] transition duration-300 group-hover:translate-x-1">
                           <div className="font-semibold text-[#171311]">{post.account_name ?? "Unknown account"}</div>
                           <div className="mt-1 text-sm leading-6 text-[#665946]">{post.content_preview ?? "No content preview"}</div>
                           <div className="mt-1 text-xs text-[#8c7f68]">{formatDateLabel(post.posted_at)}</div>
                         </div>
                       </td>
                       <td className="py-4 pr-4">
-                        <span className="rounded-full px-3 py-1 text-xs font-semibold" style={{ backgroundColor: PLATFORM_COLORS[post.platform]?.soft ?? "rgba(0,0,0,0.06)", color: PLATFORM_COLORS[post.platform]?.strong ?? "#171311" }}>
+                        <span
+                          className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold transition duration-300 group-hover:scale-[1.03]"
+                          style={{ backgroundColor: PLATFORM_COLORS[post.platform]?.soft ?? "rgba(0,0,0,0.06)", color: PLATFORM_COLORS[post.platform]?.strong ?? "#171311" }}
+                        >
+                          <PlatformIcon platform={post.platform} className="text-sm transition duration-300 group-hover:rotate-6" />
                           {PLATFORM_LABELS[post.platform] ?? post.platform}
                         </span>
                       </td>
