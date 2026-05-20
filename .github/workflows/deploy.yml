@@ -49,6 +49,31 @@ jobs:
               fi
             }
 
+            build_frontend_release() {
+              echo "Building frontend in isolated release directory..."
+              cd ~
+              rm -rf Connect_frontend_release
+              cp -R ~/Connect/frontend ~/Connect_frontend_release
+              cd ~/Connect_frontend_release
+
+              load_frontend_env
+              rm -rf .next
+              npm ci
+              npm run build
+
+              cd ~/Connect
+            }
+
+            promote_frontend_release() {
+              echo "Promoting isolated frontend build..."
+              rm -rf ~/Connect/frontend/.next_previous
+              if [ -d ~/Connect/frontend/.next ]; then
+                mv ~/Connect/frontend/.next ~/Connect/frontend/.next_previous
+              fi
+              cp -R ~/Connect_frontend_release/.next ~/Connect/frontend/.next
+              rm -rf ~/Connect_frontend_release
+            }
+
             load_frontend_env() {
               FRONTEND_ENV_FILE=""
               if [ -f ~/Connect/frontend/.env.production.local ]; then
@@ -88,12 +113,8 @@ jobs:
               restart_backend_services
 
               echo "Rebuilding frontend from previous commit..."
-              cd frontend
-              rm -rf .next
-              load_frontend_env
-              npm ci
-              npm run build
-              cd ..
+              build_frontend_release
+              promote_frontend_release
 
               restart_frontend_service
               pm2 save
@@ -144,12 +165,8 @@ jobs:
             done
 
             echo "Building frontend..."
-            cd frontend
-            rm -rf .next
-            load_frontend_env
-            npm ci
-            npm run build
-            cd ..
+            build_frontend_release
+            promote_frontend_release
 
             restart_frontend_service
 

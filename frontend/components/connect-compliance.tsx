@@ -34,7 +34,7 @@ export function ConnectComplianceFooter() {
       </p>
       <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-medium">
         <a
-          href="https://snapkey.in/privacy-policy.html"
+          href="https://snapkey.in/privacy-policy/"
           target="_blank"
           rel="noreferrer"
           className="text-[#8a6516] transition-colors hover:text-[#5e4306]"
@@ -42,7 +42,7 @@ export function ConnectComplianceFooter() {
           Privacy Policy
         </a>
         <a
-          href="https://snapkey.in/terms-and-conditions.html"
+          href="https://snapkey.in/terms-and-conditions/"
           target="_blank"
           rel="noreferrer"
           className="text-[#8a6516] transition-colors hover:text-[#5e4306]"
@@ -50,7 +50,7 @@ export function ConnectComplianceFooter() {
           Terms &amp; Conditions
         </a>
         <a
-          href="https://snapkey.in/data-deletion.html"
+          href="https://snapkey.in/data-deletion-request/"
           target="_blank"
           rel="noreferrer"
           className="text-[#8a6516] transition-colors hover:text-[#5e4306]"
