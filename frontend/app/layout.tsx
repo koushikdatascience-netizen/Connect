@@ -20,8 +20,8 @@ const displayFont = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "SnapKey CRM | Social Publishing",
-  description: "Social publishing module for SnapKey CRM.",
+  title: "Snapkey CRM | Snapkey Connect",
+  description: "Snapkey Connect is the social publishing and analytics module within Snapkey CRM.",
 };
 
 // Add this:

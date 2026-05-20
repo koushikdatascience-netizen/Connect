@@ -4,13 +4,14 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ReactNode, useState } from "react";
 
+import { ConnectComplianceBanner, ConnectComplianceFooter } from "@/components/connect-compliance";
 import { clearStoredAuthToken, logoutSession } from "@/lib/api";
 
 const navigation = [
-  { href: "/compose", label: "Compose Post", icon: "compose" },
+  { href: "/compose", label: "Create Post", icon: "compose" },
   { href: "/analytics", label: "Analytics", icon: "analytics" },
   { href: "/posts", label: "Scheduled Posts", icon: "clock" },
-  { href: "/connections", label: "Social Accounts", icon: "spark" },
+  { href: "/connections", label: "Manage Accounts", icon: "spark" },
 ] as const;
 
 function LogoMark() {
@@ -60,8 +61,8 @@ export function AppShellUx({ children }: { children: ReactNode }) {
           <button type="button" onClick={() => setMobileMenuOpen(true)} className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[#3b3421] bg-[#151515] p-0 text-[#f4d24a] transition-colors hover:border-[#5a4b1e] hover:bg-[#1b1b1b]" aria-label="Open navigation">
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><line x1="2" y1="4.5" x2="16" y2="4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><line x1="2" y1="9" x2="16" y2="9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><line x1="2" y1="13.5" x2="16" y2="13.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
           </button>
-          <div className="flex items-center gap-3"><LogoMark /><div className="hidden sm:block"><div className="font-display text-xl font-semibold tracking-[-0.06em] text-white">Snapkey</div><div className="text-[10px] uppercase tracking-[0.22em] text-[#f4d24a]">Social Suite</div></div></div>
-          <button type="button" onClick={() => router.push("/compose")} className="primary-button h-11 px-4 py-0 text-xs">+ New Post</button>
+          <div className="flex items-center gap-3"><LogoMark /><div className="hidden sm:block"><div className="font-display text-xl font-semibold tracking-[-0.06em] text-white">Snapkey</div><div className="text-[10px] uppercase tracking-[0.22em] text-[#f4d24a]">Social Manager</div></div></div>
+          <button type="button" onClick={() => router.push("/compose")} className="primary-button h-11 px-4 py-0 text-xs">Create Post</button>
         </div>
       </div>
 
@@ -69,7 +70,7 @@ export function AppShellUx({ children }: { children: ReactNode }) {
         <div className="fixed inset-0 z-50 bg-[rgba(17,17,17,0.32)] backdrop-blur-sm lg:hidden" onClick={() => setMobileMenuOpen(false)}>
           <aside className="h-full w-[84%] max-w-[320px] border-r border-[#2a2414] bg-[#0b0b0b] px-5 py-5 shadow-[0_18px_50px_rgba(0,0,0,0.42)]" onClick={(event) => event.stopPropagation()}>
             <div className="mb-6 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3"><LogoMark /><div><div className="font-display text-2xl font-semibold tracking-[-0.06em] text-white">Snapkey</div><p className="text-xs uppercase tracking-[0.2em] text-[#f4d24a]">Workspace menu</p></div></div>
+              <div className="flex items-center gap-3"><LogoMark /><div><div className="font-display text-2xl font-semibold tracking-[-0.06em] text-white">Snapkey</div><p className="text-xs uppercase tracking-[0.2em] text-[#f4d24a]">Snapkey CRM module</p></div></div>
               <button type="button" onClick={() => setMobileMenuOpen(false)} className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[#3b3421] bg-[#151515] p-0 text-[#f4d24a] transition-colors hover:border-[#5a4b1e] hover:bg-[#1b1b1b]" aria-label="Close navigation"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><line x1="2" y1="2" x2="14" y2="14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><line x1="14" y1="2" x2="2" y2="14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg></button>
             </div>
             <nav className="space-y-2">{navigation.map((item) => {
@@ -85,7 +86,7 @@ export function AppShellUx({ children }: { children: ReactNode }) {
         <aside className="hidden w-[220px] shrink-0 lg:block">
           <div className="sticky top-5 flex h-[calc(100vh-2.5rem)] flex-col justify-between rounded-[28px] border border-[#2b2414] bg-[#0b0b0b] p-4 shadow-[0_24px_64px_rgba(0,0,0,0.42)]">
             <div>
-              <div className="mb-6 flex items-center gap-3"><LogoMark /><div><div className="font-display text-[22px] font-semibold tracking-[-0.06em] text-white">Snapkey</div><div className="text-[10px] uppercase tracking-[0.24em] text-[#f4d24a]">Social Suite</div></div></div>
+              <div className="mb-6 flex items-center gap-3"><LogoMark /><div><div className="font-display text-[22px] font-semibold tracking-[-0.06em] text-white">Snapkey</div><div className="text-[10px] uppercase tracking-[0.24em] text-[#f4d24a]">Social Manager</div></div></div>
               <nav className="space-y-1.5">
                 {navigation.map((item) => {
                   const active = pathname === item.href || pathname?.startsWith(`${item.href}/`);
@@ -106,7 +107,11 @@ export function AppShellUx({ children }: { children: ReactNode }) {
           </div>
         </aside>
 
-        <div className="min-w-0 flex-1">{children}</div>
+        <div className="min-w-0 flex-1">
+          <ConnectComplianceBanner />
+          {children}
+          <ConnectComplianceFooter />
+        </div>
       </div>
 
       <nav className="fixed inset-x-4 bottom-4 z-40 rounded-[26px] border border-[#2b2414] bg-[rgba(10,10,10,0.96)] p-2 shadow-[0_18px_40px_rgba(0,0,0,0.3)] backdrop-blur lg:hidden">

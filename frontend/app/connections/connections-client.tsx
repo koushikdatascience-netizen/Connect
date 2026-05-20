@@ -18,7 +18,7 @@ const platformMeta: Array<{
   { key: "facebook",        label: "Facebook",        hint: "Pages & Groups",        color: "#1877f2", iconBg: "rgba(24,119,242,0.12)",  iconColor: "#1877f2" },
   { key: "instagram",       label: "Instagram",       hint: "Business & Creator",     color: "#e1306c", iconBg: "rgba(225,48,108,0.12)",  iconColor: "#e1306c" },
   { key: "linkedin",        label: "LinkedIn",        hint: "Profiles & Pages",       color: "#0a66c2", iconBg: "rgba(10,102,194,0.12)",  iconColor: "#0a66c2" },
-  { key: "twitter",         label: "X (Twitter)",     hint: "Text-first publishing",  color: "#111111", iconBg: "rgba(0,0,0,0.08)",       iconColor: "#111111" },
+  { key: "twitter",         label: "X (Twitter)",     hint: "Text post support",      color: "#111111", iconBg: "rgba(0,0,0,0.08)",       iconColor: "#111111" },
   { key: "youtube",         label: "YouTube",         hint: "Video publishing",       color: "#ff0000", iconBg: "rgba(255,0,0,0.10)",     iconColor: "#ff0000" },
   { key: "blogger",         label: "Blogger",         hint: "Blog publishing",        color: "#ef6c00", iconBg: "rgba(239,108,0,0.10)",   iconColor: "#ef6c00" },
   { key: "google_business", label: "Google Business", hint: "Business updates",       color: "#1a73e8", iconBg: "rgba(26,115,232,0.10)",  iconColor: "#1a73e8" },
@@ -206,7 +206,7 @@ function PlatformCard({ meta, accounts, connected, onConnect, onRemoveAccount }:
               cursor: "pointer", transition: "background 0.15s, border-color 0.15s",
             }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>
-            {accounts.length > 0 ? "Add another account" : "Connect account"}
+            {accounts.length > 0 ? "Add another account" : "Connect Account"}
           </button>
         </div>
       )}
@@ -331,18 +331,21 @@ export default function ConnectionsClient() {
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
           <div>
             <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.14em", textTransform: "uppercase", color: "#b8955a", marginBottom: 6 }}>
-              Social Connections
+              Connected Accounts
             </div>
             <h1 style={{ fontSize: "clamp(22px, 4vw, 32px)", fontWeight: 800, letterSpacing: "-0.04em", color: "#2d1f00", margin: 0, lineHeight: 1.1 }}>
-              Manage your channels
+              Manage Connected Accounts
             </h1>
             <p style={{ fontSize: 13.5, color: "#9b7d42", marginTop: 6, lineHeight: 1.6 }}>
-              Tap any platform to expand — see connected accounts, add new ones, or remove existing ones.
+              Tap any platform to expand, review connected accounts, add new ones, or remove existing ones.
+            </p>
+            <p style={{ fontSize: 13.5, color: "#8b6b33", marginTop: 8, lineHeight: 1.6 }}>
+              Accounts are connected securely using official authorization flows and platform permissions.
             </p>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 7, borderRadius: 100, padding: "7px 16px", background: "rgba(255,255,255,0.72)", border: "1.5px solid rgba(212,170,90,0.42)", boxShadow: "0 2px 8px rgba(0,0,0,0.05)", fontSize: 13, fontWeight: 700, color: "#8a6520", whiteSpace: "nowrap" }}>
             <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#d4a83a" }} />
-            {accounts.length} active account{accounts.length !== 1 ? "s" : ""}
+            {accounts.length} connected account{accounts.length !== 1 ? "s" : ""}
           </div>
         </div>
       </div>
@@ -384,3 +387,4 @@ export default function ConnectionsClient() {
     </main>
   );
 }
+

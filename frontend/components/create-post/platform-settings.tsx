@@ -241,7 +241,7 @@ function TwitterSettings({ config, onChange }: { config: PlatformConfig; onChang
         </Field>
       </Section>
       <Section title="Post options">
-        <Toggle checked={config.twitterThreadMode} onChange={(v) => onChange("twitterThreadMode", v)} label="Thread mode" description="Auto-splits long content into a numbered thread." />
+        <Toggle checked={config.twitterThreadMode} onChange={(v) => onChange("twitterThreadMode", v)} label="Thread mode" description="Splits long content into a numbered thread." />
         <Toggle checked={config.twitterCardEnabled} onChange={(v) => onChange("twitterCardEnabled", v)} label="Show link preview card" description="Renders a rich card when the post contains a URL." />
         <Toggle checked={config.twitterSensitive} onChange={(v) => onChange("twitterSensitive", v)} label="Mark as sensitive content" description="Adds an age-gate warning to media in this post." />
         <Toggle checked={config.twitterForSuperFollowers} onChange={(v) => onChange("twitterForSuperFollowers", v)} label="Super followers only" description="Restricts this post to paid super followers." />

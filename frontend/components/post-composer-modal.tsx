@@ -26,9 +26,9 @@ const descriptions: Record<PlatformName, string> = {
   facebook: "Pages and Meta-connected publishing",
   instagram: "Feed and reel publishing",
   linkedin: "Professional and company updates",
-  twitter: "Fast campaign updates and threads",
+  twitter: "Text post updates and threads",
   youtube: "Video publishing through Google",
-  blogger: "Text-first blog publishing",
+  blogger: "Blog publishing",
   google_business: "Business profile updates",
   wordpress: "Website article publishing",
 };
@@ -186,7 +186,7 @@ export function PostComposerModal({ open, onClose }: Props) {
                       <div className="field-row">
                         <div className="field">
                           <label htmlFor="hashtags">Hashtags</label>
-                          <input id="hashtags" value={hashtags} onChange={(event) => setHashtags(event.target.value)} placeholder="crm, marketing, automation" type="text" />
+                          <input id="hashtags" value={hashtags} onChange={(event) => setHashtags(event.target.value)} placeholder="crm, marketing, launch" type="text" />
                         </div>
                         <div className="field">
                           <label htmlFor="mentions">Mentions</label>

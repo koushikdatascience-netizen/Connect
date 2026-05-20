@@ -543,13 +543,13 @@ export function AnalyticsDashboard() {
           <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
             <div className="max-w-3xl">
               <div className="inline-flex rounded-full border border-[#e2ca80] bg-[#fff2c7] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8e6a09]">
-                Live Social Intelligence
+                Live Analytics
               </div>
               <h1 className="mt-4 font-display text-4xl font-semibold tracking-[-0.06em] text-[#171311] sm:text-5xl">
-                Advanced analytics for the channels that move revenue, not vanity.
+                Performance analytics for your connected publishing channels.
               </h1>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-[#615541] sm:text-[15px]">
-                Cross-network performance is now aggregated from real provider metrics snapshots, giving you a live report layer instead of only scheduler stats.
+                Review impressions, reach, engagement, clicks, and publishing performance from official platform metrics snapshots across your connected accounts.
               </p>
               <div className="mt-4 flex flex-wrap gap-2">
                 {featuredPlatforms.map((platform) => (
