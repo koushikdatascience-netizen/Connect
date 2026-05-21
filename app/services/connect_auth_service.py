@@ -131,6 +131,7 @@ def register_connect_user(
         updated_at=datetime.utcnow(),
     )
     db.add(user)
+    db.flush()
     verification_token = create_auth_token(db, user.id, "email_verification", settings.CONNECT_EMAIL_TOKEN_TTL_MINUTES)
     approval_token = None
     if settings.CONNECT_REVIEW_REQUIRED:
