@@ -91,6 +91,60 @@
     box-shadow: 0 8px 20px rgba(180, 144, 34, 0.10);
   }
 
+  .auth-page {
+    min-height: 100vh;
+    background:
+      radial-gradient(circle at top left, rgba(255, 214, 110, 0.24), transparent 30%),
+      radial-gradient(circle at top right, rgba(245, 196, 0, 0.14), transparent 24%),
+      linear-gradient(180deg, #fff9ea 0%, #f6edd8 48%, #efe4cf 100%);
+  }
+
+  .auth-card {
+    @apply w-full rounded-[34px] border px-7 py-8 shadow-[0_28px_64px_rgba(107,83,20,0.14)] sm:px-8;
+    border-color: #e7d39f;
+    background:
+      linear-gradient(180deg, rgba(255, 253, 247, 0.98), rgba(249, 242, 225, 0.96));
+  }
+
+  .auth-input {
+    @apply w-full rounded-2xl border px-4 py-3 text-sm outline-none transition;
+    border-color: #e5d4aa;
+    background: rgba(255, 255, 255, 0.88);
+    color: #171311;
+  }
+
+  .auth-input::placeholder {
+    color: #8d7b60;
+  }
+
+  .auth-input:focus {
+    border-color: #d7af29;
+    box-shadow: 0 0 0 4px rgba(255, 213, 42, 0.14);
+  }
+
+  .auth-link {
+    color: #9c7408;
+    transition: color 0.15s ease, opacity 0.15s ease;
+  }
+
+  .auth-link:hover {
+    color: #6c4f05;
+  }
+
+  .auth-link-pill {
+    @apply inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold;
+    border-color: #e4cb80;
+    background: #fff3c7;
+    color: #8b6809;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
+  }
+
+  .auth-link-pill:hover {
+    color: #6c4f05;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(180, 144, 34, 0.12);
+  }
+
   .ghost-button {
     @apply inline-flex items-center justify-center rounded-2xl border border-transparent px-4 py-2.5 text-sm font-medium text-ink-700;
     transition: background-color 0.15s, color 0.15s;

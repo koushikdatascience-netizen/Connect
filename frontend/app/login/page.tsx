@@ -56,14 +56,14 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[radial-gradient(ellipse_60%_40%_at_50%_0%,rgba(255,213,42,0.11)_0%,transparent_100%),linear-gradient(180deg,#09090e_0%,#07080d_100%)] px-6 py-10">
-      <section className="w-full max-w-[460px] rounded-[30px] border border-[#252030] bg-[#0d1018]/95 p-8 shadow-[0_22px_60px_rgba(24,24,24,0.08)] backdrop-blur">
+    <main className="auth-page flex items-center justify-center px-6 py-10">
+      <section className="auth-card max-w-[480px]">
         <div className="mb-8">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#ffd52a]">Snapkey Connect</p>
-          <h1 className="mt-3 font-display text-4xl font-semibold tracking-[-0.06em] text-ink-900">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#a67d10]">Snapkey Connect</p>
+          <h1 className="mt-3 font-display text-4xl font-semibold tracking-[-0.06em] text-[#171311]">
             Sign in to your workspace
           </h1>
-          <p className="mt-3 text-sm leading-6 text-ink-700">
+          <p className="mt-3 text-sm leading-6 text-[#6d6048]">
             Use your Snapkey Connect credentials to manage publishing access, connected accounts, and scheduled content.
           </p>
         </div>
@@ -82,7 +82,7 @@ export default function LoginPage() {
 
         <form className="space-y-4" onSubmit={handleLogin}>
           <div>
-            <label htmlFor="email" className="mb-2 block text-sm font-medium text-ink-700">
+            <label htmlFor="email" className="mb-2 block text-sm font-medium text-[#5f533f]">
               Email
             </label>
             <input
@@ -90,7 +90,7 @@ export default function LoginPage() {
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              className="w-full rounded-2xl border border-[#252030] bg-[#0d0b14] px-4 py-3 text-sm text-ink-900 outline-none transition focus:border-[#ffd52a]"
+              className="auth-input"
               placeholder="you@example.com"
               autoComplete="email"
               required
@@ -98,10 +98,10 @@ export default function LoginPage() {
           </div>
           <div>
             <div className="mb-2 flex items-center justify-between gap-3">
-              <label htmlFor="password" className="block text-sm font-medium text-ink-700">
+              <label htmlFor="password" className="block text-sm font-medium text-[#5f533f]">
                 Password
               </label>
-              <Link href="/forgot-password" className="text-xs font-medium text-[#ffd52a] hover:text-[#ffe37a]">
+              <Link href="/forgot-password" className="auth-link-pill">
                 Forgot password?
               </Link>
             </div>
@@ -110,7 +110,7 @@ export default function LoginPage() {
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              className="w-full rounded-2xl border border-[#252030] bg-[#0d0b14] px-4 py-3 text-sm text-ink-900 outline-none transition focus:border-[#ffd52a]"
+              className="auth-input"
               placeholder="Enter your password"
               autoComplete="current-password"
               required
@@ -125,21 +125,21 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div className="mt-5 flex items-center justify-between gap-3 text-sm text-ink-600">
+        <div className="mt-5 flex items-center justify-between gap-3 text-sm text-[#726451]">
           <span>Need an account?</span>
-          <Link href="/register" className="font-medium text-[#ffd52a] hover:text-[#ffe37a]">
+          <Link href="/register" className="auth-link font-semibold">
             Register for access
           </Link>
         </div>
 
         {hasDemoToken ? (
-          <div className="mt-6 rounded-2xl border border-[#252030] bg-[#0d0b14] px-4 py-4 text-xs leading-5 text-ink-500">
+          <div className="mt-6 rounded-2xl border border-[#eadba6] bg-[#fff8e2] px-4 py-4 text-xs leading-5 text-[#74664d]">
             <div className="mb-3">Demo access is enabled in this environment.</div>
             <button
               type="button"
               onClick={() => void handleDemoLogin()}
               disabled={submitting}
-              className="w-full rounded-full border border-[#3b3421] px-4 py-2.5 text-sm font-semibold text-[#ffd52a] transition hover:border-[#5a4b1e] hover:bg-[#151515] disabled:cursor-not-allowed disabled:opacity-60"
+              className="secondary-button w-full justify-center py-2.5 font-semibold text-[#8b6809]"
             >
               Continue as Demo User
             </button>
