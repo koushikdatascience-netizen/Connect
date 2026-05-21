@@ -204,9 +204,25 @@ export async function beginOAuthLogin(
     authTab.document.write("<title>Connecting account...</title><p style=\"font-family: sans-serif; padding: 24px;\">Redirecting to the provider login...</p>");
   }
 
-  const response = await apiFetch<{ authorization_url: string }>(
-    `/api/v1/oauth/${oauthPlatform}/authorize?add_another=${addAnother}`,
-  );
+  let response: { authorization_url: string };
+  try {
+    response = await apiFetch<{ authorization_url: string }>(
+      `/api/v1/oauth/${oauthPlatform}/authorize?add_another=${addAnother}`,
+    );
+  } catch (error) {
+    if (authTab && !authTab.closed) {
+      authTab.close();
+    }
+    throw error;
+  }
+
+  if (!response.authorization_url) {
+    if (authTab && !authTab.closed) {
+      authTab.close();
+    }
+    throw new Error("OAuth provider URL was not returned. Please try again.");
+  }
+
   if (typeof window !== "undefined") {
     if (options?.openInNewTab) {
       if (!authTab || authTab.closed) {
