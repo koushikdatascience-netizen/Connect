@@ -5,7 +5,16 @@ import { usePathname, useRouter } from "next/navigation";
 
 import { fetchSession, hasStoredAuthToken } from "@/lib/api";
 
-const PUBLIC_PATHS = new Set(["/login", "/privacy-policy", "/terms", "/webview-auth"]);
+const PUBLIC_PATHS = new Set([
+  "/login",
+  "/register",
+  "/forgot-password",
+  "/reset-password",
+  "/verify-email",
+  "/privacy-policy",
+  "/terms",
+  "/webview-auth",
+]);
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

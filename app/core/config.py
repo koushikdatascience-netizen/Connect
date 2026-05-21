@@ -50,6 +50,24 @@ class Settings(BaseSettings):
     SESSION_COOKIE_SECURE: bool = False
     SESSION_COOKIE_SAMESITE: str = "lax"
 
+    # Snapkey Connect registration / beta access
+    CONNECT_PUBLIC_REGISTRATION_ENABLED: bool = True
+    CONNECT_REVIEW_REQUIRED: bool = True
+    CONNECT_DEFAULT_MAX_SOCIAL_ACCOUNTS: int = 2
+    CONNECT_DEFAULT_MAX_MONTHLY_POSTS: int = 20
+    CONNECT_EMAIL_TOKEN_TTL_MINUTES: int = 60 * 24
+    CONNECT_PASSWORD_RESET_TTL_MINUTES: int = 30
+
+    # SMTP email delivery. Keep credentials in environment variables only.
+    SMTP_HOST: Optional[str] = None
+    SMTP_PORT: int = 465
+    SMTP_USERNAME: Optional[str] = None
+    SMTP_PASSWORD: Optional[str] = None
+    SMTP_FROM_EMAIL: Optional[str] = None
+    SMTP_FROM_NAME: str = "Snapkey Connect"
+    SMTP_USE_SSL: bool = True
+    SMTP_ADMIN_RECIPIENTS: str = ""
+
     # Auth / JWT
     AUTH_REQUIRED: bool = True
     ALLOW_DEV_TENANT_HEADER: bool = True

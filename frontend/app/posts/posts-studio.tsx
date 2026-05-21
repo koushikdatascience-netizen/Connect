@@ -78,6 +78,7 @@ export default function PostsStudio() {
   const router = useRouter();
   const [posts, setPosts] = useState<Post[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [deleteNotice, setDeleteNotice] = useState<{ tone: "success" | "warning"; text: string } | null>(null);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [platformFilter, setPlatformFilter] = useState("all");
@@ -119,10 +120,15 @@ export default function PostsStudio() {
   async function handleDelete(postId: number) {
     try {
       setError(null);
-      await deletePost(postId);
+      const result = await deletePost(postId);
+      setDeleteNotice({
+        tone: result.remote_deleted ? "success" : "warning",
+        text: result.message,
+      });
       setSelectedPostId((current) => (current === postId ? null : current));
       await load();
     } catch (deleteError) {
+      setDeleteNotice(null);
       setError(deleteError instanceof Error ? deleteError.message : "Unable to delete post.");
     }
   }
@@ -142,6 +148,17 @@ export default function PostsStudio() {
               </div>
 
               <ErrorNotice error={error} fallback="We couldn't load scheduled posts right now." />
+              {deleteNotice ? (
+                <div
+                  className={`rounded-2xl border px-4 py-3 text-sm ${
+                    deleteNotice.tone === "success"
+                      ? "border-[#d7e9c0] bg-[#f7fbef] text-[#53722c]"
+                      : "border-[#e8c88b] bg-[#fff8e1] text-[#8a6116]"
+                  }`}
+                >
+                  {deleteNotice.text}
+                </div>
+              ) : null}
 
               <div className="rounded-[26px] border border-[#eadfcd] bg-[#fff8e8] p-4 shadow-[0_10px_24px_rgba(180,144,34,0.08)]">
                 <div className="grid gap-3 xl:grid-cols-[minmax(0,1.3fr)_1fr_1fr]">

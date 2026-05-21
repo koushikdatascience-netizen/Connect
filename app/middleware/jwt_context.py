@@ -62,6 +62,12 @@ async def jwt_context_middleware(request: Request, call_next):
     oauth_callback_path = oauth_path and request.url.path.endswith("/callback")
     auth_exchange_path = request.url.path == "/api/v1/auth/webview/exchange"
     public_auth_paths = {
+        "/api/v1/auth/register",
+        "/api/v1/auth/login",
+        "/api/v1/auth/verify-email",
+        "/api/v1/auth/forgot-password",
+        "/api/v1/auth/reset-password",
+        "/api/v1/auth/approve-access",
         "/api/v1/auth/session",
         "/api/v1/auth/logout",
     }

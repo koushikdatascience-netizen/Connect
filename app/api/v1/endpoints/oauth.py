@@ -13,6 +13,7 @@ from app.core.config import get_settings
 from app.core.logging import get_logger
 from app.core.redis_client import redis_client
 from app.services.oauth_service import save_social_account
+from app.services.connect_access_service import ensure_user_can_connect_accounts
 
 from fastapi import Depends
 from app.utils.deps import get_current_user
@@ -110,6 +111,7 @@ def _get_tenant_and_user(request: Request):
     if not user_id:
         user_id = "anonymous"
 
+    ensure_user_can_connect_accounts(tenant_id)
     return tenant_id, user_id
 
 

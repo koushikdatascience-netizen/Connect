@@ -2,13 +2,29 @@ from datetime import datetime, timezone
 import json
 import secrets
 from typing import Any, Dict, Optional
+from urllib.parse import urlencode
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, Field
+from sqlalchemy.orm import Session
 
 from app.core.auth import CurrentUser, create_bearer_token
 from app.core.config import get_settings
 from app.core.redis_client import redis_client
+from app.db.database import SessionLocal
+from app.services.connect_auth_service import (
+    consume_auth_token,
+    create_auth_token,
+    get_user_by_email,
+    get_user_by_tenant,
+    mark_user_active,
+    register_connect_user,
+    send_password_reset_email,
+    send_registration_emails,
+    hash_password,
+    verify_password,
+)
 from app.utils.deps import get_current_user
 
 router = APIRouter(prefix="/auth")
@@ -31,6 +47,91 @@ class SessionRead(BaseModel):
     user_id: str
     role: Optional[str] = None
     is_admin: bool
+    status: Optional[str] = None
+    email_verified: Optional[bool] = None
+
+
+class RegisterRequest(BaseModel):
+    email: str = Field(min_length=5, max_length=255)
+    phone: str = Field(min_length=7, max_length=32)
+    password: str = Field(min_length=8, max_length=128)
+    confirm_password: str = Field(min_length=8, max_length=128)
+
+
+class RegisterResponse(BaseModel):
+    message: str
+    status: str
+
+
+class LoginRequest(BaseModel):
+    email: str = Field(min_length=5, max_length=255)
+    password: str = Field(min_length=8, max_length=128)
+
+
+class LoginResponse(BaseModel):
+    token: str
+    authenticated: bool
+    tenant_id: str
+    user_id: str
+    status: str
+
+
+class TokenRequest(BaseModel):
+    token: str = Field(min_length=16)
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: str = Field(min_length=5, max_length=255)
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str = Field(min_length=16)
+    password: str = Field(min_length=8, max_length=128)
+    confirm_password: str = Field(min_length=8, max_length=128)
+
+
+class ApproveAccessResponse(BaseModel):
+    message: str
+    status: str
+
+
+def _db_session():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+def _set_session_cookie(response: Response, token: str) -> None:
+    response.set_cookie(
+        key=settings.SESSION_COOKIE_NAME,
+        value=token,
+        httponly=True,
+        secure=settings.SESSION_COOKIE_SECURE,
+        samesite=settings.SESSION_COOKIE_SAMESITE,
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        path="/",
+    )
+
+
+def _create_user_token(user) -> str:
+    return create_bearer_token(
+        tenant_id=user.tenant_id,
+        subject=user.id,
+        is_admin=bool(user.is_admin),
+        extra_claims={
+            "email": user.email,
+            "connect_status": user.status,
+        },
+    )
+
+
+def _admin_approval_redirect(message: str) -> RedirectResponse:
+    return RedirectResponse(
+        f"{settings.frontend_url}/login?{urlencode({'approval': message})}",
+        status_code=status.HTTP_303_SEE_OTHER,
+    )
 
 
 def _webview_code_key(code: str) -> str:
@@ -65,14 +166,135 @@ def _deserialize_webview_payload(raw: str) -> Dict[str, Any]:
 
 
 @router.get("/session", response_model=SessionRead)
-def read_session(user: CurrentUser = Depends(get_current_user)):
+def read_session(
+    user: CurrentUser = Depends(get_current_user),
+    db: Session = Depends(_db_session),
+):
+    connect_user = get_user_by_tenant(db, user.tenant_id)
     return {
         "authenticated": True,
         "tenant_id": user.tenant_id,
         "user_id": user.subject,
         "role": user.role,
         "is_admin": user.is_admin,
+        "status": connect_user.status if connect_user else None,
+        "email_verified": bool(connect_user.email_verified_at) if connect_user else None,
     }
+
+
+@router.post("/register", response_model=RegisterResponse, status_code=status.HTTP_201_CREATED)
+def register(payload: RegisterRequest, db: Session = Depends(_db_session)):
+    if not settings.CONNECT_PUBLIC_REGISTRATION_ENABLED:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Registration is currently closed.")
+    if payload.password != payload.confirm_password:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Passwords do not match.")
+
+    user, verification_token, approval_token = register_connect_user(
+        db,
+        email=payload.email,
+        phone=payload.phone,
+        password=payload.password,
+    )
+    db.flush()
+    try:
+        send_registration_emails(user, verification_token, approval_token)
+    except RuntimeError as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc),
+        ) from exc
+    db.commit()
+    return {
+        "message": "Registration received. Please verify your email to continue.",
+        "status": user.status,
+    }
+
+
+@router.post("/verify-email")
+def verify_email(payload: TokenRequest, db: Session = Depends(_db_session)):
+    user = consume_auth_token(db, payload.token, "email_verification")
+    user.email_verified_at = datetime.utcnow()
+    user.updated_at = datetime.utcnow()
+    if user.status == "pending_review" and not settings.CONNECT_REVIEW_REQUIRED:
+        mark_user_active(user)
+    db.commit()
+    return {
+        "message": (
+            "Email verified. Your account is pending review for beta access."
+            if user.status == "pending_review"
+            else "Email verified. You can now sign in."
+        ),
+        "status": user.status,
+    }
+
+
+@router.post("/login", response_model=LoginResponse)
+def login(payload: LoginRequest, response: Response, db: Session = Depends(_db_session)):
+    user = get_user_by_email(db, payload.email)
+    if not user or not verify_password(payload.password, user.password_hash):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password.")
+    if user.status == "blocked":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="This account is not available.")
+    if not user.email_verified_at:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Please verify your email before signing in.")
+
+    token = _create_user_token(user)
+    _set_session_cookie(response, token)
+    return {
+        "token": token,
+        "authenticated": True,
+        "tenant_id": user.tenant_id,
+        "user_id": user.id,
+        "status": user.status,
+    }
+
+
+@router.post("/forgot-password")
+def forgot_password(payload: ForgotPasswordRequest, db: Session = Depends(_db_session)):
+    user = get_user_by_email(db, payload.email)
+    if user:
+        token = create_auth_token(db, user.id, "password_reset", settings.CONNECT_PASSWORD_RESET_TTL_MINUTES)
+        db.flush()
+        try:
+            send_password_reset_email(user, token)
+        except RuntimeError as exc:
+            db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=str(exc),
+            ) from exc
+        db.commit()
+    return {"message": "If this email exists, a password reset link has been sent."}
+
+
+@router.post("/reset-password")
+def reset_password(payload: ResetPasswordRequest, db: Session = Depends(_db_session)):
+    if payload.password != payload.confirm_password:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Passwords do not match.")
+    user = consume_auth_token(db, payload.token, "password_reset")
+
+    user.password_hash = hash_password(payload.password)
+    user.updated_at = datetime.utcnow()
+    db.commit()
+    return {"message": "Password updated. You can now sign in."}
+
+
+@router.get("/approve-access")
+def approve_access(
+    token: str = Query(min_length=16),
+    db: Session = Depends(_db_session),
+):
+    try:
+        user = consume_auth_token(db, token, "beta_access_approval")
+    except HTTPException as exc:
+        return _admin_approval_redirect(
+            "This approval link is invalid or expired. Please use a fresh registration email."
+        )
+
+    mark_user_active(user)
+    db.commit()
+    return _admin_approval_redirect(f"Approved access for {user.email}.")
 
 
 @router.post("/webview/create-code", response_model=WebViewCodeCreateResponse)
@@ -131,15 +353,7 @@ def exchange_webview_code(
         extra_claims=data.get("claims") if isinstance(data.get("claims"), dict) else None,
     )
 
-    response.set_cookie(
-        key=settings.SESSION_COOKIE_NAME,
-        value=token,
-        httponly=True,
-        secure=settings.SESSION_COOKIE_SECURE,
-        samesite=settings.SESSION_COOKIE_SAMESITE,
-        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-        path="/",
-    )
+    _set_session_cookie(response, token)
 
     return {
         "authenticated": True,

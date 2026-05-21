@@ -219,6 +219,56 @@ export async function beginOAuthLogin(
   }
 }
 
+export function registerConnectUser(payload: {
+  email: string;
+  phone: string;
+  password: string;
+  confirm_password: string;
+}) {
+  return apiFetch<{ message: string; status: string }>("/api/v1/auth/register", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function loginConnectUser(payload: { email: string; password: string }) {
+  return apiFetch<{
+    token: string;
+    authenticated: boolean;
+    tenant_id: string;
+    user_id: string;
+    status: string;
+  }>("/api/v1/auth/login", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function verifyConnectEmail(token: string) {
+  return apiFetch<{ message: string; status: string }>("/api/v1/auth/verify-email", {
+    method: "POST",
+    body: JSON.stringify({ token }),
+  });
+}
+
+export function requestPasswordReset(email: string) {
+  return apiFetch<{ message: string }>("/api/v1/auth/forgot-password", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
+export function resetConnectPassword(payload: {
+  token: string;
+  password: string;
+  confirm_password: string;
+}) {
+  return apiFetch<{ message: string }>("/api/v1/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
 export function connectWordpressSite(payload: {
   site_url: string;
   username: string;

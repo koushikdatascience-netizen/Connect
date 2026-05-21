@@ -50,7 +50,14 @@ export function AppShellUx({ children }: { children: ReactNode }) {
     router.replace("/login");
   }
 
-  if (pathname === "/login" || pathname === "/webview-auth") {
+  if (
+    pathname === "/login" ||
+    pathname === "/register" ||
+    pathname === "/forgot-password" ||
+    pathname === "/reset-password" ||
+    pathname === "/verify-email" ||
+    pathname === "/webview-auth"
+  ) {
     return <>{children}</>;
   }
 

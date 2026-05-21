@@ -5,6 +5,7 @@ from app.core.logging import get_logger
 from app.core.security import encrypt_token
 from app.db.database import SessionLocal, reset_tenant_context, set_tenant_context
 from app.models.social_account import SocialAccount
+from app.services.connect_access_service import ensure_account_limit_available
 
 logger = get_logger("app.oauth")
 
@@ -20,6 +21,8 @@ def save_social_account(
     account_type: Optional[str] = None,
     profile_picture_url: Optional[str] = None,
 ):
+    ensure_account_limit_available(tenant_id, platform, platform_account_id)
+
     db = SessionLocal()
     set_tenant_context(db, tenant_id)
 

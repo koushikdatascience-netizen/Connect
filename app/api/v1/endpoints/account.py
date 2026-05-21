@@ -21,6 +21,7 @@ from app.schemas.account import (
     AccountUpdate,
     WordPressConnectRequest,
 )
+from app.services.connect_access_service import ensure_user_can_connect_accounts
 from app.services.oauth_service import save_social_account
 from app.utils.deps import get_db, get_tenant
 
@@ -45,6 +46,7 @@ def create_account_endpoint(
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant),
 ):
+    ensure_user_can_connect_accounts(tenant_id)
     return create_account(db, tenant_id, data)
 
 
@@ -53,6 +55,7 @@ def connect_wordpress_site(
     data: WordPressConnectRequest,
     tenant_id: str = Depends(get_tenant),
 ):
+    ensure_user_can_connect_accounts(tenant_id)
     site_url = _normalize_wordpress_site_url(data.site_url)
     username = data.username.strip()
     application_password = data.application_password.strip()
