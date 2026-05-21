@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import hashlib
 import hmac
 import secrets
@@ -15,6 +15,10 @@ from app.services.email_service import admin_recipients, send_email
 
 PASSWORD_ALGORITHM = "pbkdf2_sha256"
 PASSWORD_ITERATIONS = 260000
+
+
+def utc_now() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 def normalize_email(email: str) -> str:
@@ -59,8 +63,8 @@ def create_auth_token(db: Session, user_id: str, purpose: str, ttl_minutes: int)
             user_id=user_id,
             purpose=purpose,
             token_hash=hash_token(token),
-            expires_at=datetime.utcnow() + timedelta(minutes=ttl_minutes),
-            created_at=datetime.utcnow(),
+            expires_at=utc_now() + timedelta(minutes=ttl_minutes),
+            created_at=utc_now(),
         )
     )
     return token
@@ -68,7 +72,7 @@ def create_auth_token(db: Session, user_id: str, purpose: str, ttl_minutes: int)
 
 def mark_user_active(user: ConnectUser) -> ConnectUser:
     user.status = "active"
-    user.updated_at = datetime.utcnow()
+    user.updated_at = utc_now()
     return user
 
 
@@ -90,7 +94,7 @@ def consume_auth_token(db: Session, token: str, purpose: str) -> ConnectUser:
         )
         .first()
     )
-    if token_row is None or token_row.expires_at < datetime.utcnow():
+    if token_row is None or token_row.expires_at < utc_now():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="This link is invalid or expired. Please request a new one.",
@@ -100,7 +104,7 @@ def consume_auth_token(db: Session, token: str, purpose: str) -> ConnectUser:
     if user is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User not found.")
 
-    token_row.used_at = datetime.utcnow()
+    token_row.used_at = utc_now()
     return user
 
 
@@ -127,8 +131,8 @@ def register_connect_user(
         is_admin=False,
         max_social_accounts=settings.CONNECT_DEFAULT_MAX_SOCIAL_ACCOUNTS,
         max_monthly_posts=settings.CONNECT_DEFAULT_MAX_MONTHLY_POSTS,
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=utc_now(),
+        updated_at=utc_now(),
     )
     db.add(user)
     db.flush()

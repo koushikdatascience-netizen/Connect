@@ -214,8 +214,8 @@ def register(payload: RegisterRequest, db: Session = Depends(_db_session)):
 @router.post("/verify-email")
 def verify_email(payload: TokenRequest, db: Session = Depends(_db_session)):
     user = consume_auth_token(db, payload.token, "email_verification")
-    user.email_verified_at = datetime.utcnow()
-    user.updated_at = datetime.utcnow()
+    user.email_verified_at = datetime.now(timezone.utc)
+    user.updated_at = datetime.now(timezone.utc)
     if user.status == "pending_review" and not settings.CONNECT_REVIEW_REQUIRED:
         mark_user_active(user)
     db.commit()
@@ -275,7 +275,7 @@ def reset_password(payload: ResetPasswordRequest, db: Session = Depends(_db_sess
     user = consume_auth_token(db, payload.token, "password_reset")
 
     user.password_hash = hash_password(payload.password)
-    user.updated_at = datetime.utcnow()
+    user.updated_at = datetime.now(timezone.utc)
     db.commit()
     return {"message": "Password updated. You can now sign in."}
 
