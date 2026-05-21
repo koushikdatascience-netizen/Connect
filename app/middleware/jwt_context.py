@@ -78,6 +78,7 @@ async def jwt_context_middleware(request: Request, call_next):
         "/redoc",
         "/docs/oauth2-redirect",
         "/api/v1/openapi.json",
+        "/api/v1/health",
     ]
     if any(request.url.path.startswith(p) for p in public_paths):
         return await call_next(request)
