@@ -5,7 +5,7 @@ import { FormEvent, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { AuthSplitShell } from "@/components/auth-split-shell";
-import { getDemoBearerToken, loginConnectUser, setStoredAuthToken } from "@/lib/api";
+import { loginConnectUser, setStoredAuthToken } from "@/lib/api";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -35,44 +35,12 @@ export default function LoginPage() {
     }
   }
 
-  async function handleDemoLogin() {
-    const token = getDemoBearerToken();
-    if (!token) {
-      setError("NEXT_PUBLIC_DEBUG_BEARER_TOKEN is not configured in the frontend environment.");
-      return;
-    }
-
-    try {
-      setSubmitting(true);
-      setError(null);
-      setStoredAuthToken(token);
-      router.replace(nextPath);
-    } catch (loginError) {
-      setError(loginError instanceof Error ? loginError.message : "Unable to store the demo token.");
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
   return (
     <AuthSplitShell
       title="Welcome back"
       subtitle="Use your Snapkey Connect credentials to manage publishing access, connected accounts, and scheduled content."
       message={approvalNotice ?? undefined}
       error={error}
-      footer={
-        <div className="rounded-[18px] border border-[#ead48f] bg-[#fffdf6] p-3 text-sm text-[#475467] shadow-[0_18px_45px_rgba(34,34,34,0.06)]">
-          <p className="text-xs text-[#74664d]">Demo access is available for reviewers.</p>
-          <button
-            type="button"
-            onClick={() => void handleDemoLogin()}
-            disabled={submitting}
-            className="secondary-button mt-3 w-full justify-center py-2.5 font-semibold text-[#8b6809]"
-          >
-            Continue as Demo User
-          </button>
-        </div>
-      }
     >
       <form className="space-y-4" onSubmit={handleLogin}>
         <div>
