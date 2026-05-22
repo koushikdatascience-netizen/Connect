@@ -5,6 +5,7 @@ import { FaFacebookF, FaInstagram, FaLinkedinIn, FaYoutube } from "react-icons/f
 import { RiTwitterXFill } from "react-icons/ri";
 
 import { ErrorNotice } from "@/components/error-notice";
+import { ReviewCountdownAlert } from "@/components/review-countdown-alert";
 import {
   fetchAccounts,
   fetchAnalyticsHeatmap,
@@ -538,6 +539,7 @@ export function AnalyticsDashboard() {
     <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(255,214,110,0.22),transparent_30%),radial-gradient(circle_at_top_right,rgba(28,144,207,0.16),transparent_26%),linear-gradient(180deg,#f9f3e7_0%,#f3ead9_52%,#efe6d4_100%)] px-3 py-4 sm:px-4 lg:px-6">
       <div className="mx-auto max-w-[1480px] space-y-5">
         <ErrorNotice error={error} fallback="We couldn't load analytics right now." />
+        <ReviewCountdownAlert />
 
         <section className="overflow-hidden rounded-[34px] border border-[#e7d8bd] bg-[linear-gradient(120deg,rgba(255,252,244,0.96),rgba(255,246,221,0.94)_44%,rgba(242,230,204,0.96))] p-5 shadow-[0_24px_60px_rgba(100,76,18,0.12)] sm:p-6">
           <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">

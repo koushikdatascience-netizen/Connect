@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { EditPostModal } from "@/components/edit-post-modal-v2";
 import { ErrorNotice } from "@/components/error-notice";
 import { LivePostMetricsModal } from "@/components/live-post-metrics-modal";
+import { ReviewCountdownAlert } from "@/components/review-countdown-alert";
 import { PendingApprovalBanner, useSessionState } from "@/components/session-state";
 import { deletePost, fetchPosts } from "@/lib/api";
 import { Post } from "@/lib/types";
@@ -139,6 +140,9 @@ export default function PostsStudio() {
     <>
       <main className="min-h-[calc(100vh-2.5rem)] px-4 py-4 sm:px-5 lg:px-6">
         <div className="rounded-[30px] border border-[#1e2535] bg-[linear-gradient(135deg,rgba(255,255,255,0.92)_0%,rgba(255,250,240,0.96)_52%,rgba(255,245,221,0.9)_100%)] p-4 shadow-[0_18px_48px_rgba(24,24,24,0.08)] sm:p-5 lg:p-6">
+          <div className="mb-5">
+            <ReviewCountdownAlert />
+          </div>
           <div className="grid gap-5 xl:grid-cols-[minmax(0,1.55fr)_320px]">
             <div className="space-y-5">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">

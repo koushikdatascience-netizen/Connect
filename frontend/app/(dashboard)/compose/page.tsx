@@ -1,6 +1,7 @@
 "use client";
 
 import { CreatePostStudio } from "@/components/create-post/create-post-studio";
+import { ReviewCountdownAlert } from "@/components/review-countdown-alert";
 import { motion } from "framer-motion";
 
 export default function ComposeDashboardPage() {
@@ -14,6 +15,9 @@ export default function ComposeDashboardPage() {
       </div>
 
       <div className="relative mx-auto w-full max-w-[1400px] px-4 py-4 flex flex-col min-h-screen">
+        <div className="mb-4">
+          <ReviewCountdownAlert />
+        </div>
 
         {/* main container animation */}
         <motion.div
