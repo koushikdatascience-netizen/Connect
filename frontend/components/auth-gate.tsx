@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
-import { fetchSession, hasStoredAuthToken } from "@/lib/api";
+import { clearStoredAuthToken, fetchSession } from "@/lib/api";
 import { SessionState, SessionStateContext } from "@/components/session-state";
 
 const PUBLIC_PATHS = new Set([
@@ -34,21 +34,22 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     let cancelled = false;
 
     async function resolveSession() {
-      const hasToken = hasStoredAuthToken();
-      let hasCookieSession = false;
       let resolvedSession: SessionState | null = null;
 
       try {
         resolvedSession = await fetchSession();
-        hasCookieSession = Boolean(resolvedSession?.authenticated);
       } catch {
-        hasCookieSession = false;
+        resolvedSession = null;
       }
 
-      const isAuthenticated = hasToken || hasCookieSession;
+      const isAuthenticated = Boolean(resolvedSession?.authenticated);
 
       if (cancelled) {
         return;
+      }
+
+      if (!isAuthenticated) {
+        clearStoredAuthToken();
       }
 
       setSession(resolvedSession);
