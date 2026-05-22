@@ -55,7 +55,11 @@ export function AppShellUx({ children }: { children: ReactNode }) {
     } catch {
       // Frontend logout should still work if cookie cleanup fails.
     }
-    router.replace("/login");
+    if (typeof window !== "undefined") {
+      window.location.replace("/login?logged_out=1");
+      return;
+    }
+    router.replace("/login?logged_out=1");
   }
 
   if (

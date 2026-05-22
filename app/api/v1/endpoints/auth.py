@@ -485,6 +485,8 @@ def logout(response: Response):
     response.delete_cookie(
         key=settings.SESSION_COOKIE_NAME,
         path="/",
+        httponly=True,
+        secure=settings.SESSION_COOKIE_SECURE,
         samesite=settings.SESSION_COOKIE_SAMESITE,
     )
     response.status_code = status.HTTP_204_NO_CONTENT

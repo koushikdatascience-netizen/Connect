@@ -34,6 +34,19 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     let cancelled = false;
 
     async function resolveSession() {
+      const search =
+        typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+      const forceLoggedOut = search?.get("logged_out") === "1";
+
+      if (forceLoggedOut) {
+        clearStoredAuthToken();
+        if (!cancelled) {
+          setSession(null);
+          setReady(true);
+        }
+        return;
+      }
+
       let resolvedSession: SessionState | null = null;
 
       try {
