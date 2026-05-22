@@ -22,7 +22,8 @@ function formatRemaining(ms: number) {
   const days = Math.floor(safeMs / (24 * 60 * 60 * 1000));
   const hours = Math.floor((safeMs / (60 * 60 * 1000)) % 24);
   const minutes = Math.floor((safeMs / (60 * 1000)) % 60);
-  return `${days}d ${hours}h ${minutes}m`;
+  const seconds = Math.floor((safeMs / 1000) % 60);
+  return `${days}d ${hours}h ${minutes}m ${seconds}s`;
 }
 
 export function ReviewCountdownAlert() {
@@ -31,7 +32,7 @@ export function ReviewCountdownAlert() {
 
   useEffect(() => {
     setDeadline(getInitialDeadline());
-    const timer = window.setInterval(() => setNow(Date.now()), 60_000);
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(timer);
   }, []);
 
@@ -40,8 +41,14 @@ export function ReviewCountdownAlert() {
   return (
     <div className="rounded-2xl border border-[#e7c861] bg-[#fff7d8] px-4 py-3 text-sm text-[#6f5308] shadow-[0_12px_28px_rgba(146,108,14,0.10)]">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="font-semibold">Review access window</span>
-        <span className="rounded-full bg-white/75 px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-[#916b08]">
+        <span className="flex items-center gap-2 font-semibold">
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#d2a20f] opacity-45" />
+            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#b98705]" />
+          </span>
+          Review access window
+        </span>
+        <span className="rounded-full bg-white/75 px-3 py-1 font-mono text-xs font-bold uppercase tracking-[0.12em] text-[#916b08]">
           {formatRemaining(deadline - now)} left
         </span>
       </div>
