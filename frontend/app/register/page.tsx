@@ -37,9 +37,8 @@ export default function RegisterPage() {
 
   return (
     <AuthSplitShell
-      mode="register"
       title="Create account"
-      subtitle="Set up your workspace access in a few quick steps."
+      subtitle="Create your Snapkey Connect account. We'll send a verification email first, then your workspace can be approved for beta access."
       message={message ?? undefined}
       error={error}
       footer={
@@ -100,12 +99,8 @@ export default function RegisterPage() {
             required
           />
         </div>
-        <button
-          type="submit"
-          disabled={submitting}
-          className="auth-submit-button"
-        >
-          {submitting ? "Submitting..." : "Continue"}
+        <button type="submit" disabled={submitting} className="auth-submit-button">
+          {submitting ? "Submitting..." : "Register"}
         </button>
       </form>
     </AuthSplitShell>

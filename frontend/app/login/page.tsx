@@ -58,21 +58,19 @@ export default function LoginPage() {
 
   return (
     <AuthSplitShell
-      mode="login"
       title="Welcome back"
-      subtitle="Sign in to access your workspace."
+      subtitle="Use your Snapkey Connect credentials to manage publishing access, connected accounts, and scheduled content."
       message={approvalNotice ?? undefined}
       error={error}
       footer={
         hasDemoToken ? (
           <div className="rounded-[24px] border border-[#d9e4ff] bg-[#f5f8ff] p-4 text-sm text-[#475467]">
-            <p className="font-medium text-[#101828]">Demo mode is available in this environment.</p>
-            <p className="mt-1 text-xs leading-6 text-[#667085]">Use the sandbox flow to preview the product without a production account.</p>
+            <p className="text-xs text-[#74664d]">Demo access is enabled in this environment.</p>
             <button
               type="button"
               onClick={() => void handleDemoLogin()}
               disabled={submitting}
-              className="secondary-button mt-3 w-full justify-center py-3 text-sm font-semibold"
+              className="secondary-button mt-3 w-full justify-center py-2.5 font-semibold text-[#8b6809]"
             >
               Continue as Demo User
             </button>
@@ -116,14 +114,17 @@ export default function LoginPage() {
             required
           />
         </div>
-        <button
-          type="submit"
-          disabled={submitting}
-          className="auth-submit-button"
-        >
-          {submitting ? "Signing in..." : "Continue"}
+        <button type="submit" disabled={submitting} className="auth-submit-button">
+          {submitting ? "Signing in..." : "Sign In"}
         </button>
       </form>
+
+      <div className="mt-5 flex items-center justify-between gap-3 text-sm text-[#726451]">
+        <span>Need an account?</span>
+        <Link href="/register" className="auth-link font-semibold">
+          Register for access
+        </Link>
+      </div>
     </AuthSplitShell>
   );
 }
