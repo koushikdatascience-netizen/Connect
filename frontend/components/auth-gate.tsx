@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
 import { fetchSession, hasStoredAuthToken } from "@/lib/api";
+import { SessionState, SessionStateContext } from "@/components/session-state";
 
 const PUBLIC_PATHS = new Set([
   "/login",
@@ -20,6 +21,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [ready, setReady] = useState(false);
+  const [session, setSession] = useState<SessionState | null>(null);
 
   const isPublicPath = useMemo(() => {
     if (!pathname) {
@@ -34,14 +36,13 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     async function resolveSession() {
       const hasToken = hasStoredAuthToken();
       let hasCookieSession = false;
+      let resolvedSession: SessionState | null = null;
 
-      if (!hasToken) {
-        try {
-          const session = await fetchSession();
-          hasCookieSession = Boolean(session?.authenticated);
-        } catch {
-          hasCookieSession = false;
-        }
+      try {
+        resolvedSession = await fetchSession();
+        hasCookieSession = Boolean(resolvedSession?.authenticated);
+      } catch {
+        hasCookieSession = false;
       }
 
       const isAuthenticated = hasToken || hasCookieSession;
@@ -49,6 +50,8 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       if (cancelled) {
         return;
       }
+
+      setSession(resolvedSession);
 
       if (isPublicPath) {
         if ((pathname === "/login" || pathname === "/webview-auth") && isAuthenticated) {
@@ -89,5 +92,15 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     );
   }
 
-  return <>{children}</>;
+  return (
+    <SessionStateContext.Provider
+      value={{
+        ready,
+        session,
+        isPendingApproval: session?.status === "pending_review",
+      }}
+    >
+      {children}
+    </SessionStateContext.Provider>
+  );
 }

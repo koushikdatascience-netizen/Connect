@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { PendingApprovalBanner, useSessionState } from "@/components/session-state";
 
 import {
   PLATFORM_META,
@@ -152,6 +153,7 @@ type PostResult = {
 
 export function CreatePostStudio() {
   const router = useRouter();
+  const { isPendingApproval } = useSessionState();
 
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [media, setMedia] = useState<MediaAsset[]>([]);
@@ -529,6 +531,7 @@ export function CreatePostStudio() {
   const totalSelectedAccounts = Object.values(selectedAccounts).flat().length;
   const canSubmit =
     totalSelectedAccounts > 0 &&
+    !isPendingApproval &&
     !submitting &&
     blockingValidationItems.length === 0;
 
@@ -542,6 +545,9 @@ export function CreatePostStudio() {
 
   return (
     <main className="flex h-full flex-col">
+      <div className="px-4 pt-4 md:px-5">
+        <PendingApprovalBanner compact />
+      </div>
 
       {/* MOBILE TAB BAR — hidden on desktop */}
       <div className="flex border-b bg-white md:hidden">
@@ -701,13 +707,19 @@ export function CreatePostStudio() {
                 <line x1="22" y1="2" x2="11" y2="13" />
                 <polygon points="22 2 15 22 11 13 2 9 22 2" />
               </svg>
-              Publish
+              {isPendingApproval ? "Approval required" : "Publish"}
             </>
           )}
         </motion.button>
       </div>
 
-      {blockingValidationItems.length > 0 && (
+      {isPendingApproval ? (
+        <div className="border-t border-[#f1dacd] bg-[#fff8f2] px-5 py-4">
+          <div className="rounded-2xl border border-[#f0d2ca] bg-white px-4 py-3 text-sm text-[#7c3f36]">
+            <span className="font-semibold text-[#5b271f]">Publishing locked:</span> Your account is pending approval, so create, publish, and schedule actions are temporarily disabled.
+          </div>
+        </div>
+      ) : blockingValidationItems.length > 0 && (
         <div className="border-t border-[#f1dacd] bg-[#fff8f2] px-5 py-4">
           <div className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#b25a4f]">
             Fix Before Publishing

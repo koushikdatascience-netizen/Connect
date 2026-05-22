@@ -238,11 +238,6 @@ def login(payload: LoginRequest, response: Response, db: Session = Depends(_db_s
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="This account is not available.")
     if not user.email_verified_at:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Please verify your email before signing in.")
-    if user.status == "pending_review":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Your account is waiting for Snapkey approval. Please approve access from the admin email before signing in.",
-        )
 
     token = _create_user_token(user)
     _set_session_cookie(response, token)

@@ -26,6 +26,24 @@ def ensure_user_can_connect_accounts(tenant_id: str) -> None:
         db.close()
 
 
+def ensure_user_can_publish(tenant_id: str) -> None:
+    db = SessionLocal()
+    try:
+        user = db.query(ConnectUser).filter(ConnectUser.tenant_id == tenant_id).first()
+        if user is None:
+            return
+        if user.status not in APPROVED_STATUSES:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=(
+                    "Your account is pending beta access approval. "
+                    "Publishing, scheduling, and social actions unlock after approval."
+                ),
+            )
+    finally:
+        db.close()
+
+
 def ensure_account_limit_available(tenant_id: str, platform: str, platform_account_id: str) -> None:
     settings = get_settings()
     db = SessionLocal()

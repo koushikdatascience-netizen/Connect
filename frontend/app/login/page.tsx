@@ -59,12 +59,25 @@ export default function LoginPage() {
     <main className="auth-page flex items-center justify-center px-6 py-10">
       <section className="auth-card max-w-[480px]">
         <div className="mb-8">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#a67d10]">Snapkey Connect</p>
+          <div className="mb-4 flex flex-wrap items-center gap-3 text-xs font-medium text-[#8f7440]">
+            <a href="https://crm.snapkey.in" className="inline-flex items-center gap-1 rounded-full border border-[#ead9af] bg-white/80 px-3 py-1.5 transition-colors hover:bg-[#fff7df]">
+              <span aria-hidden="true">←</span>
+              Back to Snapkey CRM
+            </a>
+            <a href="https://snapkey.in" className="transition-colors hover:text-[#684d10]">snapkey.in</a>
+          </div>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#a67d10]">Snapkey Connect - Part of Snapkey CRM</p>
           <h1 className="mt-3 font-display text-4xl font-semibold tracking-[-0.06em] text-[#171311]">
             Sign in to your workspace
           </h1>
           <p className="mt-3 text-sm leading-6 text-[#6d6048]">
-            Use your Snapkey Connect credentials to manage publishing access, connected accounts, and scheduled content.
+            Snapkey Connect is a social media management module within Snapkey CRM. It allows businesses to connect their social media accounts, create content, schedule posts, and manage publishing using authorized platform integrations.
+          </p>
+          <p className="mt-3 text-sm leading-6 text-[#6d6048]">
+            Access your Snapkey workspace to manage connected accounts and social media publishing.
+          </p>
+          <p className="mt-2 text-sm leading-6 text-[#7d6b4c]">
+            This platform is part of Snapkey CRM and is accessible to authorized users. Some features may require an active Snapkey CRM account.
           </p>
         </div>
 
@@ -134,7 +147,8 @@ export default function LoginPage() {
 
         {hasDemoToken ? (
           <div className="mt-6 rounded-2xl border border-[#eadba6] bg-[#fff8e2] px-4 py-4 text-xs leading-5 text-[#74664d]">
-            <div className="mb-3">Demo access is enabled in this environment.</div>
+            <div className="mb-2">Demo access is enabled in this environment.</div>
+            <div className="mb-3">You are viewing a sandbox environment for demonstration purposes. Some actions may be simulated.</div>
             <button
               type="button"
               onClick={() => void handleDemoLogin()}

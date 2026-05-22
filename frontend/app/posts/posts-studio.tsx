@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { EditPostModal } from "@/components/edit-post-modal-v2";
 import { ErrorNotice } from "@/components/error-notice";
 import { LivePostMetricsModal } from "@/components/live-post-metrics-modal";
+import { PendingApprovalBanner, useSessionState } from "@/components/session-state";
 import { deletePost, fetchPosts } from "@/lib/api";
 import { Post } from "@/lib/types";
 
@@ -76,6 +77,7 @@ function getLivePostUrl(post: Post): string | null {
 
 export default function PostsStudio() {
   const router = useRouter();
+  const { isPendingApproval } = useSessionState();
   const [posts, setPosts] = useState<Post[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [deleteNotice, setDeleteNotice] = useState<{ tone: "success" | "warning"; text: string } | null>(null);
@@ -144,9 +146,10 @@ export default function PostsStudio() {
                   <h1 className="font-display text-3xl font-semibold tracking-[-0.06em] text-ink-900">Scheduled Posts</h1>
                   <p className="mt-2 text-sm leading-6 text-ink-600">A more interactive post queue with filters, list/card toggles, and a details panel to keep editing fast.</p>
                 </div>
-                <button type="button" onClick={() => router.push("/create-post")} className="primary-button px-5 py-3 text-sm">Create Post</button>
+                <button type="button" onClick={() => !isPendingApproval && router.push("/create-post")} disabled={isPendingApproval} className="primary-button px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-60">{isPendingApproval ? "Approval required" : "Create Post"}</button>
               </div>
 
+              <PendingApprovalBanner compact />
               <ErrorNotice error={error} fallback="We couldn't load scheduled posts right now." />
               {deleteNotice ? (
                 <div
@@ -197,6 +200,7 @@ export default function PostsStudio() {
                   <div className="space-y-3">
                     {filteredPosts.map((post) => {
                       const liveUrl = getLivePostUrl(post);
+                      const actionDisabled = isPendingApproval;
                       return (
                         <button key={post.id} type="button" onClick={() => setSelectedPostId(post.id)} className={`flex w-full items-center gap-3 rounded-[20px] border p-3 text-left transition ${selectedPostId === post.id ? "border-[#e1ca8b] bg-[#fff9e9]" : "border-[#eee4d6] bg-[#fffef9] hover:border-[#e2d4b1]"}`}>
                           <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${platformTone(post.platform)}`}>
@@ -221,31 +225,40 @@ export default function PostsStudio() {
                               type="button"
                               onClick={(event) => {
                                 event.stopPropagation();
-                                setEditingPost(post);
+                                if (!actionDisabled) {
+                                  setEditingPost(post);
+                                }
                               }}
+                              disabled={actionDisabled}
                               className="secondary-button px-3 py-2 text-xs"
                             >
-                              Edit
+                              {actionDisabled ? "Approval required" : "Edit"}
                             </button>
                             <button
                               type="button"
                               onClick={(event) => {
                                 event.stopPropagation();
-                                setEditingPost(post);
+                                if (!actionDisabled) {
+                                  setEditingPost(post);
+                                }
                               }}
+                              disabled={actionDisabled}
                               className="secondary-button px-3 py-2 text-xs"
                             >
-                              Reschedule
+                              {actionDisabled ? "Approval required" : "Reschedule"}
                             </button>
                             <button
                               type="button"
                               onClick={(event) => {
                                 event.stopPropagation();
-                                void handleDelete(post.id);
+                                if (!actionDisabled) {
+                                  void handleDelete(post.id);
+                                }
                               }}
+                              disabled={actionDisabled}
                               className="secondary-button px-3 py-2 text-xs text-[#b64e48] hover:border-[#f5d5d0] hover:bg-[#fff1ef]"
                             >
-                              Delete
+                              {actionDisabled ? "Approval required" : "Delete"}
                             </button>
                             {post.status === "posted" && (
                               <>
@@ -332,9 +345,9 @@ export default function PostsStudio() {
                     </div>
                   )}
                   <div className="mt-5 space-y-3">
-                    <button type="button" onClick={() => setEditingPost(selectedPost)} className="primary-button w-full justify-center py-3">Edit Post</button>
-                    <button type="button" onClick={() => setEditingPost(selectedPost)} className="secondary-button w-full justify-center py-3">Reschedule</button>
-                    <button type="button" onClick={() => void handleDelete(selectedPost.id)} className="secondary-button w-full justify-center py-3">Delete</button>
+                    <button type="button" onClick={() => !isPendingApproval && setEditingPost(selectedPost)} disabled={isPendingApproval} className="primary-button w-full justify-center py-3 disabled:cursor-not-allowed disabled:opacity-60">{isPendingApproval ? "Approval required" : "Edit Post"}</button>
+                    <button type="button" onClick={() => !isPendingApproval && setEditingPost(selectedPost)} disabled={isPendingApproval} className="secondary-button w-full justify-center py-3 disabled:cursor-not-allowed disabled:opacity-60">{isPendingApproval ? "Approval required" : "Reschedule"}</button>
+                    <button type="button" onClick={() => !isPendingApproval && void handleDelete(selectedPost.id)} disabled={isPendingApproval} className="secondary-button w-full justify-center py-3 disabled:cursor-not-allowed disabled:opacity-60">{isPendingApproval ? "Approval required" : "Delete"}</button>
                     {selectedPost.status === "posted" && (() => {
                       const liveUrl = getLivePostUrl(selectedPost);
                       return liveUrl ? (

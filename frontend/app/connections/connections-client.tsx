@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { ErrorNotice } from "@/components/error-notice";
+import { PendingApprovalBanner, useSessionState } from "@/components/session-state";
 import { beginOAuthLogin, connectWordpressSite, deleteAccount, fetchAccounts, fetchAccountStatus } from "@/lib/api";
 import { Account, AccountStatusResponse, PlatformName } from "@/lib/types";
 
@@ -124,12 +125,14 @@ function AccountRow({ account, onRemove }: { account: Account; onRemove: (id: nu
 }
 
 // ─── platform accordion card ─────────────────────────────────────────────────
-function PlatformCard({ meta, accounts, connected, onConnect, onRemoveAccount }: {
+function PlatformCard({ meta, accounts, connected, onConnect, onRemoveAccount, disabled, disabledMessage }: {
   meta: typeof platformMeta[number];
   accounts: Account[];
   connected: boolean;
   onConnect: (addAnother?: boolean) => void;
   onRemoveAccount: (id: number) => Promise<void>;
+  disabled?: boolean;
+  disabledMessage?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [btnHover, setBtnHover] = useState(false);
@@ -163,6 +166,11 @@ function PlatformCard({ meta, accounts, connected, onConnect, onRemoveAccount }:
           <div style={{ fontSize: 12, color: "#a07d3a", marginTop: 1 }}>
             {connected ? `${accounts.length} account${accounts.length !== 1 ? "s" : ""} connected` : meta.hint}
           </div>
+          {disabledMessage ? (
+            <div style={{ marginTop: 6, fontSize: 12, lineHeight: 1.5, color: "#9b7d42" }}>
+              {disabledMessage}
+            </div>
+          ) : null}
         </div>
 
         {/* status pill */}
@@ -195,7 +203,7 @@ function PlatformCard({ meta, accounts, connected, onConnect, onRemoveAccount }:
             </div>
           )}
 
-          <button type="button" onClick={() => onConnect(accounts.length > 0)}
+          <button type="button" onClick={() => onConnect(accounts.length > 0)} disabled={disabled}
             onMouseEnter={() => setBtnHover(true)} onMouseLeave={() => setBtnHover(false)}
             style={{
               marginTop: 12, display: "flex", alignItems: "center", gap: 6,
@@ -203,10 +211,11 @@ function PlatformCard({ meta, accounts, connected, onConnect, onRemoveAccount }:
               border: `1.5px solid ${meta.color}${btnHover ? "88" : "55"}`,
               background: `${meta.color}${btnHover ? "22" : "12"}`,
               color: meta.color, fontSize: 13, fontWeight: 700,
-              cursor: "pointer", transition: "background 0.15s, border-color 0.15s",
+              cursor: disabled ? "not-allowed" : "pointer", transition: "background 0.15s, border-color 0.15s",
+              opacity: disabled ? 0.55 : 1,
             }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>
-            {accounts.length > 0 ? "Add another account" : "Connect Account"}
+            {disabled ? "Approval required" : accounts.length > 0 ? "Add another account" : "Connect Account"}
           </button>
         </div>
       )}
@@ -220,6 +229,7 @@ export default function ConnectionsClient() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [error, setError]       = useState<string | null>(null);
   const [oauthBanner, setOauthBanner] = useState<{ tone: "success" | "error"; text: string } | null>(null);
+  const { isPendingApproval } = useSessionState();
 
   async function handleOAuthConnect(platform: PlatformName, addAnother = false) {
     try {
@@ -352,6 +362,7 @@ export default function ConnectionsClient() {
 
       {/* error */}
       <div style={{ maxWidth: 760, margin: "0 auto" }}>
+        <PendingApprovalBanner compact />
         <ErrorNotice error={error} fallback="We couldn't load social account connections right now." />
         {oauthBanner ? (
           <div
@@ -381,6 +392,12 @@ export default function ConnectionsClient() {
             connected={status[meta.key].connected}
             onConnect={(addAnother) => void handleOAuthConnect(meta.key, addAnother)}
             onRemoveAccount={handleRemoveAccount}
+            disabled={isPendingApproval}
+            disabledMessage={
+              isPendingApproval
+                ? "Account connections unlock after your Snapkey CRM approval is completed."
+                : undefined
+            }
           />
         ))}
       </div>

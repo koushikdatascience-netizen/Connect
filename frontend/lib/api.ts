@@ -161,6 +161,8 @@ export function fetchSession() {
     user_id: string;
     role?: string | null;
     is_admin: boolean;
+    status?: string | null;
+    email_verified?: boolean | null;
   }>("/api/v1/auth/session");
 }
 

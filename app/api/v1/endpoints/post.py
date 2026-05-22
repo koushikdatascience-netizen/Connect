@@ -33,6 +33,7 @@ from app.services.provider_publishers import (
     delete_provider_post,
     fetch_provider_live_metrics,
 )
+from app.services.connect_access_service import ensure_user_can_publish
 from app.worker.celery_app import celery_app
 from app.core.logging import get_logger
 
@@ -173,6 +174,7 @@ def process_overdue_posts(
     Manually trigger processing of all overdue scheduled/queued posts.
     Useful when the worker was down and posts didn't get published on time.
     """
+    ensure_user_can_publish(tenant_id)
     posts = list_posts(db, tenant_id)
     now = datetime.now(timezone.utc)
     processed = []
@@ -227,6 +229,7 @@ def create(
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant),
 ):
+    ensure_user_can_publish(tenant_id)
     try:
         post = create_post(db, tenant_id, data)
     except ValueError as exc:
@@ -337,6 +340,7 @@ def edit_post(
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant),
 ):
+    ensure_user_can_publish(tenant_id)
     post = get_post(db, tenant_id, post_id)
     if not post:
         raise HTTPException(
@@ -433,6 +437,7 @@ def publish_now(
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant),
 ):
+    ensure_user_can_publish(tenant_id)
     post = get_post(db, tenant_id, post_id)
     if not post:
         raise HTTPException(
@@ -455,6 +460,7 @@ def cancel_post(
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant),
 ):
+    ensure_user_can_publish(tenant_id)
     post = get_post(db, tenant_id, post_id)
     if not post:
         raise HTTPException(

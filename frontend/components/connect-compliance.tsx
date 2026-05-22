@@ -6,14 +6,32 @@ export function ConnectComplianceBanner() {
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div className="max-w-4xl">
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8e6a09]">
-            Snapkey Connect
+            Snapkey Connect - Part of Snapkey CRM
           </p>
           <h1 className="mt-2 font-display text-2xl font-semibold tracking-[-0.05em] text-[#171311] sm:text-3xl">
             Snapkey Connect is a social media management module within Snapkey CRM.
           </h1>
           <p className="mt-3 max-w-3xl text-sm leading-6 text-[#615541] sm:text-[15px]">
-            Users can securely connect supported social media accounts, create content, schedule posts, and manage publishing workflows using official platform integrations.
+            It allows businesses to connect social media accounts, create content, schedule posts, and manage publishing using authorized platform integrations.
           </p>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-[#74664d]">
+            This platform is part of Snapkey CRM and is accessible to authorized users. Some features may require an active Snapkey CRM account.
+          </p>
+          <div className="mt-4 flex flex-wrap items-center gap-3 text-sm font-medium">
+            <a
+              href="https://crm.snapkey.in"
+              className="inline-flex items-center gap-2 rounded-full border border-[#e2ca80] bg-[#fff2c7] px-4 py-2 text-[#7f630f] transition-colors hover:bg-[#ffe89b]"
+            >
+              <span aria-hidden="true">←</span>
+              Back to Snapkey CRM
+            </a>
+            <a
+              href="https://snapkey.in"
+              className="inline-flex items-center gap-2 rounded-full border border-[#ead9af] bg-white/80 px-4 py-2 text-[#7a6331] transition-colors hover:bg-[#fff8e8]"
+            >
+              Visit snapkey.in
+            </a>
+          </div>
         </div>
         <div className="inline-flex self-start rounded-full border border-[#e2ca80] bg-[#fff2c7] px-3 py-2 text-xs font-semibold text-[#7f630f]">
           Accessible to authorized Snapkey CRM users.
@@ -30,9 +48,28 @@ export function ConnectComplianceFooter() {
         Snapkey Connect is a module of Snapkey CRM. All data handling, permissions, and user privacy are governed by Snapkey&apos;s central privacy policy.
       </p>
       <p className="mt-2 text-sm leading-6 text-[#5f533f]">
-        Snapkey uses official platform APIs and operates in compliance with Facebook and Instagram platform policies. All publishing actions are initiated and controlled by the user.
+        Snapkey uses official platform APIs and operates in compliance with Facebook and Instagram platform policies. All actions are initiated and controlled by the user.
+      </p>
+      <p className="mt-2 text-sm leading-6 text-[#5f533f]">
+        Some features may require an active Snapkey CRM account.
       </p>
       <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-medium">
+        <a
+          href="https://crm.snapkey.in"
+          target="_blank"
+          rel="noreferrer"
+          className="text-[#8a6516] transition-colors hover:text-[#5e4306]"
+        >
+          Back to Snapkey CRM
+        </a>
+        <a
+          href="https://snapkey.in"
+          target="_blank"
+          rel="noreferrer"
+          className="text-[#8a6516] transition-colors hover:text-[#5e4306]"
+        >
+          snapkey.in
+        </a>
         <a
           href="https://snapkey.in/privacy-policy/"
           target="_blank"
