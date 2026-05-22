@@ -68,7 +68,6 @@ async def jwt_context_middleware(request: Request, call_next):
         "/api/v1/auth/forgot-password",
         "/api/v1/auth/reset-password",
         "/api/v1/auth/approve-access",
-        "/api/v1/auth/session",
         "/api/v1/auth/logout",
     }
 
