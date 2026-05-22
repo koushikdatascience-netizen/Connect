@@ -129,7 +129,10 @@
     align-items: center;
     justify-content: center;
     padding: 22px 24px;
-    background: #ffffff;
+    background:
+      radial-gradient(circle at 18% 16%, rgba(255, 226, 105, 0.26), transparent 28%),
+      radial-gradient(circle at 84% 88%, rgba(214, 161, 28, 0.16), transparent 30%),
+      linear-gradient(135deg, #fffdf4 0%, #fff7d6 52%, #f7e4a6 100%);
   }
 
   .auth-split-frame {
@@ -140,6 +143,9 @@
     align-items: center;
     gap: 0;
     background: #ffffff;
+    border: 1px solid rgba(204, 153, 24, 0.14);
+    border-radius: 16px;
+    box-shadow: 0 26px 80px rgba(127, 93, 13, 0.13);
   }
 
   .auth-split-form-side {
@@ -148,6 +154,7 @@
     justify-content: center;
     padding: 18px 0 18px 48px;
     background: #ffffff;
+    border-radius: 0 16px 16px 0;
   }
 
   .auth-split-form-wrap {
