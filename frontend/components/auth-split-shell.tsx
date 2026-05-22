@@ -41,7 +41,7 @@ export function AuthSplitShell({
           <div className="auth-split-form-wrap">
             <div>
               <p className="auth-brand-label">Snapkey Connect</p>
-              <h1 className="mt-3 font-display text-[30px] font-semibold text-[#171311]">
+              <h1 className="auth-title mt-3 text-[30px] font-semibold text-[#171311]">
                 {title}
               </h1>
               <p className="mt-3 text-sm leading-6 text-[#2e251a]">{subtitle}</p>

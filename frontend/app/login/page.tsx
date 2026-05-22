@@ -17,8 +17,6 @@ export default function LoginPage() {
 
   const nextPath = useMemo(() => searchParams.get("next") || "/", [searchParams]);
   const approvalNotice = useMemo(() => searchParams.get("approval"), [searchParams]);
-  const hasDemoToken = Boolean(getDemoBearerToken());
-
   async function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     try {
@@ -63,19 +61,17 @@ export default function LoginPage() {
       message={approvalNotice ?? undefined}
       error={error}
       footer={
-        hasDemoToken ? (
-          <div className="rounded-[24px] border border-[#d9e4ff] bg-[#f5f8ff] p-4 text-sm text-[#475467]">
-            <p className="text-xs text-[#74664d]">Demo access is enabled in this environment.</p>
-            <button
-              type="button"
-              onClick={() => void handleDemoLogin()}
-              disabled={submitting}
-              className="secondary-button mt-3 w-full justify-center py-2.5 font-semibold text-[#8b6809]"
-            >
-              Continue as Demo User
-            </button>
-          </div>
-        ) : undefined
+        <div className="rounded-[18px] border border-[#ead48f] bg-[#fffdf6] p-3 text-sm text-[#475467] shadow-[0_18px_45px_rgba(34,34,34,0.06)]">
+          <p className="text-xs text-[#74664d]">Demo access is available for reviewers.</p>
+          <button
+            type="button"
+            onClick={() => void handleDemoLogin()}
+            disabled={submitting}
+            className="secondary-button mt-3 w-full justify-center py-2.5 font-semibold text-[#8b6809]"
+          >
+            Continue as Demo User
+          </button>
+        </div>
       }
     >
       <form className="space-y-4" onSubmit={handleLogin}>
