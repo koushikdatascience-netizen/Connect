@@ -1,6 +1,14 @@
 @import url("https://fonts.googleapis.com/css2?family=TikTok+Sans:opsz,wght@12..36,400..800&display=swap");
 @import "tailwindcss";
 
+body.main-body {
+    width: -webkit-fill-available;
+    background: white !important;
+    display: block;
+    box-sizing: border-box;
+    min-height: auto !important;
+}
+
 @theme {
   --font-sans: var(--font-body), sans-serif;
   --font-display: var(--font-display), sans-serif;
@@ -68,17 +76,22 @@
 
   .primary-button {
     @apply inline-flex items-center justify-center rounded-full bg-[#ffd52a] px-5 py-3 text-sm font-semibold text-[#09090e] disabled:cursor-not-allowed disabled:opacity-55;
-    box-shadow: 0 8px 22px rgba(255, 213, 42, 0.28);
+    background-color: #212121 !important;
+    color: #fff !important;
+    text-transform: uppercase !important;
+    border-radius: 11px !important;
+    font-size: 1.2rem !important;
+    cursor: pointer;
     transition: transform 0.16s ease, box-shadow 0.16s ease, background-color 0.16s;
   }
   .primary-button:not(:disabled):hover {
-    background-color: #ffe566;
+    background-color: #424242;
     transform: translateY(-2px);
-    box-shadow: 0 14px 32px rgba(255, 213, 42, 0.36);
+    box-shadow: 0 14px 32px rgba(73, 73, 71, 0.36);
   }
   .primary-button:not(:disabled):active {
     transform: translateY(0);
-    box-shadow: 0 4px 12px rgba(255, 213, 42, 0.18);
+    box-shadow: 0 4px 12px rgba(73, 73, 71, 0.18);
   }
 
   .secondary-button {
@@ -395,3 +408,42 @@
   ::-webkit-scrollbar-thumb { background: #d8c36e; border-radius: 999px; }
   ::-webkit-scrollbar-thumb:hover { background: #c8af4f; }
 }
+
+@import url('https://fonts.googleapis.com/css2?family=TikTok+Sans:opsz,wght@12..36,300..900&display=swap');
+
+main.auth-page.flex.items-center.justify-center.px-6.py-10.parent-div {
+    display: flex;
+    width: 1140px !important;
+    box-sizing: border-box;
+    padding: 0 !important;
+    max-width: 1140px;
+    background: transparent;
+    margin: 0 auto;
+    font-family: "TikTok Sans", sans-serif;
+  font-optical-sizing: auto;
+}
+
+section.left-main-div {
+    width: 50%;
+}
+
+section.auth-card.max-w-\[480px\] {
+    box-shadow: none;
+    border: none;
+    background: transparent;
+    padding: 0px;
+}
+
+.left-main-div img {
+    width: 100%;
+    height: auto;
+    border-radius: 20px;
+    object-fit: cover;
+}
+
+.mt-6.rounded-2xl.border.border-\[\#eadba6\].bg-\[\#fff8e2\].px-4.py-4.text-xs.leading-5.text-\[\#74664d\] {
+    background-color: white;
+    border: none;
+    box-shadow: rgba(17, 12, 46, 0.15) 0px 48px 100px 0px;
+}
+

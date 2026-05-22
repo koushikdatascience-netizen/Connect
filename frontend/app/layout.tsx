@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { DM_Sans, Space_Grotesk } from "next/font/google";
+//  import { DM_Sans, Space_Grotesk } from "next/font/google";
 
 import { AppShellUx } from "@/components/app-shell-ux";
 import { AuthGate } from "@/components/auth-gate";
@@ -7,17 +7,17 @@ import { AuthGate } from "@/components/auth-gate";
 import "./globals.css";
 
 /* ✅ GOOGLE FONTS (SAFE MODE) */
-const bodyFont = DM_Sans({
-  subsets: ["latin"],
-  variable: "--font-body",
-  display: "swap",
-});
+// const bodyFont = DM_Sans({
+//   subsets: ["latin"],
+//   variable: "--font-body",
+//   display: "swap",
+// });
 
-const displayFont = Space_Grotesk({
-  subsets: ["latin"],
-  variable: "--font-display",
-  display: "swap",
-});
+// const displayFont = Space_Grotesk({
+//   subsets: ["latin"],
+//   variable: "--font-display",
+//   display: "swap",
+// });
 
 export const metadata: Metadata = {
   title: "Snapkey CRM | Snapkey Connect",
@@ -37,7 +37,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${bodyFont.variable} ${displayFont.variable}`}>
+      
+      <body className= "main-body">
         <AuthGate>
           <AppShellUx>{children}</AppShellUx>
         </AuthGate>

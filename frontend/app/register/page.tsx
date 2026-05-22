@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 
-import { AuthSplitShell } from "@/components/auth-split-shell";
+import { AuthSideShell } from "@/components/auth-side-shell";
 import { registerConnectUser } from "@/lib/api";
 
 export default function RegisterPage() {
@@ -36,73 +36,74 @@ export default function RegisterPage() {
   }
 
   return (
-    <AuthSplitShell
+    <AuthSideShell
       title="Create account"
-      subtitle="Create your Snapkey Connect account. We'll send a verification email first, then your workspace can be approved for beta access."
-      message={message ?? undefined}
-      error={error}
-      footer={
-        <p className="text-sm text-[#667085]">
-          Already have an account?{" "}
-          <Link href="/login" className="font-semibold text-[#2463eb] transition-colors hover:text-[#1849a9]">
-            Sign in
-          </Link>
-        </p>
-      }
+      description="Create your Snapkey Connect account. We'll send a verification email first, then your workspace can be approved for beta access."
     >
+      {message ? (
+        <div className="mb-5 rounded-2xl border border-[#d7e9c0] bg-[#f7fbef] px-4 py-3 text-sm text-[#53722c]">
+          {message}
+        </div>
+      ) : null}
+
+      {error ? (
+        <div className="mb-5 rounded-2xl border border-[#3a1515] bg-[#2a100e] px-4 py-3 text-sm text-[#f07070]">
+          {error}
+        </div>
+      ) : null}
+
       <form className="space-y-4" onSubmit={handleSubmit}>
-        <div>
-          <label className="mb-2 block text-sm font-medium text-[#344054]">Email address</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            className="auth-input"
-            placeholder="Email address"
-            autoComplete="email"
-            required
-          />
-        </div>
-        <div>
-          <label className="mb-2 block text-sm font-medium text-[#344054]">Phone number</label>
-          <input
-            type="tel"
-            value={phone}
-            onChange={(event) => setPhone(event.target.value)}
-            className="auth-input"
-            placeholder="Phone number"
-            autoComplete="tel"
-            required
-          />
-        </div>
-        <div>
-          <label className="mb-2 block text-sm font-medium text-[#344054]">Password</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            className="auth-input"
-            placeholder="Create password"
-            autoComplete="new-password"
-            required
-          />
-        </div>
-        <div>
-          <label className="mb-2 block text-sm font-medium text-[#344054]">Confirm password</label>
-          <input
-            type="password"
-            value={confirmPassword}
-            onChange={(event) => setConfirmPassword(event.target.value)}
-            className="auth-input"
-            placeholder="Confirm password"
-            autoComplete="new-password"
-            required
-          />
-        </div>
-        <button type="submit" disabled={submitting} className="auth-submit-button">
+        <input
+          type="email"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          className="auth-input"
+          placeholder="Email address"
+          autoComplete="email"
+          required
+        />
+        <input
+          type="tel"
+          value={phone}
+          onChange={(event) => setPhone(event.target.value)}
+          className="auth-input"
+          placeholder="Phone number"
+          autoComplete="tel"
+          required
+        />
+        <input
+          type="password"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          className="auth-input"
+          placeholder="Password"
+          autoComplete="new-password"
+          required
+        />
+        <input
+          type="password"
+          value={confirmPassword}
+          onChange={(event) => setConfirmPassword(event.target.value)}
+          className="auth-input"
+          placeholder="Confirm password"
+          autoComplete="new-password"
+          required
+        />
+        <button
+          type="submit"
+          disabled={submitting}
+          className="primary-button w-full justify-center py-3.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+        >
           {submitting ? "Submitting..." : "Register"}
         </button>
       </form>
-    </AuthSplitShell>
+
+      <div className="mt-5 text-sm text-[#726451]">
+        Already registered?{" "}
+        <Link href="/login" className="auth-link font-semibold">
+          Sign in
+        </Link>
+      </div>
+    </AuthSideShell>
   );
 }
