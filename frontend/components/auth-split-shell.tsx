@@ -12,7 +12,7 @@ type AuthSplitShellProps = {
 };
 
 const AUTH_IMAGE_URL =
-  "https://images.unsplash.com/photo-1778663424846-2150fc61d443?q=80&w=1200&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D";
+  "https://ik.imagekit.io/elw9ev2tn/Ritika%20Banerjee.png";
 
 function AuthShowcase() {
   return (
