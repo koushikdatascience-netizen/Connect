@@ -127,14 +127,14 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 34px 24px;
+    padding: 22px 24px;
     background: #ffffff;
   }
 
   .auth-split-frame {
     display: grid;
     width: min(100%, 960px);
-    min-height: 570px;
+    min-height: 520px;
     grid-template-columns: minmax(0, 1.28fr) minmax(320px, 0.92fr);
     align-items: center;
     gap: 0;
@@ -145,7 +145,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 24px 0 24px 48px;
+    padding: 18px 0 18px 48px;
     background: #ffffff;
   }
 
@@ -191,8 +191,8 @@
   }
 
   .auth-submit-button {
-    @apply inline-flex w-full items-center justify-center px-5 py-3.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-55;
-    min-height: 42px;
+    @apply inline-flex w-full items-center justify-center px-5 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-55;
+    min-height: 40px;
     border-radius: 8px;
     background: #222222;
     text-transform: uppercase;
@@ -216,7 +216,7 @@
   .auth-showcase-image {
     display: block;
     height: 100%;
-    min-height: 570px;
+    min-height: 520px;
     width: 100%;
     object-fit: cover;
     object-position: center;
