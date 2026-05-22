@@ -287,6 +287,52 @@ export function resetConnectPassword(payload: {
   });
 }
 
+export type AdminConnectUser = {
+  id: string;
+  tenant_id: string;
+  email: string;
+  phone: string;
+  status: string;
+  is_admin: boolean;
+  email_verified: boolean;
+  max_social_accounts: number;
+  connected_social_accounts: number;
+  max_monthly_posts: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export function fetchAdminConnectUsers() {
+  return apiFetch<AdminConnectUser[]>("/api/v1/auth/admin/users");
+}
+
+export function approveAdminConnectUser(userId: string) {
+  return apiFetch<{ message: string; user: AdminConnectUser }>(
+    `/api/v1/auth/admin/users/${userId}/approve`,
+    { method: "POST" },
+  );
+}
+
+export function suspendAdminConnectUser(userId: string) {
+  return apiFetch<{ message: string; user: AdminConnectUser }>(
+    `/api/v1/auth/admin/users/${userId}/suspend`,
+    { method: "POST" },
+  );
+}
+
+export function updateAdminConnectUserLimits(
+  userId: string,
+  payload: { max_social_accounts: number; max_monthly_posts: number },
+) {
+  return apiFetch<{ message: string; user: AdminConnectUser }>(
+    `/api/v1/auth/admin/users/${userId}/limits`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
 export function connectWordpressSite(payload: {
   site_url: string;
   username: string;

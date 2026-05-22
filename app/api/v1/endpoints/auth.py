@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 import json
 import secrets
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
@@ -13,6 +13,8 @@ from app.core.auth import CurrentUser, create_bearer_token
 from app.core.config import get_settings
 from app.core.redis_client import redis_client
 from app.db.database import SessionLocal
+from app.models.connect_user import ConnectUser
+from app.models.social_account import SocialAccount
 from app.services.connect_auth_service import (
     consume_auth_token,
     create_auth_token,
@@ -95,6 +97,31 @@ class ApproveAccessResponse(BaseModel):
     status: str
 
 
+class AdminUserRead(BaseModel):
+    id: str
+    tenant_id: str
+    email: str
+    phone: str
+    status: str
+    is_admin: bool
+    email_verified: bool
+    max_social_accounts: int
+    connected_social_accounts: int
+    max_monthly_posts: int
+    created_at: datetime
+    updated_at: datetime
+
+
+class AdminUserLimitsUpdate(BaseModel):
+    max_social_accounts: int = Field(ge=0, le=1000)
+    max_monthly_posts: int = Field(ge=0, le=100000)
+
+
+class AdminUserStatusResponse(BaseModel):
+    message: str
+    user: AdminUserRead
+
+
 def _db_session():
     db = SessionLocal()
     try:
@@ -125,6 +152,37 @@ def _create_user_token(user) -> str:
             "connect_status": user.status,
         },
     )
+
+
+def _require_admin(user: CurrentUser) -> CurrentUser:
+    if not user.is_admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required.")
+    return user
+
+
+def _admin_user_read(db: Session, user: ConnectUser) -> AdminUserRead:
+    connected_count = db.query(SocialAccount).filter(SocialAccount.tenant_id == user.tenant_id).count()
+    return AdminUserRead(
+        id=user.id,
+        tenant_id=user.tenant_id,
+        email=user.email,
+        phone=user.phone,
+        status=user.status,
+        is_admin=bool(user.is_admin),
+        email_verified=bool(user.email_verified_at),
+        max_social_accounts=user.max_social_accounts,
+        connected_social_accounts=connected_count,
+        max_monthly_posts=user.max_monthly_posts,
+        created_at=user.created_at,
+        updated_at=user.updated_at,
+    )
+
+
+def _get_admin_target_user(db: Session, user_id: str) -> ConnectUser:
+    user = db.query(ConnectUser).filter(ConnectUser.id == user_id).first()
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
+    return user
 
 
 def _admin_approval_redirect(message: str) -> RedirectResponse:
@@ -278,6 +336,64 @@ def reset_password(payload: ResetPasswordRequest, db: Session = Depends(_db_sess
     user.updated_at = datetime.now(timezone.utc)
     db.commit()
     return {"message": "Password updated. You can now sign in."}
+
+
+@router.get("/admin/users", response_model=List[AdminUserRead])
+def list_admin_users(
+    current_user: CurrentUser = Depends(get_current_user),
+    db: Session = Depends(_db_session),
+):
+    _require_admin(current_user)
+    users = db.query(ConnectUser).order_by(ConnectUser.created_at.desc()).all()
+    return [_admin_user_read(db, user) for user in users]
+
+
+@router.post("/admin/users/{user_id}/approve", response_model=AdminUserStatusResponse)
+def approve_admin_user(
+    user_id: str,
+    current_user: CurrentUser = Depends(get_current_user),
+    db: Session = Depends(_db_session),
+):
+    _require_admin(current_user)
+    user = _get_admin_target_user(db, user_id)
+    mark_user_active(user)
+    db.commit()
+    db.refresh(user)
+    return {"message": f"Approved {user.email}.", "user": _admin_user_read(db, user)}
+
+
+@router.post("/admin/users/{user_id}/suspend", response_model=AdminUserStatusResponse)
+def suspend_admin_user(
+    user_id: str,
+    current_user: CurrentUser = Depends(get_current_user),
+    db: Session = Depends(_db_session),
+):
+    _require_admin(current_user)
+    user = _get_admin_target_user(db, user_id)
+    if user.is_admin and user.id == current_user.subject:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You cannot suspend your own admin account.")
+    user.status = "blocked"
+    user.updated_at = datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(user)
+    return {"message": f"Suspended {user.email}.", "user": _admin_user_read(db, user)}
+
+
+@router.patch("/admin/users/{user_id}/limits", response_model=AdminUserStatusResponse)
+def update_admin_user_limits(
+    user_id: str,
+    payload: AdminUserLimitsUpdate,
+    current_user: CurrentUser = Depends(get_current_user),
+    db: Session = Depends(_db_session),
+):
+    _require_admin(current_user)
+    user = _get_admin_target_user(db, user_id)
+    user.max_social_accounts = payload.max_social_accounts
+    user.max_monthly_posts = payload.max_monthly_posts
+    user.updated_at = datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(user)
+    return {"message": f"Updated limits for {user.email}.", "user": _admin_user_read(db, user)}
 
 
 @router.get("/approve-access")
