@@ -12,7 +12,7 @@ type AuthSplitShellProps = {
 };
 
 const AUTH_IMAGE_URL =
-  "https://ik.imagekit.io/elw9ev2tn/LOGINPICSOCIAL.png";
+  "https://ik.imagekit.io/elw9ev2tn/stopdoingthingmanually.png";
 
 function AuthShowcase() {
   return (
