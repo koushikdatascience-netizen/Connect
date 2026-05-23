@@ -447,3 +447,8 @@ section.auth-card.max-w-\[480px\] {
     box-shadow: rgba(17, 12, 46, 0.15) 0px 48px 100px 0px;
 }
 
+section.auth-card.max-w-\[480px\]
+{
+    padding: 40px !important;
+
+}
