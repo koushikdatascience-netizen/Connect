@@ -52,7 +52,7 @@ class Settings(BaseSettings):
 
     # Snapkey Connect registration / beta access
     CONNECT_PUBLIC_REGISTRATION_ENABLED: bool = True
-    CONNECT_REVIEW_REQUIRED: bool = True
+    CONNECT_REVIEW_REQUIRED: bool = False
     CONNECT_DEFAULT_MAX_SOCIAL_ACCOUNTS: int = 2
     CONNECT_DEFAULT_MAX_MONTHLY_POSTS: int = 20
     CONNECT_EMAIL_TOKEN_TTL_MINUTES: int = 60 * 24

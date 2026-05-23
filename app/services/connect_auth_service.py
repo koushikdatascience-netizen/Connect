@@ -171,7 +171,7 @@ def send_registration_emails(
         if approval_token
         else None
     )
-    if recipients or approval_token:
+    if recipients:
         send_email(
             recipients=recipients,
             subject="New Snapkey Connect registration",
