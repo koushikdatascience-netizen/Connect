@@ -118,12 +118,15 @@ export default function LoginPage() {
         </button>
       </form>
 
-      <div className="mt-5 flex items-center justify-between gap-3 text-sm text-[#726451]">
-        <span></span>
-        <Link href="/register" className="auth-link font-semibold">
-         Need an Account? Register for access
-        </Link>
-      </div>
+     <div className="mt-5 flex items-center justify-between gap-3 text-sm text-[#726451]">
+      <span></span>
+      <Link href="/register" className="auth-link font-semibold">
+        <span style={{ fontWeight: "normal", color: "black" }}>
+          Need an Account?
+        </span>{" "}
+        Register for access
+  </Link>
+</div>
 
       {hasDemoToken ? (
         <div className="mt-6 rounded-2xl border border-[#eadba6] bg-[#fff8e2] px-4 py-4 text-xs leading-5 text-[#74664d]">
