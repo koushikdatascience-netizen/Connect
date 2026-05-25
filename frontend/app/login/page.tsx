@@ -119,9 +119,9 @@ export default function LoginPage() {
       </form>
 
       <div className="mt-5 flex items-center justify-between gap-3 text-sm text-[#726451]">
-        <span>Need an account?</span>
+        <span></span>
         <Link href="/register" className="auth-link font-semibold">
-          Register for access
+         Need an Account? Register for access
         </Link>
       </div>
 
