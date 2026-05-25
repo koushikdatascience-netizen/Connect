@@ -358,7 +358,7 @@ def _pop_verifier(nonce: str) -> Optional[str]:
         )
     return verifier
 
-
+ # 
 def _facebook_authorization_url(tenant_id: str, user_id: str, add_another: bool = False) -> str:
     state = _build_state(tenant_id, user_id)
     params = {
@@ -366,6 +366,7 @@ def _facebook_authorization_url(tenant_id: str, user_id: str, add_another: bool 
         "redirect_uri": settings.facebook_redirect_uri,
         "state": state,
         "scope": "pages_manage_posts,pages_read_engagement,pages_show_list,business_management,instagram_basic,instagram_content_publish",
+    
     }
     if add_another:
         params["auth_type"] = "rerequest"
