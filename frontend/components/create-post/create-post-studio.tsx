@@ -179,7 +179,7 @@ export function CreatePostStudio() {
   const [altText, setAltText] = useState("");
 
   const [loading, setLoading] = useState(true);
-  const [mobileTab, setMobileTab] = useState<"accounts" | "compose" | "settings">("compose");
+  const [mobileTab, setMobileTab] = useState<"accounts" | "compose" | "settings">("accounts");
 
   const [activePlatformTab, setActivePlatformTab] =
     useState<PlatformName | null>(null);
@@ -599,6 +599,7 @@ export function CreatePostStudio() {
             onPlatformToggle={handlePlatformToggle}
             onSelectAllAccounts={handleSelectAllAccounts}
             onAccountToggle={handleAccountToggle}
+            setMobileTab={setMobileTab}
           />
         </div>
 

@@ -31,6 +31,7 @@ type Props = {
     accountId: number,
     enabled: boolean
   ) => void;
+  setMobileTab: (tab: "accounts" | "compose" | "settings") => void;
 };
 
 export function Sidebar({
@@ -47,6 +48,7 @@ export function Sidebar({
   onPlatformToggle,
   onSelectAllAccounts,
   onAccountToggle,
+  setMobileTab,
 }: Props) {
   const allSelected =
     totalSelectedAccounts === totalAccounts && totalAccounts > 0;
@@ -54,7 +56,7 @@ export function Sidebar({
   return (
     // ❌ removed h-full + overflow
     // ✅ let parent control scroll
-    <div className="flex flex-col gap-5 p-3 min-h-0">
+    <div className="flex flex-col gap-5 p-3 min-h-0 h-full">
 
       {/* ---------------- PLATFORMS ---------------- */}
       <div className="rounded-2xl border border-[#eadfcb] bg-white/80 backdrop-blur p-4 shadow-sm">
@@ -196,6 +198,20 @@ export function Sidebar({
             Save
           </motion.button>
         </div>
+      </div>
+      {/* ---------------- NEXT BUTTON (MOBILE) ---------------- */}
+      <div className="mt-auto pt-2 md:hidden">
+        <button
+          onClick={() => setMobileTab("compose")}
+          disabled={totalSelectedAccounts === 0}
+          className={`w-full py-3 rounded-xl text-sm font-semibold shadow-sm ${
+          totalSelectedAccounts === 0
+          ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+          : "bg-gradient-to-r from-[#1f170c] to-[#3a2b10] text-[#f6d48f]"
+          }`}
+         >
+        Next
+        </button>
       </div>
     </div>
   );
