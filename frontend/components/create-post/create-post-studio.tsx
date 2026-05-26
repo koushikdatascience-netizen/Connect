@@ -513,9 +513,27 @@ export function CreatePostStudio() {
           platform,
           label: PLATFORM_LABELS[platform],
           message: platformValidation[platform].message,
+          fixTarget: platformValidation[platform].fixTarget,
         })),
     [platformValidation, selectedPlatformList]
   );
+
+  const jumpToValidationFix = (item: (typeof blockingValidationItems)[number]) => {
+    const fixTarget = item.fixTarget;
+    if (!fixTarget) {
+      return;
+    }
+
+    setActivePlatformTab(item.platform);
+    setMobileTab(fixTarget.panel);
+
+    window.setTimeout(() => {
+      const target = document.getElementById(fixTarget.sectionId);
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }, 180);
+  };
 
   const sidebarPlatforms = useMemo(
     () =>
@@ -730,8 +748,21 @@ export function CreatePostStudio() {
                 key={item.platform}
                 className="rounded-2xl border border-[#f0d2ca] bg-white px-4 py-3 text-sm text-[#7c3f36]"
               >
-                <span className="font-semibold text-[#5b271f]">{item.label}:</span>{" "}
-                {item.message}
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <span className="font-semibold text-[#5b271f]">{item.label}:</span>{" "}
+                    {item.message}
+                  </div>
+                  {item.fixTarget ? (
+                    <button
+                      type="button"
+                      onClick={() => jumpToValidationFix(item)}
+                      className="shrink-0 rounded-full border border-[#f0d2ca] bg-[#fff8f2] px-3 py-1.5 text-xs font-semibold text-[#9f4035] transition-colors hover:bg-[#fff1ea]"
+                    >
+                      {item.fixTarget.actionLabel}
+                    </button>
+                  ) : null}
+                </div>
               </div>
             ))}
           </div>

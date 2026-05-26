@@ -71,9 +71,9 @@ function Toggle({
   );
 }
 
-function Section({ title, children }: { title: string; children: ReactNode }) {
+function Section({ title, sectionId, children }: { title: string; sectionId?: string; children: ReactNode }) {
   return (
-    <div className="space-y-3">
+    <div id={sectionId} className="space-y-3 scroll-mt-6">
       <div className="flex items-center gap-2">
         <div className="h-px flex-1 bg-[#ede5d5]" />
         <span className="text-[10px] font-bold uppercase tracking-widest text-[#b09060]">{title}</span>
@@ -147,7 +147,7 @@ function FacebookSettings({ config, onChange }: { config: PlatformConfig; onChan
 function InstagramSettings({ config, onChange }: { config: PlatformConfig; onChange: (key: keyof PlatformConfig, value: any) => void }) {
   return (
     <>
-      <Section title="Format">
+      <Section title="Format" sectionId="instagram-format">
         <Field label="Post type">
           <select value={config.instagramPostType} onChange={(e) => onChange("instagramPostType", e.target.value)} className={selectCls}>
             <option value="post">Feed post</option>
@@ -253,7 +253,7 @@ function TwitterSettings({ config, onChange }: { config: PlatformConfig; onChang
 function YouTubeSettings({ config, onChange }: { config: PlatformConfig; onChange: (key: keyof PlatformConfig, value: any) => void }) {
   return (
     <>
-      <Section title="Video details">
+      <Section title="Video details" sectionId="youtube-video-details">
         <Field label="Video title *" hint="Required for YouTube uploads.">
           <input value={config.youtubeTitle} onChange={(e) => onChange("youtubeTitle", e.target.value)} placeholder="My awesome video" className={inputCls} />
         </Field>
