@@ -1,152 +1,149 @@
-# SocialSync - Linux Server Deployment Guide
+# SocialSync Linux Server Deployment Guide
 
-Complete CI/CD deployment setup for **Linux Server (Backend + Workers)** + **Vercel (Frontend)**
+This is the current production deployment path for SocialSync.
 
----
+- Domain: `https://connect.snapkey.in`
+- Frontend: Next.js on the Linux server with PM2, served at `/`
+- Backend API: FastAPI in Docker Compose, served through the same domain under `/api`
+- Backend docs: FastAPI docs through the same domain under `/docs`
+- Worker: Celery worker in Docker Compose
+- Scheduler: Celery beat in Docker Compose
+- Database: PostgreSQL in Docker Compose
+- Queue/cache: Redis in Docker Compose
+- CI/CD: GitHub Actions deploys over SSH to the Linux server
 
-## 📋 Overview
+## Architecture
 
-This guide will help you deploy SocialSync to your own Linux server with:
+```text
+Browser
+  |
+  | https://connect.snapkey.in
+  v
+Nginx
+  |-- /                  -> Next.js frontend on 127.0.0.1:3000
+  |-- /api/              -> FastAPI backend on 127.0.0.1:8000
+  |-- /docs              -> FastAPI backend docs
+  |-- /openapi.json      -> FastAPI backend OpenAPI, if exposed
+  |-- /api/v1/openapi.json -> FastAPI API schema
 
-- ✅ **Backend API**: Deployed to your Linux server via GitHub Actions
-- ✅ **Celery Worker**: Deployed to your Linux server
-- ✅ **Celery Beat**: Deployed to your Linux server
-- ✅ **PostgreSQL**: Running on your Linux server
-- ✅ **Redis**: Running on your Linux server
-- ✅ **Frontend**: Vercel (auto-deploy from GitHub)
-- ✅ **CI/CD**: GitHub Actions (automated testing & deployment)
+Docker Compose
+  |-- backend
+  |-- worker
+  |-- beat
+  |-- db
+  |-- redis
 
----
+PM2
+  |-- socialsync-frontend
+```
 
-## 🚀 Prerequisites
+## Required Server Software
 
-1. **Linux Server** with:
-   - Docker installed
-   - Docker Compose installed
-   - SSH access
-   - Public IP or domain name
-   - Ports 8000 (backend), 5432 (PostgreSQL), 6379 (Redis) open
+Install these on the Linux server:
 
-2. **GitHub Repository** with your SocialSync code
+- Git
+- Docker
+- Docker Compose plugin
+- Node.js 20+
+- npm
+- PM2
+- Nginx
+- Certbot for HTTPS
 
-3. **Domain name** (optional, recommended for production)
-
-4. **Vercel account** (for frontend deployment)
-
----
-
-## 🔧 Step-by-Step Deployment
-
-### Step 1: Prepare Your Linux Server
-
-#### 1.1 Install Docker and Docker Compose
+Ubuntu example:
 
 ```bash
-# Install Docker
+sudo apt update
+sudo apt install -y git curl nginx certbot python3-certbot-nginx
+
 curl -fsSL https://get.docker.com | sh
 sudo usermod -aG docker $USER
 
-# Install Docker Compose
-sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-sudo chmod +x /usr/local/bin/docker-compose
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt install -y nodejs
 
-# Verify installation
-docker --version
-docker-compose --version
+sudo npm install -g pm2
 ```
 
-#### 1.2 Create Deployment User (Recommended)
+Log out and back in after adding your user to the `docker` group.
+
+## Server Directory
+
+The active GitHub Actions workflow expects the repo at:
 
 ```bash
-# Create deploy user
-sudo adduser deploy
-sudo usermod -aG docker deploy
-sudo usermod -aG sudo deploy
-
-# Switch to deploy user
-su - deploy
+~/Connect
 ```
 
-#### 1.3 Set Up SSH Access
+Clone it there:
 
 ```bash
-# On your local machine, generate SSH key if you don't have one
-ssh-keygen -t ed25519 -C "github-actions-deploy"
-
-# Copy public key to server
-ssh-copy-id -i ~/.ssh/id_ed25519.pub deploy@your-server-ip
+cd ~
+git clone <your-github-repo-url> Connect
+cd ~/Connect
+git checkout main
 ```
 
----
+If you want a different directory, update `.github/workflows/deploy-main.yml` first because `~/Connect` is currently hardcoded.
 
-### Step 2: Configure GitHub Secrets
+## GitHub Actions Secrets
 
-1. Go to your GitHub repo → **Settings** → **Secrets and variables** → **Actions**
+The current workflow `.github/workflows/deploy-main.yml` expects these repository secrets:
 
-2. Add these **Repository secrets**:
+| Secret | Example | Notes |
+| --- | --- | --- |
+| `SERVER_HOST` | `connect.snapkey.in` or server IP | SSH host |
+| `SERVER_USER` | `deploy` | Linux deploy user |
+| `SERVER_SSH_KEY` | private key contents | Private key with access to the server |
+| `SERVER_PORT` | `22` | SSH port |
 
-| Secret Name | Description | Example Value |
-|-------------|-------------|---------------|
-| `SERVER_IP` | Your server IP or domain | `123.45.67.89` or `yourdomain.com` |
-| `SSH_USERNAME` | SSH username | `deploy` |
-| `SSH_PORT` | SSH port (optional, default: 22) | `22` |
-| `DEPLOY_PATH` | Path to deploy on server | `/home/deploy/socialsync` |
-| `SSH_PRIVATE_KEY` | Private SSH key for deployment | (contents of `~/.ssh/id_ed25519`) |
-| `KNOWN_HOSTS` | Server's known hosts fingerprint | (output of `ssh-keyscan your-server-ip`) |
-| `POSTGRES_USER` | PostgreSQL username | `postgres` |
-| `POSTGRES_PASSWORD` | PostgreSQL password | `your-strong-password` |
-| `POSTGRES_DB` | PostgreSQL database name | `socialsync` |
-| `POSTGRES_PORT` | PostgreSQL port (optional) | `5432` |
-| `REDIS_PORT` | Redis port (optional) | `6379` |
+Add them in GitHub:
 
-**To get KNOWN_HOSTS:**
+```text
+Repository -> Settings -> Secrets and variables -> Actions -> New repository secret
+```
+
+## Backend Environment
+
+Create this file on the server:
+
 ```bash
-ssh-keyscan your-server-ip > known_hosts
-cat known_hosts
+nano ~/Connect/.env
 ```
 
----
-
-### Step 3: Create Production Environment File
-
-Create `.env.production` file in your project root:
+Use real production values:
 
 ```env
-# Database
-DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+DATABASE_URL=postgresql://postgres:change-this-password@db:5432/socialsync
 REDIS_URL=redis://redis:6379/0
 
-# Security
-ENCRYPTION_KEY=your-encryption-key-here
-JWT_SECRET=your-jwt-secret-here
+ENCRYPTION_KEY=replace-with-fernet-key
+JWT_SECRET=replace-with-long-random-secret
 
-# OAuth (get from developer platforms)
-FACEBOOK_CLIENT_ID=your_facebook_app_id
-FACEBOOK_SECRET=your_facebook_app_secret
-LINKEDIN_CLIENT_ID=your_linkedin_client_id
-LINKEDIN_SECRET=your_linkedin_client_secret
-GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_SECRET=your_google_client_secret
-TWITTER_CLIENT_ID=your_twitter_client_id
-TWITTER_CLIENT_SECRET=your_twitter_client_secret
+BACKEND_PUBLIC_URL=https://connect.snapkey.in
+FRONTEND_URL=https://connect.snapkey.in
+ADDITIONAL_CORS_ORIGINS=https://connect.snapkey.in
 
-# Cloudinary (from cloudinary.com)
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
+FACEBOOK_CLIENT_ID=replace-me
+FACEBOOK_SECRET=replace-me
+LINKEDIN_CLIENT_ID=replace-me
+LINKEDIN_SECRET=replace-me
+GOOGLE_CLIENT_ID=replace-me
+GOOGLE_SECRET=replace-me
+TWITTER_CLIENT_ID=replace-me
+TWITTER_CLIENT_SECRET=replace-me
 
-# URLs
-BACKEND_PUBLIC_URL=http://${SERVER_IP}:8000
-FRONTEND_URL=https://your-frontend.vercel.app
-ADDITIONAL_CORS_ORIGINS=https://your-frontend.vercel.app
+CLOUDINARY_CLOUD_NAME=replace-me
+CLOUDINARY_API_KEY=replace-me
+CLOUDINARY_API_SECRET=replace-me
 
-# Security (production)
 SESSION_COOKIE_SECURE=true
-SESSION_COOKIE_SAMESITE=none
+SESSION_COOKIE_SAMESITE=lax
+
 AUTH_REQUIRED=true
 ALLOW_DEV_TENANT_HEADER=false
+ALLOW_PUBLIC_OAUTH_LOGIN=false
 
-# JWT
 JWT_ALGORITHM=HS256
 JWT_ISSUER=SocialSync
 JWT_AUDIENCE=SocialSync
@@ -154,183 +151,238 @@ JWT_TENANT_CLAIM=TenantId
 JWT_SUBJECT_CLAIM=UserId
 JWT_ROLE_CLAIM=ISAdmin
 
-# Other
 API_V1_STR=/api/v1
 WEBVIEW_AUTH_CODE_TTL_SECONDS=60
 ENVIRONMENT=production
 ```
 
-**Generate security keys:**
-```bash
-# Generate ENCRYPTION_KEY
-python -c "import base64; from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+Generate secrets:
 
-# Generate JWT_SECRET
-python -c "import secrets; print(secrets.token_urlsafe(64))"
+```bash
+python3 - <<'PY'
+from cryptography.fernet import Fernet
+import secrets
+
+print("ENCRYPTION_KEY=" + Fernet.generate_key().decode())
+print("JWT_SECRET=" + secrets.token_urlsafe(64))
+PY
 ```
 
----
+## Frontend Environment
 
-### Step 4: Configure Frontend for Linux Server
+Create this file on the server:
 
-Update your frontend `.env.production` file:
+```bash
+nano ~/Connect/frontend/.env.production.local
+```
+
+Use:
 
 ```env
-NEXT_PUBLIC_API_BASE_URL=http://your-server-ip:8000
+NEXT_PUBLIC_API_BASE_URL=https://connect.snapkey.in
 NEXT_PUBLIC_TENANT_ID=tenant_123
 NEXT_PUBLIC_AUTH_TOKEN_STORAGE_KEY=snapkey_jwt
 ```
 
----
+Because frontend and backend share the same domain, the browser should call the API through:
 
-### Step 5: Push Code to GitHub
+```text
+https://connect.snapkey.in/api/v1/...
+```
+
+## Nginx Configuration
+
+Create:
 
 ```bash
-git add .
-git commit -m "feat: add CI/CD for Linux server deployment"
+sudo nano /etc/nginx/sites-available/connect.snapkey.in
+```
+
+Use this config:
+
+```nginx
+server {
+    listen 80;
+    server_name connect.snapkey.in;
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /docs {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /api/v1/openapi.json {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+Enable it:
+
+```bash
+sudo ln -s /etc/nginx/sites-available/connect.snapkey.in /etc/nginx/sites-enabled/connect.snapkey.in
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+Enable HTTPS:
+
+```bash
+sudo certbot --nginx -d connect.snapkey.in
+```
+
+## OAuth Redirect URLs
+
+Configure provider dashboards with same-domain callback URLs:
+
+```text
+https://connect.snapkey.in/api/v1/oauth/facebook/callback
+https://connect.snapkey.in/api/v1/oauth/instagram/callback
+https://connect.snapkey.in/api/v1/oauth/linkedin/callback
+https://connect.snapkey.in/api/v1/oauth/google/callback
+https://connect.snapkey.in/api/v1/oauth/twitter/callback
+```
+
+## First Manual Deployment
+
+Run this once on the server:
+
+```bash
+cd ~/Connect
+docker compose up -d db redis
+docker compose build backend worker beat
+docker compose run --rm -e RUN_MIGRATIONS=false backend uv run alembic upgrade head
+docker compose up -d backend worker beat
+
+cd ~/Connect/frontend
+npm ci
+npm run build
+pm2 start npm --name socialsync-frontend --cwd ~/Connect/frontend -- start
+pm2 save
+```
+
+Check:
+
+```bash
+curl http://127.0.0.1:8000/api/v1/health
+curl http://127.0.0.1:3000
+curl https://connect.snapkey.in/api/v1/health
+```
+
+## CI/CD Deployment Flow
+
+The workflow `.github/workflows/deploy-main.yml` runs on pushes to `main` and manual dispatch.
+
+It does this over SSH:
+
+1. `cd ~/Connect`
+2. Save the previous commit for rollback
+3. `git fetch origin`
+4. `git reset --hard origin/main`
+5. Start `db` and `redis`
+6. Build backend, worker, and beat images
+7. Run Alembic migrations
+8. Start backend, worker, and beat
+9. Health-check backend at `http://127.0.0.1:8000/api/v1/health`
+10. Build frontend in `~/Connect_frontend_release`
+11. Promote the built `.next` directory into `~/Connect/frontend/.next`
+12. Reload or start PM2 service `socialsync-frontend`
+13. Health-check frontend at `http://127.0.0.1:3000`
+14. Save PM2 process list
+
+If a health check fails, it resets back to the previous commit and rebuilds the previous version.
+
+## Deploying Updates
+
+Push to `main`:
+
+```bash
 git push origin main
 ```
 
----
+Or run the workflow manually:
 
-### Step 6: Monitor Deployment
-
-1. Go to your GitHub repo → **Actions** tab
-2. Watch the **Deploy to Linux Server** workflow run
-3. Check logs for any errors
-
----
-
-## 🔄 Updating Your Deployment
-
-### Automatic (Recommended)
-
-```bash
-git add .
-git commit -m "feat: your changes"
-git push origin main
+```text
+GitHub -> Actions -> Deploy (Backend + Frontend) -> Run workflow
 ```
 
-GitHub Actions will automatically:
-- Run tests
-- Deploy backend to your Linux server
-- Deploy frontend to Vercel (if frontend files changed)
-
-### Manual Trigger
-
-1. Go to GitHub repo → **Actions** tab
-2. Select **Deploy to Linux Server** workflow
-3. Click **Run workflow**
-4. Choose branch → **Run workflow**
-
----
-
-## 📊 Monitoring & Debugging
-
-### Server Logs
+## Useful Server Commands
 
 ```bash
-# SSH into your server
-ssh deploy@your-server-ip
+cd ~/Connect
 
-# View backend logs
-docker logs -f socialsync_backend
+docker compose ps
+docker compose logs -f backend
+docker compose logs -f worker
+docker compose logs -f beat
+docker compose logs -f db
+docker compose logs -f redis
 
-# View worker logs
-docker logs -f socialsync_worker
+pm2 status
+pm2 logs socialsync-frontend
 
-# View beat logs
-docker logs -f socialsync_beat
-
-# View all containers
-docker ps -a
+curl http://127.0.0.1:8000/api/v1/health
+curl http://127.0.0.1:8000/api/v1/ready
+curl http://127.0.0.1:8000/api/v1/queue
+curl https://connect.snapkey.in/api/v1/health
 ```
 
-### GitHub Actions
+## Production Notes
 
-- **Workflow runs**: Check CI/CD pipeline status
-- **Logs**: Debug failed deployments
+The current `docker-compose.yml` works for the present deployment workflow, but before hardening production you should consider these improvements:
 
----
+- Remove `--reload` from the backend command.
+- Remove `.:/app` bind mounts from backend, worker, and beat.
+- Stop publishing Postgres and Redis ports publicly unless remote access is required.
+- Move Postgres username, password, and database name into environment variables.
+- Add a Docker healthcheck for the backend service.
+- Add log rotation for Docker and PM2 logs.
 
-## 🚨 Troubleshooting
+## Firewall
 
-### Backend won't start
+Recommended public ports:
 
-```bash
-# Check container status
-docker ps -a
-
-# Check logs
-docker logs socialsync_backend
-
-# Common issues:
-# 1. DATABASE_URL not set correctly
-# 2. REDIS_URL not set correctly
-# 3. Missing environment variables
-# 4. Port conflicts
+```text
+22/tcp    SSH, preferably restricted to trusted IPs
+80/tcp    HTTP for Certbot redirect
+443/tcp   HTTPS app traffic
 ```
 
-### Database connection issues
+Avoid exposing these publicly:
 
-```bash
-# Check if PostgreSQL is running
-docker logs socialsync_db
-
-# Check database health
-docker exec -it socialsync_db pg_isready -U postgres
-
-# Run migrations manually
-docker exec -it socialsync_backend alembic upgrade head
+```text
+5432/tcp or 5433/tcp PostgreSQL
+6379/tcp Redis
+8000/tcp backend direct access
+3000/tcp frontend direct access
 ```
 
-### Worker not processing tasks
-
-```bash
-# Check worker logs
-docker logs socialsync_worker
-
-# Verify Redis connection
-docker exec -it socialsync_redis redis-cli ping
-```
-
-### Frontend can't reach backend
-
-1. Verify `NEXT_PUBLIC_API_BASE_URL` in frontend env vars
-2. Check CORS settings in backend
-3. Ensure backend is running: `curl http://your-server-ip:8000/api/v1/health`
-
----
-
-## 🔒 Security Recommendations
-
-1. **Use HTTPS**: Set up Nginx with Let's Encrypt for HTTPS
-2. **Firewall**: Configure firewall to only allow necessary ports
-3. **SSH**: Disable root login and use SSH keys only
-4. **Database**: Change default PostgreSQL credentials
-5. **Environment variables**: Never commit `.env` files to GitHub
-6. **Docker**: Regularly update Docker images
-
----
-
-## 📚 Additional Resources
-
-- [Docker Documentation](https://docs.docker.com/)
-- [GitHub Actions Documentation](https://docs.github.com/en/actions)
-- [FastAPI Deployment Guide](https://fastapi.tiangolo.com/deployment/)
-- [Nginx Configuration](https://www.nginx.com/resources/wiki/start/)
-
----
-
-## 🆘 Support
-
-If you encounter issues:
-
-1. Check the **Troubleshooting** section above
-2. Review deployment logs in GitHub Actions
-3. Check server logs with `docker logs`
-4. Open an issue in your GitHub repository
-
----
-
-**Happy Deploying! 🚀**
+Nginx should be the public entrypoint.

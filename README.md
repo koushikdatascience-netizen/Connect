@@ -277,14 +277,21 @@ docker exec -it socialsync_redis redis-cli FLUSHALL
 
 ## Deployment
 
-This project supports multiple deployment options:
+The current production target is a single Linux server behind:
 
-### Production Deployment
+```text
+https://connect.snapkey.in
+```
+
+- Frontend runs on the server with Next.js and PM2.
+- Backend, worker, beat, PostgreSQL, and Redis run with Docker Compose.
+- Nginx serves the frontend at `/` and proxies backend API traffic under `/api`.
+- GitHub Actions deploys to the server over SSH on pushes to `main`.
+
+Main deployment docs:
 
 - **Linux Server Deployment**: [DEPLOYMENT_LINUX_SERVER.md](/D:/SocialSyncV1/DEPLOYMENT_LINUX_SERVER.md)
-  - Complete CI/CD pipeline for deploying backend to your own Linux server
-  - Automated testing and deployment via GitHub Actions
-  - Docker-based deployment with PostgreSQL and Redis
+- **Deployment Checklist**: [DEPLOYMENT_CHECKLIST.md](/D:/SocialSyncV1/DEPLOYMENT_CHECKLIST.md)
 
 ### Development/Testing Deployment
 
@@ -298,8 +305,8 @@ This project supports multiple deployment options:
 ### CI/CD Pipeline
 
 The project now includes GitHub Actions workflows for:
-- Automatic backend deployment to your Linux server on push to main branch
-- Automatic frontend deployment to Vercel on push to main branch
+- Backend tests and frontend build checks
+- Automatic backend and frontend deployment to the Linux server on push to `main`
 - Automated testing before deployment
 
 ## Troubleshooting
@@ -339,9 +346,11 @@ If old posts were created before that fix, edit and resave them.
 
 ## Project docs
 
-Use these two documents as the main handoff set:
+Use these documents as the main handoff set:
 
 - [README.md](/D:/SocialSyncV1/README.md)
+- [DEPLOYMENT_LINUX_SERVER.md](/D:/SocialSyncV1/DEPLOYMENT_LINUX_SERVER.md)
+- [DEPLOYMENT_CHECKLIST.md](/D:/SocialSyncV1/DEPLOYMENT_CHECKLIST.md)
 - [DEPLOYMENT_VERCEL_NGROK.md](/D:/SocialSyncV1/DEPLOYMENT_VERCEL_NGROK.md)
 - [AWS_PRODUCTION_DEPLOYMENT.md](/D:/SocialSyncV1/AWS_PRODUCTION_DEPLOYMENT.md)
 

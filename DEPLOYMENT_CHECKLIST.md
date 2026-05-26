@@ -1,157 +1,148 @@
-# SocialSync - Quick Deployment Checklist
+# SocialSync Linux Deployment Checklist
 
-Use this checklist to track your deployment progress.
+Use this checklist for the current production target:
 
----
+```text
+https://connect.snapkey.in
+```
 
-## ✅ Pre-Deployment
+This deployment runs both backend and frontend on the same Linux server.
 
-- [ ] Code pushed to GitHub (main/master branch)
-- [ ] All CI/CD files committed:
-  - [ ] `.github/workflows/deploy-backend.yml`
-  - [ ] `.github/workflows/deploy-frontend.yml`
-  - [ ] `railway.json`
-  - [ ] `railway-worker.json`
-  - [ ] `railway-beat.json`
-  - [ ] `Dockerfile.railway`
-  - [ ] `frontend/vercel.json`
+## Server Setup
 
----
+- [ ] DNS `connect.snapkey.in` points to the Linux server public IP.
+- [ ] Deploy user exists on the server.
+- [ ] Deploy user can SSH with a key.
+- [ ] Deploy user can run Docker commands.
+- [ ] Git is installed.
+- [ ] Docker is installed.
+- [ ] Docker Compose plugin is installed.
+- [ ] Node.js 20+ is installed.
+- [ ] npm is installed.
+- [ ] PM2 is installed globally.
+- [ ] Nginx is installed.
+- [ ] Certbot is installed.
 
-## ✅ Railway Setup
+## Repository
 
-- [ ] Railway account created
-- [ ] New project created from GitHub repo
-- [ ] PostgreSQL service added
-- [ ] Redis service added
-- [ ] Backend service configured with `railway.json`
-- [ ] Worker service configured with `railway-worker.json`
-- [ ] Beat service configured with `railway-beat.json`
+- [ ] Repo is cloned at `~/Connect`.
+- [ ] Repo is on the `main` branch.
+- [ ] Server can run `git fetch origin` from `~/Connect`.
+- [ ] `.github/workflows/deploy-main.yml` exists.
+- [ ] `.github/workflows/ci-main.yml` exists.
 
----
+## GitHub Secrets
 
-## ✅ Environment Variables (Railway)
+Add these in GitHub repository Actions secrets:
 
-### Generate Security Keys
-- [ ] ENCRYPTION_KEY generated
-- [ ] JWT_SECRET generated
+- [ ] `SERVER_HOST`
+- [ ] `SERVER_USER`
+- [ ] `SERVER_SSH_KEY`
+- [ ] `SERVER_PORT`
 
-### Database & Redis
-- [ ] DATABASE_URL copied from Railway PostgreSQL
-- [ ] REDIS_URL copied from Railway Redis
+## Backend Environment
 
-### OAuth Credentials
-- [ ] Facebook/Instagram app created & credentials added
-- [ ] LinkedIn app created & credentials added
-- [ ] Google/YouTube app created & credentials added
-- [ ] Twitter/X app created & credentials added
+Create `~/Connect/.env` on the server.
 
-### URLs
-- [ ] BACKEND_PUBLIC_URL set (Railway backend URL)
-- [ ] FRONTEND_URL set (Vercel frontend URL)
-- [ ] ADDITIONAL_CORS_ORIGINS set (Vercel URL)
+- [ ] `DATABASE_URL=postgresql://...@db:5432/socialsync`
+- [ ] `REDIS_URL=redis://redis:6379/0`
+- [ ] `ENCRYPTION_KEY`
+- [ ] `JWT_SECRET`
+- [ ] `BACKEND_PUBLIC_URL=https://connect.snapkey.in`
+- [ ] `FRONTEND_URL=https://connect.snapkey.in`
+- [ ] `ADDITIONAL_CORS_ORIGINS=https://connect.snapkey.in`
+- [ ] OAuth provider credentials
+- [ ] Cloudinary credentials
+- [ ] `SESSION_COOKIE_SECURE=true`
+- [ ] `SESSION_COOKIE_SAMESITE=lax`
+- [ ] `AUTH_REQUIRED=true`
+- [ ] `ALLOW_DEV_TENANT_HEADER=false`
 
-### Media Storage
-- [ ] Cloudinary account setup
-- [ ] CLOUDINARY_CLOUD_NAME added
-- [ ] CLOUDINARY_API_KEY added
-- [ ] CLOUDINARY_API_SECRET added
+## Frontend Environment
 
-### Security Settings
-- [ ] SESSION_COOKIE_SECURE=true
-- [ ] SESSION_COOKIE_SAMESITE=none
+Create `~/Connect/frontend/.env.production.local` on the server.
 
----
+- [ ] `NEXT_PUBLIC_API_BASE_URL=https://connect.snapkey.in`
+- [ ] `NEXT_PUBLIC_TENANT_ID=tenant_123`
+- [ ] `NEXT_PUBLIC_AUTH_TOKEN_STORAGE_KEY=snapkey_jwt`
 
-## ✅ Vercel Setup
+## Nginx And HTTPS
 
-- [ ] Vercel account created
-- [ ] Project imported from GitHub
-- [ ] Root directory set to `frontend`
-- [ ] Environment variables added:
-  - [ ] NEXT_PUBLIC_API_BASE_URL
-  - [ ] NEXT_PUBLIC_TENANT_ID
-  - [ ] NEXT_PUBLIC_AUTH_TOKEN_STORAGE_KEY
+- [ ] Nginx server block exists for `connect.snapkey.in`.
+- [ ] `/` proxies to `http://127.0.0.1:3000`.
+- [ ] `/api/` proxies to `http://127.0.0.1:8000`.
+- [ ] `/docs` proxies to `http://127.0.0.1:8000`.
+- [ ] `/api/v1/openapi.json` proxies to `http://127.0.0.1:8000`.
+- [ ] `sudo nginx -t` passes.
+- [ ] Nginx is reloaded.
+- [ ] Certbot certificate is issued for `connect.snapkey.in`.
+- [ ] HTTPS loads successfully.
 
----
+## OAuth Redirect URLs
 
-## ✅ OAuth Provider Configuration
+Configure provider dashboards:
 
-- [ ] Facebook redirect URI updated: `https://your-backend.railway.app/api/v1/oauth/facebook/callback`
-- [ ] Instagram redirect URI updated: `https://your-backend.railway.app/api/v1/oauth/instagram/callback`
-- [ ] LinkedIn redirect URI updated: `https://your-backend.railway.app/api/v1/oauth/linkedin/callback`
-- [ ] Google redirect URI updated: `https://your-backend.railway.app/api/v1/oauth/google/callback`
-- [ ] Twitter redirect URI updated: `https://your-backend.railway.app/api/v1/oauth/twitter/callback`
+- [ ] Facebook: `https://connect.snapkey.in/api/v1/oauth/facebook/callback`
+- [ ] Instagram: `https://connect.snapkey.in/api/v1/oauth/instagram/callback`
+- [ ] LinkedIn: `https://connect.snapkey.in/api/v1/oauth/linkedin/callback`
+- [ ] Google: `https://connect.snapkey.in/api/v1/oauth/google/callback`
+- [ ] Twitter/X: `https://connect.snapkey.in/api/v1/oauth/twitter/callback`
 
----
+## First Deployment
 
-## ✅ GitHub Secrets Configuration
+Run once manually if the server is fresh:
 
-- [ ] RAILWAY_API_TOKEN added
-- [ ] RAILWAY_PROJECT_ID added
-- [ ] VERCEL_TOKEN added
-- [ ] VERCEL_ORG_ID added
-- [ ] VERCEL_PROJECT_ID added
+- [ ] `docker compose up -d db redis`
+- [ ] `docker compose build backend worker beat`
+- [ ] `docker compose run --rm -e RUN_MIGRATIONS=false backend uv run alembic upgrade head`
+- [ ] `docker compose up -d backend worker beat`
+- [ ] `cd ~/Connect/frontend`
+- [ ] `npm ci`
+- [ ] `npm run build`
+- [ ] `pm2 start npm --name socialsync-frontend --cwd ~/Connect/frontend -- start`
+- [ ] `pm2 save`
 
----
+## Health Checks
 
-## ✅ Test Deployment
+- [ ] `curl http://127.0.0.1:8000/api/v1/health`
+- [ ] `curl http://127.0.0.1:8000/api/v1/ready`
+- [ ] `curl http://127.0.0.1:3000`
+- [ ] `curl https://connect.snapkey.in/api/v1/health`
+- [ ] Browser opens `https://connect.snapkey.in`
 
-### Trigger Deployment
-- [ ] Push to main/master branch
-- [ ] GitHub Actions workflows triggered
+## CI/CD
 
-### Monitor CI/CD
-- [ ] Backend tests pass
-- [ ] Backend deployment successful
-- [ ] Worker deployment successful
-- [ ] Beat deployment successful
-- [ ] Frontend deployment successful
+- [ ] Push to `main` triggers `CI`.
+- [ ] Backend tests pass in GitHub Actions.
+- [ ] Frontend build passes in GitHub Actions.
+- [ ] Push to `main` triggers `Deploy (Backend + Frontend)`.
+- [ ] Deploy job SSHs into server successfully.
+- [ ] Backend containers rebuild and restart.
+- [ ] Migrations run successfully.
+- [ ] Frontend builds in release directory.
+- [ ] PM2 reloads `socialsync-frontend`.
+- [ ] Workflow health checks pass.
 
-### Verify Deployment
-- [ ] Backend health check passes: `curl https://your-backend.railway.app/api/v1/health`
-- [ ] Frontend loads: `https://your-frontend.vercel.app`
-- [ ] Database migrations ran successfully
-- [ ] Redis connection working
-- [ ] Can create a test post
-- [ ] OAuth social login works (test one platform)
+## Post-Deployment
 
----
+- [ ] User registration works.
+- [ ] Login works.
+- [ ] Session persists after refresh.
+- [ ] Social account connection works for at least one provider.
+- [ ] Media upload works.
+- [ ] Create post works.
+- [ ] Publish-now queues a task.
+- [ ] Worker processes the task.
+- [ ] Scheduled post is picked up by beat/worker.
+- [ ] Analytics sync works.
 
-## ✅ Post-Deployment
+## Hardening Follow-Up
 
-- [ ] Monitor Railway logs for errors
-- [ ] Monitor Vercel deployment logs
-- [ ] Test all social platform connections
-- [ ] Test post scheduling
-- [ ] Test immediate publishing
-- [ ] Verify Celery worker processes tasks
-- [ ] Verify Celery beat schedules tasks
-- [ ] Check database tables created
-- [ ] Test media uploads (Cloudinary)
-
----
-
-## 🎉 Deployment Complete!
-
-Your SocialSync is now live with:
-- ✅ Frontend on Vercel
-- ✅ Backend API on Railway
-- ✅ Celery Worker on Railway
-- ✅ Celery Beat on Railway
-- ✅ PostgreSQL on Railway
-- ✅ Redis on Railway
-- ✅ Automated CI/CD via GitHub Actions
-
----
-
-## 📝 Notes
-
-- Railway $5 credit will last ~1-2 months for testing
-- Monitor usage in Railway dashboard
-- Set up alerts for credit usage
-- Consider upgrading Railway plan for production use
-
----
-
-**Last Updated**: 2026-04-07
+- [ ] Remove backend `--reload` from production Compose command.
+- [ ] Remove `.:/app` bind mounts from production Compose services.
+- [ ] Stop exposing Postgres publicly.
+- [ ] Stop exposing Redis publicly.
+- [ ] Move Postgres credentials out of hardcoded Compose values.
+- [ ] Add Docker log rotation.
+- [ ] Add PM2 startup integration with systemd using `pm2 startup`.
+- [ ] Restrict SSH access by firewall if possible.
