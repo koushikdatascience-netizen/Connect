@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -186,3 +187,4 @@ jobs:
             echo "===================================="
             echo "DEPLOY SUCCESS"
             echo "===================================="
+
