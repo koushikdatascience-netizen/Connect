@@ -1,5 +1,6 @@
 "use client";
 
+import { KeyboardEvent, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { MediaAsset, PlatformName } from "@/lib/types";
 
@@ -24,6 +25,126 @@ type Props = {
   onFilesSelected: (files: FileList | null) => void;
   onEditMedia: (asset: MediaAsset) => void;
 };
+
+function parseTokenValue(value: string) {
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function normalizeTokenValue(value: string, prefix: "#" | "@") {
+  const trimmed = value.trim().replace(/^[#@]+/, "");
+  if (!trimmed) {
+    return "";
+  }
+  return `${prefix}${trimmed.replace(/\s+/g, "")}`;
+}
+
+type TokenInputProps = {
+  id: string;
+  label: string;
+  placeholder: string;
+  value: string;
+  prefix: "#" | "@";
+  onChange: (value: string) => void;
+};
+
+function TokenInput({
+  id,
+  label,
+  placeholder,
+  value,
+  prefix,
+  onChange,
+}: TokenInputProps) {
+  const [draft, setDraft] = useState("");
+  const tokens = parseTokenValue(value);
+
+  useEffect(() => {
+    if (!value.trim()) {
+      setDraft("");
+    }
+  }, [value]);
+
+  const commitDraft = () => {
+    const normalized = normalizeTokenValue(draft, prefix);
+    if (!normalized) {
+      setDraft("");
+      return;
+    }
+
+    if (!tokens.includes(normalized)) {
+      onChange([...tokens, normalized].join(", "));
+    }
+    setDraft("");
+  };
+
+  const removeToken = (tokenToRemove: string) => {
+    onChange(tokens.filter((token) => token !== tokenToRemove).join(", "));
+  };
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter" || event.key === "," || event.key === "Tab") {
+      if (draft.trim()) {
+        event.preventDefault();
+        commitDraft();
+      }
+      return;
+    }
+
+    if (event.key === "Backspace" && !draft && tokens.length > 0) {
+      event.preventDefault();
+      const nextTokens = [...tokens];
+      const lastToken = nextTokens.pop();
+      onChange(nextTokens.join(", "));
+      setDraft(lastToken ? lastToken.replace(/^[#@]/, "") : "");
+    }
+  };
+
+  return (
+    <label
+      htmlFor={id}
+      className="
+        rounded-2xl border border-[#eee3d0] bg-white/75 px-3 py-3
+        transition-all duration-200 focus-within:border-[#d4a94f]
+        focus-within:ring-2 focus-within:ring-[#d4a94f]/30
+      "
+    >
+      <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-[#9b7b3f]">
+        {label}
+      </div>
+      <div className="flex min-h-[42px] flex-wrap items-center gap-2">
+        {tokens.map((token) => (
+          <span
+            key={token}
+            className="inline-flex items-center gap-1 rounded-full bg-[#fff3d7] px-3 py-1 text-xs font-medium text-[#8a6a18]"
+          >
+            {token}
+            <button
+              type="button"
+              onClick={() => removeToken(token)}
+              className="text-[#9b7b3f] transition-colors hover:text-[#6f5415]"
+              aria-label={`Remove ${token}`}
+            >
+              ×
+            </button>
+          </span>
+        ))}
+
+        <input
+          id={id}
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          onKeyDown={handleKeyDown}
+          onBlur={commitDraft}
+          placeholder={tokens.length === 0 ? placeholder : `Add another ${label.toLowerCase().slice(0, -1)}`}
+          className="min-w-[120px] flex-1 bg-transparent text-sm outline-none placeholder:text-[#a39170]"
+        />
+      </div>
+    </label>
+  );
+}
 
 export function PostEditor({
   caption,
@@ -101,28 +222,22 @@ export function PostEditor({
         transition={{ delay: 0.05 }}
         className="grid grid-cols-2 gap-3"
       >
-        <input
-          aria-label="Hashtags"
+        <TokenInput
+          id="post-hashtags"
+          label="Hashtags"
           value={hashtags}
-          onChange={(e) => onHashtagsChange(e.target.value)}
-          placeholder="#hashtags"
-          className="
-            h-10 rounded-xl border border-[#eee3d0] bg-white/70 px-3 text-sm
-            outline-none transition-all duration-200
-            focus:ring-2 focus:ring-[#d4a94f]/40 focus:border-[#d4a94f]
-          "
+          onChange={onHashtagsChange}
+          placeholder="#socialmedia"
+          prefix="#"
         />
 
-        <input
-          aria-label="Mentions"
+        <TokenInput
+          id="post-mentions"
+          label="Mentions"
           value={mentions}
-          onChange={(e) => onMentionsChange(e.target.value)}
-          placeholder="@mentions"
-          className="
-            h-10 rounded-xl border border-[#eee3d0] bg-white/70 px-3 text-sm
-            outline-none transition-all duration-200
-            focus:ring-2 focus:ring-[#d4a94f]/40 focus:border-[#d4a94f]
-          "
+          onChange={onMentionsChange}
+          placeholder="@brandname"
+          prefix="@"
         />
       </motion.div>
 
