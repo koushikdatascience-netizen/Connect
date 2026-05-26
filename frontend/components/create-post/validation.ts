@@ -7,6 +7,11 @@ import { MediaAsset, PlatformName } from "@/lib/types";
 type PlatformValidation = {
   valid: boolean;
   message: string;
+  fixTarget?: {
+    panel: "compose" | "settings";
+    sectionId: string;
+    actionLabel: string;
+  };
 };
 
 type MediaConstraint = {
@@ -146,111 +151,307 @@ export function getPlatformValidation(
   const label = PLATFORM_LABELS[platform];
 
   if ((platform === "facebook" || platform === "twitter" || platform === "linkedin") && !hasContent && mediaCount === 0) {
-    return { valid: false, message: `${label} requires text or media.` };
+    return {
+      valid: false,
+      message: `${label} requires text or media.`,
+      fixTarget: {
+        panel: "compose",
+        sectionId: "compose-caption",
+        actionLabel: "Open composer",
+      },
+    };
   }
 
   if (platform === "facebook") {
     if (otherCount) {
-      return { valid: false, message: "Facebook supports image and video assets only." };
+      return {
+        valid: false,
+        message: "Facebook supports image and video assets only.",
+        fixTarget: {
+          panel: "compose",
+          sectionId: "compose-media",
+          actionLabel: "Review media",
+        },
+      };
     }
     if (videoCount > 1 || (videoCount === 1 && imageCount > 0)) {
-      return { valid: false, message: "Facebook supports either one video or an image set, but not mixed media." };
+      return {
+        valid: false,
+        message: "Facebook supports either one video or an image set, but not mixed media.",
+        fixTarget: {
+          panel: "compose",
+          sectionId: "compose-media",
+          actionLabel: "Review media",
+        },
+      };
     }
     for (const [index, asset] of selectedAssets.entries()) {
       const error = validateAssetAgainstConstraints("facebook", asset, index);
-      if (error) return { valid: false, message: error };
+      if (error) {
+        return {
+          valid: false,
+          message: error,
+          fixTarget: {
+            panel: "compose",
+            sectionId: "compose-media",
+            actionLabel: "Review media",
+          },
+        };
+      }
     }
     return { valid: true, message: "Ready for Facebook publishing." };
   }
 
   if (platform === "instagram") {
     if (mediaCount < 1 || mediaCount > 10) {
-      return { valid: false, message: "Instagram requires 1-10 media items." };
+      return {
+        valid: false,
+        message: "Instagram requires 1-10 media items.",
+        fixTarget: {
+          panel: "compose",
+          sectionId: "compose-media",
+          actionLabel: "Review media",
+        },
+      };
     }
     if (otherCount) {
-      return { valid: false, message: "Instagram supports image and video assets only." };
+      return {
+        valid: false,
+        message: "Instagram supports image and video assets only.",
+        fixTarget: {
+          panel: "compose",
+          sectionId: "compose-media",
+          actionLabel: "Review media",
+        },
+      };
     }
     if (mediaCount > 1) {
       const types = new Set(selectedAssets.map((asset) => asset.file_type));
       if (types.size > 1) {
-        return { valid: false, message: "Instagram carousel must contain the same media type for every item." };
+        return {
+          valid: false,
+          message: "Instagram carousel must contain the same media type for every item.",
+          fixTarget: {
+            panel: "compose",
+            sectionId: "compose-media",
+            actionLabel: "Review media",
+          },
+        };
       }
     }
     if (config.instagramPostType === "reel" && (mediaCount !== 1 || videoCount !== 1)) {
-      return { valid: false, message: "Instagram Reel mode requires exactly one video." };
+      return {
+        valid: false,
+        message: "Instagram Reel mode requires exactly one video.",
+        fixTarget: {
+          panel: "settings",
+          sectionId: "instagram-format",
+          actionLabel: "Open Instagram settings",
+        },
+      };
     }
     if (config.instagramPostType === "story" && mediaCount !== 1) {
-      return { valid: false, message: "Instagram Story mode requires exactly one media item." };
+      return {
+        valid: false,
+        message: "Instagram Story mode requires exactly one media item.",
+        fixTarget: {
+          panel: "settings",
+          sectionId: "instagram-format",
+          actionLabel: "Open Instagram settings",
+        },
+      };
     }
     if (config.instagramPostType === "carousel" && mediaCount < 2) {
-      return { valid: false, message: "Instagram Carousel mode requires at least 2 media items." };
+      return {
+        valid: false,
+        message: "Instagram Carousel mode requires at least 2 media items.",
+        fixTarget: {
+          panel: "settings",
+          sectionId: "instagram-format",
+          actionLabel: "Open Instagram settings",
+        },
+      };
     }
     for (const [index, asset] of selectedAssets.entries()) {
       const error = validateAssetAgainstConstraints("instagram", asset, index);
-      if (error) return { valid: false, message: error };
+      if (error) {
+        return {
+          valid: false,
+          message: error,
+          fixTarget: {
+            panel: "compose",
+            sectionId: "compose-media",
+            actionLabel: "Review media",
+          },
+        };
+      }
     }
     return { valid: true, message: "Ready for Instagram publishing." };
   }
 
   if (platform === "linkedin") {
     if (otherCount) {
-      return { valid: false, message: "LinkedIn supports image and video assets only." };
+      return {
+        valid: false,
+        message: "LinkedIn supports image and video assets only.",
+        fixTarget: {
+          panel: "compose",
+          sectionId: "compose-media",
+          actionLabel: "Review media",
+        },
+      };
     }
     if (mediaCount > 1) {
-      return { valid: false, message: "LinkedIn supports one image or one video per post." };
+      return {
+        valid: false,
+        message: "LinkedIn supports one image or one video per post.",
+        fixTarget: {
+          panel: "compose",
+          sectionId: "compose-media",
+          actionLabel: "Review media",
+        },
+      };
     }
     return { valid: true, message: mediaCount ? "Ready for LinkedIn publishing." : "Ready for a text-only LinkedIn post." };
   }
 
   if (platform === "twitter") {
     if (otherCount) {
-      return { valid: false, message: "X supports image and video assets only." };
+      return {
+        valid: false,
+        message: "X supports image and video assets only.",
+        fixTarget: {
+          panel: "compose",
+          sectionId: "compose-media",
+          actionLabel: "Review media",
+        },
+      };
     }
     if (imageCount > 4) {
-      return { valid: false, message: "X supports up to 4 images per post." };
+      return {
+        valid: false,
+        message: "X supports up to 4 images per post.",
+        fixTarget: {
+          panel: "compose",
+          sectionId: "compose-media",
+          actionLabel: "Review media",
+        },
+      };
     }
     if (videoCount > 1 || (videoCount === 1 && imageCount > 0)) {
-      return { valid: false, message: "X supports either a single video or up to 4 images." };
+      return {
+        valid: false,
+        message: "X supports either a single video or up to 4 images.",
+        fixTarget: {
+          panel: "compose",
+          sectionId: "compose-media",
+          actionLabel: "Review media",
+        },
+      };
     }
     return { valid: true, message: "Ready for X publishing." };
   }
 
   if (platform === "youtube") {
     if (!config.youtubeTitle.trim()) {
-      return { valid: false, message: "YouTube requires a video title." };
+      return {
+        valid: false,
+        message: "YouTube requires a video title.",
+        fixTarget: {
+          panel: "settings",
+          sectionId: "youtube-video-details",
+          actionLabel: "Open YouTube settings",
+        },
+      };
     }
     if (mediaCount !== 1 || videoCount !== 1 || otherCount > 0 || imageCount > 0) {
-      return { valid: false, message: "YouTube requires exactly one uploaded video." };
+      return {
+        valid: false,
+        message: "YouTube requires exactly one uploaded video.",
+        fixTarget: {
+          panel: "compose",
+          sectionId: "compose-media",
+          actionLabel: "Review media",
+        },
+      };
     }
     return { valid: true, message: "Ready for YouTube publishing." };
   }
 
   if (platform === "blogger") {
     if (!hasContent && mediaCount === 0) {
-      return { valid: false, message: "Blogger requires text or media content." };
+      return {
+        valid: false,
+        message: "Blogger requires text or media content.",
+        fixTarget: {
+          panel: "compose",
+          sectionId: "compose-caption",
+          actionLabel: "Open composer",
+        },
+      };
     }
     return { valid: true, message: "Ready for Blogger publishing." };
   }
 
   if (platform === "google_business") {
     if (!hasContent && mediaCount === 0) {
-      return { valid: false, message: "Google Business requires text or media content." };
+      return {
+        valid: false,
+        message: "Google Business requires text or media content.",
+        fixTarget: {
+          panel: "compose",
+          sectionId: "compose-caption",
+          actionLabel: "Open composer",
+        },
+      };
     }
     if (otherCount) {
-      return { valid: false, message: "Google Business supports image and video assets only." };
+      return {
+        valid: false,
+        message: "Google Business supports image and video assets only.",
+        fixTarget: {
+          panel: "compose",
+          sectionId: "compose-media",
+          actionLabel: "Review media",
+        },
+      };
     }
     if (mediaCount > 1) {
-      return { valid: false, message: "Google Business supports one image or one video per post." };
+      return {
+        valid: false,
+        message: "Google Business supports one image or one video per post.",
+        fixTarget: {
+          panel: "compose",
+          sectionId: "compose-media",
+          actionLabel: "Review media",
+        },
+      };
     }
     return { valid: true, message: "Ready for Google Business publishing." };
   }
 
   if (platform === "wordpress") {
     if (!hasContent && mediaCount === 0) {
-      return { valid: false, message: "WordPress requires text or media content." };
+      return {
+        valid: false,
+        message: "WordPress requires text or media content.",
+        fixTarget: {
+          panel: "compose",
+          sectionId: "compose-caption",
+          actionLabel: "Open composer",
+        },
+      };
     }
     if (otherCount) {
-      return { valid: false, message: "WordPress supports image and video assets only." };
+      return {
+        valid: false,
+        message: "WordPress supports image and video assets only.",
+        fixTarget: {
+          panel: "compose",
+          sectionId: "compose-media",
+          actionLabel: "Review media",
+        },
+      };
     }
     return { valid: true, message: "Ready for WordPress publishing." };
   }

@@ -57,6 +57,7 @@ export function PostEditor({
 
       {/* CAPTION CARD */}
       <motion.div
+        id="compose-caption"
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         className="
@@ -127,6 +128,7 @@ export function PostEditor({
 
       {/* MEDIA CARD */}
       <motion.div
+        id="compose-media"
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
