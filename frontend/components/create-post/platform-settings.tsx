@@ -147,7 +147,7 @@ function MultiValueInput({
             key={item}
             className="inline-flex max-w-full items-center gap-1 rounded-full bg-[#f7ebcb] px-2.5 py-1 text-xs font-semibold text-[#73551c]"
           >
-            <span className="max-w-[180px] truncate">{item}</span>
+            <span className="max-w-[70vw] truncate sm:max-w-[180px]">{item}</span>
             <button
               type="button"
               onClick={() => removeItem(item)}

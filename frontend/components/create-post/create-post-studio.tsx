@@ -562,19 +562,19 @@ export function CreatePostStudio() {
   }
 
   return (
-    <main className="flex min-h-[100dvh] flex-col md:h-full md:min-h-0">
-      <div className="px-4 pt-4 md:px-5">
+    <main className="flex h-full min-h-0 flex-col overflow-hidden">
+      <div className="shrink-0 px-3 pt-3 md:px-5 md:pt-4">
         <PendingApprovalBanner compact />
       </div>
 
       {/* MOBILE TAB BAR — hidden on desktop */}
-      <div className="flex border-b bg-white md:hidden">
+      <div className="flex shrink-0 border-b bg-white md:hidden">
         {(["accounts", "compose", "settings"] as const).map((tab) => (
           <button
             key={tab}
             type="button"
             onClick={() => setMobileTab(tab)}
-            className={`flex-1 py-2.5 text-xs font-semibold capitalize transition-colors ${
+            className={`min-w-0 flex-1 py-2.5 text-xs font-semibold capitalize transition-colors ${
               mobileTab === tab
                 ? "border-b-2 border-[#ffd52a] text-[#8c6f00]"
                 : "text-ink-500"
@@ -599,7 +599,7 @@ export function CreatePostStudio() {
 
         {/* LEFT — Accounts */}
         <div
-          className={`w-full overflow-y-auto border-b bg-white md:block md:w-[260px] md:border-b-0 md:border-r ${
+          className={`min-h-0 w-full overflow-y-auto border-b bg-white md:block md:w-[260px] md:border-b-0 md:border-r ${
             mobileTab === "accounts" ? "block" : "hidden md:block"
           }`}
         >
@@ -623,7 +623,7 @@ export function CreatePostStudio() {
 
         {/* CENTER — Compose */}
         <div
-          className={`flex w-full flex-1 flex-col overflow-y-auto bg-white ${
+          className={`min-h-0 w-full flex-1 flex-col overflow-y-auto bg-white ${
             mobileTab === "compose" ? "flex" : "hidden md:flex"
           }`}
         >
@@ -650,7 +650,7 @@ export function CreatePostStudio() {
 
         {/* RIGHT — Settings */}
         <div
-          className={`w-full overflow-y-auto bg-white md:block md:w-[300px] md:border-l ${
+          className={`min-h-0 w-full overflow-y-auto bg-white md:block md:w-[300px] md:border-l ${
             mobileTab === "settings" ? "block" : "hidden md:block"
           }`}
         >
@@ -684,7 +684,7 @@ export function CreatePostStudio() {
       />
 
       {/* POST BUTTON BAR */}
-      <div className="flex flex-col gap-3 border-t border-[#eadfcb] bg-[#fffef9] px-4 py-3 shadow-[0_-4px_18px_rgba(180,144,34,0.08)] sm:flex-row sm:items-center sm:justify-between sm:px-5">
+      <div className="order-last flex shrink-0 flex-col gap-3 border-t border-[#eadfcb] bg-[#fffef9] px-4 py-3 shadow-[0_-4px_18px_rgba(180,144,34,0.08)] sm:flex-row sm:items-center sm:justify-between sm:px-5">
         <div className="min-w-0 text-xs text-[#9b7b3f]">
           {blockingValidationItems.length > 0
             ? `${blockingValidationItems.length} platform requirement${
@@ -733,13 +733,13 @@ export function CreatePostStudio() {
       </div>
 
       {isPendingApproval ? (
-        <div className="border-t border-[#f1dacd] bg-[#fff8f2] px-4 py-4 sm:px-5">
+        <div className="shrink-0 overflow-y-auto border-t border-[#f1dacd] bg-[#fff8f2] px-4 py-3 sm:px-5 sm:py-4">
           <div className="rounded-2xl border border-[#f0d2ca] bg-white px-4 py-3 text-sm text-[#7c3f36]">
             <span className="font-semibold text-[#5b271f]">Publishing locked:</span> Your account is pending approval, so create, publish, and schedule actions are temporarily disabled.
           </div>
         </div>
       ) : blockingValidationItems.length > 0 && (
-        <div className="border-t border-[#f1dacd] bg-[#fff8f2] px-4 py-4 sm:px-5">
+        <div className="max-h-[26dvh] shrink-0 overflow-y-auto border-t border-[#f1dacd] bg-[#fff8f2] px-4 py-3 sm:max-h-none sm:px-5 sm:py-4">
           <div className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#b25a4f]">
             Fix Before Publishing
           </div>

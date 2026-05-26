@@ -92,7 +92,7 @@ export function PlatformSelector({
         </div>
 
         {/* NAME — FIX: use label, not raw id */}
-        <div className="flex-1 text-sm font-medium text-[#2a2116]">
+        <div className="min-w-0 flex-1 truncate text-sm font-medium text-[#2a2116]">
           {platformLabel}
         </div>
 

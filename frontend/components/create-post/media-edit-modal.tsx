@@ -256,9 +256,9 @@ export function MediaEditModal({ asset, open, saving, selectedPlatforms, onClose
             </div>
 
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
-              <div className="relative flex min-h-0 flex-[1.1] items-center justify-center overflow-hidden bg-[#f1e7d6] p-3 lg:flex-1 lg:p-6">
+              <div className="relative flex h-[34dvh] shrink-0 items-center justify-center overflow-hidden bg-[#f1e7d6] p-3 sm:h-[42dvh] lg:h-auto lg:min-h-0 lg:flex-1 lg:shrink lg:p-6">
                 <div className="relative max-h-full max-w-full" onMouseDown={startInteraction} onTouchStart={startInteraction}>
-                  {previewUrl && <img ref={imgRef} src={compareOriginal ? asset.file_url : previewUrl} className="max-h-[38dvh] max-w-full rounded-lg object-contain shadow-2xl pointer-events-none sm:max-h-[48dvh] lg:max-h-[78vh]" alt="Preview" />}
+                  {previewUrl && <img ref={imgRef} src={compareOriginal ? asset.file_url : previewUrl} className="max-h-[30dvh] max-w-full rounded-lg object-contain shadow-2xl pointer-events-none sm:max-h-[38dvh] lg:max-h-[78vh]" alt="Preview" />}
                   {aspect === "free" && !compareOriginal && (
                     <div className="absolute border-2 border-yellow-400 shadow-[0_0_0_9999px_rgba(0,0,0,0.5)] pointer-events-none"
                       style={{ left: `${freeCropBox.x * 100}%`, top: `${freeCropBox.y * 100}%`, width: `${freeCropBox.w * 100}%`, height: `${freeCropBox.h * 100}%` }}>
@@ -272,10 +272,10 @@ export function MediaEditModal({ asset, open, saving, selectedPlatforms, onClose
                 </div>
               </div>
 
-              <div className="min-h-0 w-full overflow-y-auto border-t border-[#eadfcb] bg-white p-4 lg:w-[380px] lg:border-l lg:border-t-0 lg:p-6 space-y-5 sm:space-y-6 lg:space-y-8">
+              <div className="min-h-0 w-full flex-1 overflow-y-auto border-t border-[#eadfcb] bg-white p-4 lg:w-[380px] lg:flex-none lg:border-l lg:border-t-0 lg:p-6 space-y-5 sm:space-y-6 lg:space-y-8">
                 <section>
                   <label className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Recommended</label>
-                  <div className="mt-3 grid gap-2 sm:grid-cols-3 lg:grid-cols-1">
+                  <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3 lg:grid-cols-1">
                     {QUICK_PRESETS.map((p) => (
                       <button key={p.id} onClick={() => setAspect(p.aspect)}
                         className={`w-full rounded-2xl border-2 p-3 text-left transition-all sm:p-4 ${aspect === p.aspect ? 'border-amber-500 bg-amber-50' : 'border-gray-100 hover:border-gray-200'}`}>
