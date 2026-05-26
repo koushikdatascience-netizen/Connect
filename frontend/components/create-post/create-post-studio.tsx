@@ -562,7 +562,7 @@ export function CreatePostStudio() {
   }
 
   return (
-    <main className="flex h-full flex-col">
+    <main className="flex min-h-[100dvh] flex-col md:h-full md:min-h-0">
       <div className="px-4 pt-4 md:px-5">
         <PendingApprovalBanner compact />
       </div>
@@ -595,7 +595,7 @@ export function CreatePostStudio() {
       </div>
 
       {/* PANELS */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex min-h-0 flex-1 overflow-hidden">
 
         {/* LEFT — Accounts */}
         <div
@@ -684,8 +684,8 @@ export function CreatePostStudio() {
       />
 
       {/* POST BUTTON BAR */}
-      <div className="flex items-center justify-between border-t border-[#eadfcb] bg-[#fffef9] px-5 py-3 shadow-[0_-4px_18px_rgba(180,144,34,0.08)]">
-        <div className="text-xs text-[#9b7b3f]">
+      <div className="flex flex-col gap-3 border-t border-[#eadfcb] bg-[#fffef9] px-4 py-3 shadow-[0_-4px_18px_rgba(180,144,34,0.08)] sm:flex-row sm:items-center sm:justify-between sm:px-5">
+        <div className="min-w-0 text-xs text-[#9b7b3f]">
           {blockingValidationItems.length > 0
             ? `${blockingValidationItems.length} platform requirement${
                 blockingValidationItems.length === 1 ? "" : "s"
@@ -704,7 +704,7 @@ export function CreatePostStudio() {
           disabled={!canSubmit}
           whileHover={{ scale: submitting ? 1 : 1.03 }}
           whileTap={{ scale: 0.97 }}
-          className="relative flex items-center gap-2.5 rounded-full bg-[#ffd52a] px-7 py-2.5 text-sm font-bold text-[#09090e] shadow-[0_6px_22px_rgba(255,213,42,0.35)] transition-all disabled:cursor-not-allowed disabled:opacity-50"
+          className="relative flex w-full items-center justify-center gap-2.5 rounded-full bg-[#ffd52a] px-7 py-2.5 text-sm font-bold text-[#09090e] shadow-[0_6px_22px_rgba(255,213,42,0.35)] transition-all disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
         >
           {submitting ? (
             <>
@@ -733,13 +733,13 @@ export function CreatePostStudio() {
       </div>
 
       {isPendingApproval ? (
-        <div className="border-t border-[#f1dacd] bg-[#fff8f2] px-5 py-4">
+        <div className="border-t border-[#f1dacd] bg-[#fff8f2] px-4 py-4 sm:px-5">
           <div className="rounded-2xl border border-[#f0d2ca] bg-white px-4 py-3 text-sm text-[#7c3f36]">
             <span className="font-semibold text-[#5b271f]">Publishing locked:</span> Your account is pending approval, so create, publish, and schedule actions are temporarily disabled.
           </div>
         </div>
       ) : blockingValidationItems.length > 0 && (
-        <div className="border-t border-[#f1dacd] bg-[#fff8f2] px-5 py-4">
+        <div className="border-t border-[#f1dacd] bg-[#fff8f2] px-4 py-4 sm:px-5">
           <div className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#b25a4f]">
             Fix Before Publishing
           </div>
@@ -749,7 +749,7 @@ export function CreatePostStudio() {
                 key={item.platform}
                 className="rounded-2xl border border-[#f0d2ca] bg-white px-4 py-3 text-sm text-[#7c3f36]"
               >
-                <div className="flex items-start justify-between gap-3">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div>
                     <span className="font-semibold text-[#5b271f]">{item.label}:</span>{" "}
                     {item.message}
@@ -777,14 +777,14 @@ export function CreatePostStudio() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-stretch justify-center bg-black/50 p-0 backdrop-blur-sm sm:items-center sm:p-4"
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.92, y: 24 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 12 }}
               transition={{ type: "spring", damping: 22, stiffness: 280 }}
-              className="relative w-full max-w-lg overflow-hidden rounded-[28px] border border-[#1e2535] bg-[#0d1018] shadow-[0_30px_80px_rgba(0,0,0,0.5)]"
+              className="relative flex h-[100dvh] w-full max-w-lg flex-col overflow-hidden bg-[#0d1018] shadow-[0_30px_80px_rgba(0,0,0,0.5)] sm:h-auto sm:max-h-[90dvh] sm:rounded-[28px] sm:border sm:border-[#1e2535]"
             >
               {(() => {
                 const successCount = resultsModal.filter(
@@ -841,7 +841,7 @@ export function CreatePostStudio() {
                     </div>
 
                     {/* Results list */}
-                    <div className="max-h-[380px] space-y-2.5 overflow-y-auto px-4 py-4">
+                    <div className="min-h-0 flex-1 space-y-2.5 overflow-y-auto px-4 py-4 sm:max-h-[380px]">
                       {resultsModal.map((result, i) => (
                         <div
                           key={i}
@@ -920,7 +920,7 @@ export function CreatePostStudio() {
                     </div>
 
                     {/* Footer */}
-                    <div className="flex items-center justify-between gap-3 border-t border-[#1a2030] px-5 py-4">
+                    <div className="flex flex-col gap-3 border-t border-[#1a2030] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
                       <a
                         href="/posts"
                         className="text-xs font-medium text-[#6a8aaa] transition-colors hover:text-[#93b8d8]"
@@ -940,7 +940,7 @@ export function CreatePostStudio() {
                             setSelectedAccounts(createEmptySelectedAccounts());
                           }
                         }}
-                        className="rounded-full bg-[#ffd52a] px-5 py-2 text-sm font-bold text-[#09090e] shadow-[0_4px_14px_rgba(255,213,42,0.3)] transition-colors hover:bg-[#ffe566]"
+                        className="w-full rounded-full bg-[#ffd52a] px-5 py-2 text-sm font-bold text-[#09090e] shadow-[0_4px_14px_rgba(255,213,42,0.3)] transition-colors hover:bg-[#ffe566] sm:w-auto"
                       >
                         {resultsModal.every((r) => r.status === "success")
                           ? "Done"

@@ -14,8 +14,8 @@ export default function ComposeDashboardPage() {
         <div className="absolute bottom-[-100px] right-1/4 h-[300px] w-[300px] rounded-full bg-[#c9a45a]/10 blur-[120px]" />
       </div>
 
-      <div className="relative mx-auto w-full max-w-[1400px] px-4 py-4 flex flex-col min-h-screen">
-        <div className="mb-4">
+      <div className="relative mx-auto flex min-h-screen w-full max-w-[1400px] flex-col px-0 py-0 sm:px-4 sm:py-4">
+        <div className="mb-3 px-3 pt-3 sm:mb-4 sm:px-0 sm:pt-0">
           <ReviewCountdownAlert />
         </div>
 
@@ -26,10 +26,11 @@ export default function ComposeDashboardPage() {
           transition={{ duration: 0.35 }}
           className="
             flex-1 min-h-0
-            rounded-2xl border border-[#e6dccb]
+            border border-[#e6dccb]
             bg-white/70 backdrop-blur-md
             shadow-[0_10px_40px_rgba(0,0,0,0.08)]
             overflow-hidden
+            sm:rounded-2xl
           "
         >
           <CreatePostStudio />

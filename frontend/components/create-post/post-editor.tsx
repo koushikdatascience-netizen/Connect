@@ -118,9 +118,9 @@ function TokenInput({
         {tokens.map((token) => (
           <span
             key={token}
-            className="inline-flex items-center gap-1 rounded-full bg-[#fff3d7] px-3 py-1 text-xs font-medium text-[#8a6a18]"
+            className="inline-flex max-w-full items-center gap-1 rounded-full bg-[#fff3d7] px-3 py-1 text-xs font-medium text-[#8a6a18]"
           >
-            {token}
+            <span className="max-w-[220px] truncate">{token}</span>
             <button
               type="button"
               onClick={() => removeToken(token)}
@@ -220,7 +220,7 @@ export function PostEditor({
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.05 }}
-        className="grid grid-cols-2 gap-3"
+        className="grid grid-cols-1 gap-3 sm:grid-cols-2"
       >
         <TokenInput
           id="post-hashtags"
@@ -302,7 +302,7 @@ export function PostEditor({
 
         {/* MEDIA GRID */}
         {media.length > 0 && (
-          <div className="mt-4 grid grid-cols-3 gap-3">
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
             {media.map((m) => {
               const selected = selectedMediaIds.includes(m.id);
               const edited = editedMediaIds.includes(m.id);
@@ -334,7 +334,7 @@ export function PostEditor({
                   {isVideo ? (
                     <video
                       src={m.file_url}
-                      className="h-24 w-full object-cover"
+                      className="h-24 w-full object-cover sm:h-24"
                       muted
                       playsInline
                       preload="metadata"
@@ -343,11 +343,11 @@ export function PostEditor({
                     <img
                       src={m.file_url}
                       alt={m.alt_text ?? `Uploaded media ${m.id}`}
-                      className="h-24 w-full object-cover"
+                      className="h-24 w-full object-cover sm:h-24"
                     />
                   )}
 
-                  <div className="absolute left-2 top-2 flex gap-1.5">
+                  <div className="absolute left-2 top-2 flex max-w-[calc(100%-1rem)] flex-wrap gap-1.5">
                     {edited && (
                       <span className="rounded-full bg-[#111827]/78 px-2 py-1 text-[10px] font-semibold text-white">
                         Edited
@@ -367,7 +367,7 @@ export function PostEditor({
                         event.stopPropagation();
                         onEditMedia(m);
                       }}
-                      className="absolute right-2 top-2 rounded-full bg-[rgba(17,24,39,0.78)] px-2.5 py-1.5 text-[10px] font-semibold text-white shadow-lg transition-colors hover:bg-[rgba(17,24,39,0.92)]"
+                      className="absolute right-2 top-2 rounded-full bg-[rgba(17,24,39,0.78)] px-2 py-1 text-[10px] font-semibold text-white shadow-lg transition-colors hover:bg-[rgba(17,24,39,0.92)] sm:px-2.5 sm:py-1.5"
                     >
                       {editingMediaId === m.id ? "Opening..." : "Edit"}
                     </button>

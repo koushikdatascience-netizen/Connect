@@ -244,21 +244,21 @@ export function MediaEditModal({ asset, open, saving, selectedPlatforms, onClose
   return (
     <AnimatePresence>
       {open && asset && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[70] flex items-center justify-center bg-black/75 p-2 sm:p-4 backdrop-blur-md">
-          <motion.div initial={{ scale: 0.98 }} animate={{ scale: 1 }} className="flex h-[95vh] w-full max-w-7xl flex-col overflow-hidden rounded-[24px] bg-[#f8f2e8] border border-[#d8ccb5] shadow-2xl">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[70] flex items-stretch justify-center bg-black/75 p-0 backdrop-blur-md sm:items-center sm:p-4">
+          <motion.div initial={{ scale: 0.98 }} animate={{ scale: 1 }} className="flex h-[100dvh] w-full max-w-7xl flex-col overflow-hidden bg-[#f8f2e8] shadow-2xl sm:h-[95dvh] sm:rounded-[24px] sm:border sm:border-[#d8ccb5]">
             
-            <div className="flex items-center justify-between border-b border-[#eadfcb] px-6 py-4 bg-white/70">
-              <div>
-                <h2 className="text-lg font-bold text-gray-900">Media Polish Studio</h2>
+            <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[#eadfcb] bg-white/70 px-3 py-3 sm:px-6 sm:py-4">
+              <div className="min-w-0">
+                <h2 className="truncate text-base font-bold text-gray-900 sm:text-lg">Media Polish Studio</h2>
                 <p className="text-xs font-semibold text-amber-800">{asset.width_px}x{asset.height_px} | {formatBytes(asset.file_size_bytes)}</p>
               </div>
-              <button onClick={onClose} className="rounded-full bg-white px-6 py-2 text-sm font-bold border border-gray-200 hover:bg-gray-50 transition-colors">Close</button>
+              <button onClick={onClose} className="shrink-0 rounded-full border border-gray-200 bg-white px-4 py-2 text-xs font-bold transition-colors hover:bg-gray-50 sm:px-6 sm:text-sm">Close</button>
             </div>
 
-            <div className="flex flex-1 overflow-hidden lg:flex-row flex-col">
-              <div className="relative flex-1 bg-[#f1e7d6] flex items-center justify-center p-3 lg:p-6 overflow-hidden">
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
+              <div className="relative flex min-h-0 flex-[1.1] items-center justify-center overflow-hidden bg-[#f1e7d6] p-3 lg:flex-1 lg:p-6">
                 <div className="relative max-h-full max-w-full" onMouseDown={startInteraction} onTouchStart={startInteraction}>
-                  {previewUrl && <img ref={imgRef} src={compareOriginal ? asset.file_url : previewUrl} className="max-h-[78vh] object-contain shadow-2xl rounded-lg pointer-events-none" alt="Preview" />}
+                  {previewUrl && <img ref={imgRef} src={compareOriginal ? asset.file_url : previewUrl} className="max-h-[38dvh] max-w-full rounded-lg object-contain shadow-2xl pointer-events-none sm:max-h-[48dvh] lg:max-h-[78vh]" alt="Preview" />}
                   {aspect === "free" && !compareOriginal && (
                     <div className="absolute border-2 border-yellow-400 shadow-[0_0_0_9999px_rgba(0,0,0,0.5)] pointer-events-none"
                       style={{ left: `${freeCropBox.x * 100}%`, top: `${freeCropBox.y * 100}%`, width: `${freeCropBox.w * 100}%`, height: `${freeCropBox.h * 100}%` }}>
@@ -272,14 +272,14 @@ export function MediaEditModal({ asset, open, saving, selectedPlatforms, onClose
                 </div>
               </div>
 
-              <div className="w-full lg:w-[380px] border-l border-[#eadfcb] bg-white p-6 overflow-y-auto space-y-8">
+              <div className="min-h-0 w-full overflow-y-auto border-t border-[#eadfcb] bg-white p-4 lg:w-[380px] lg:border-l lg:border-t-0 lg:p-6 space-y-5 sm:space-y-6 lg:space-y-8">
                 <section>
                   <label className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Recommended</label>
-                  <div className="mt-3 space-y-3">
+                  <div className="mt-3 grid gap-2 sm:grid-cols-3 lg:grid-cols-1">
                     {QUICK_PRESETS.map((p) => (
                       <button key={p.id} onClick={() => setAspect(p.aspect)}
-                        className={`w-full p-4 text-left rounded-2xl border-2 transition-all ${aspect === p.aspect ? 'border-amber-500 bg-amber-50' : 'border-gray-100 hover:border-gray-200'}`}>
-                        <div className="flex items-center justify-between">
+                        className={`w-full rounded-2xl border-2 p-3 text-left transition-all sm:p-4 ${aspect === p.aspect ? 'border-amber-500 bg-amber-50' : 'border-gray-100 hover:border-gray-200'}`}>
+                        <div className="flex items-start justify-between gap-2">
                           <span className="font-bold text-sm text-gray-900">{p.label}</span>
                           {p.recommendedFor?.some(r => selectedPlatforms.includes(r)) && <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold">MATCH</span>}
                         </div>
@@ -303,9 +303,9 @@ export function MediaEditModal({ asset, open, saving, selectedPlatforms, onClose
 
                 <section>
                   <label className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Tools</label>
-                  <div className="mt-3 flex gap-2">
+                  <div className="mt-3 grid grid-cols-2 gap-2">
                     <button onClick={() => setRotation(r => (r + 90) % 360)} className="flex-1 py-3 text-xs font-bold border rounded-xl hover:bg-gray-50 transition-all">Rotate 90°</button>
-                    <button onMouseDown={() => setCompareOriginal(true)} onMouseUp={() => setCompareOriginal(false)} className="flex-1 py-3 text-xs font-bold border rounded-xl hover:bg-gray-50">Compare</button>
+                    <button onMouseDown={() => setCompareOriginal(true)} onMouseUp={() => setCompareOriginal(false)} onMouseLeave={() => setCompareOriginal(false)} onTouchStart={() => setCompareOriginal(true)} onTouchEnd={() => setCompareOriginal(false)} className="flex-1 py-3 text-xs font-bold border rounded-xl hover:bg-gray-50">Compare</button>
                   </div>
                 </section>
 
@@ -320,7 +320,7 @@ export function MediaEditModal({ asset, open, saving, selectedPlatforms, onClose
                    const canvas = createEditedCanvas(sourceImage!, { rotation, zoom, panX, panY, aspect, freeWidth: 1, freeHeight: 1, freeCropBox }, 1600);
                    canvas.toBlob(b => onSave({ blob: b!, altText, fileName: 'edit.jpg', mimeType: 'image/jpeg' }), 'image/jpeg', 0.92);
                 }}
-                  className="w-full py-5 bg-amber-500 text-white text-sm font-black rounded-2xl hover:bg-amber-600 disabled:opacity-30 shadow-xl shadow-amber-100 transition-all active:scale-[0.97]">
+                  className="sticky bottom-0 w-full rounded-2xl bg-amber-500 py-4 text-sm font-black text-white shadow-xl shadow-amber-100 transition-all hover:bg-amber-600 active:scale-[0.97] disabled:opacity-30 sm:py-5">
                   {saving ? "Saving..." : "Apply All Changes"}
                 </button>
               </div>

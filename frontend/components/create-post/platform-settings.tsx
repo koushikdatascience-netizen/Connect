@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode } from "react";
+import { KeyboardEvent, ReactNode, useState } from "react";
 import { PlatformLogo } from "@/components/platform-logo";
 import { PLATFORM_LABELS } from "@/components/create-post/constants";
 import {
@@ -29,6 +29,148 @@ const inputCls =
   "w-full rounded-[14px] border border-[#e7dcc9] bg-[#fffdfa] px-3 py-2 text-sm outline-none focus:border-[#d1ac63] focus:ring-2 focus:ring-[#f7ebcb] transition-colors";
 
 const selectCls = inputCls;
+
+type MultiValueInputProps = {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  prefix?: "#" | "@";
+  transform?: (value: string) => string;
+  compact?: boolean;
+};
+
+function parseDelimitedValue(value: string) {
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function normalizeMultiValueItem(
+  value: string,
+  prefix?: "#" | "@",
+  transform?: (value: string) => string,
+) {
+  let normalized = value.trim();
+  if (!normalized) return "";
+
+  if (prefix) {
+    normalized = normalized.replace(/^[#@]+/, "").replace(/\s+/g, "");
+    normalized = `${prefix}${normalized}`;
+  }
+
+  return transform ? transform(normalized) : normalized;
+}
+
+function MultiValueInput({
+  value,
+  onChange,
+  placeholder,
+  prefix,
+  transform,
+  compact = false,
+}: MultiValueInputProps) {
+  const [draft, setDraft] = useState("");
+  const items = parseDelimitedValue(value);
+
+  const updateItems = (nextItems: string[]) => {
+    onChange(nextItems.join(", "));
+  };
+
+  const addItems = (rawItems: string[]) => {
+    const nextItems = [...items];
+
+    rawItems.forEach((rawItem) => {
+      const normalized = normalizeMultiValueItem(rawItem, prefix, transform);
+      const duplicate = nextItems.some(
+        (item) => item.toLowerCase() === normalized.toLowerCase(),
+      );
+
+      if (normalized && !duplicate) {
+        nextItems.push(normalized);
+      }
+    });
+
+    updateItems(nextItems);
+    setDraft("");
+  };
+
+  const commitDraft = () => {
+    if (!draft.trim()) {
+      setDraft("");
+      return;
+    }
+
+    addItems(draft.split(/[,\n]+/));
+  };
+
+  const removeItem = (itemToRemove: string) => {
+    updateItems(items.filter((item) => item !== itemToRemove));
+  };
+
+  const handleDraftChange = (nextDraft: string) => {
+    if (nextDraft.includes(",") || nextDraft.includes("\n")) {
+      addItems(nextDraft.split(/[,\n]+/));
+      return;
+    }
+
+    setDraft(nextDraft);
+  };
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter" || event.key === "Tab") {
+      if (draft.trim()) {
+        event.preventDefault();
+        commitDraft();
+      }
+      return;
+    }
+
+    if (event.key === "Backspace" && !draft && items.length > 0) {
+      event.preventDefault();
+      const nextItems = [...items];
+      const lastItem = nextItems.pop();
+      updateItems(nextItems);
+      setDraft(lastItem ? lastItem.replace(/^[#@]/, "") : "");
+    }
+  };
+
+  return (
+    <div
+      className={`w-full rounded-[14px] border border-[#e7dcc9] bg-[#fffdfa] px-2.5 ${
+        compact ? "py-1.5" : "py-2"
+      } transition-colors focus-within:border-[#d1ac63] focus-within:ring-2 focus-within:ring-[#f7ebcb]`}
+    >
+      <div className="flex min-h-[34px] flex-wrap items-center gap-1.5">
+        {items.map((item) => (
+          <span
+            key={item}
+            className="inline-flex max-w-full items-center gap-1 rounded-full bg-[#f7ebcb] px-2.5 py-1 text-xs font-semibold text-[#73551c]"
+          >
+            <span className="max-w-[180px] truncate">{item}</span>
+            <button
+              type="button"
+              onClick={() => removeItem(item)}
+              className="rounded-full px-1 text-[#8a6a18] transition-colors hover:bg-[#ead59b] hover:text-[#4d3711]"
+              aria-label={`Remove ${item}`}
+            >
+              x
+            </button>
+          </span>
+        ))}
+
+        <input
+          value={draft}
+          onChange={(event) => handleDraftChange(event.target.value)}
+          onKeyDown={handleKeyDown}
+          onBlur={commitDraft}
+          placeholder={items.length ? "Add another" : placeholder}
+          className="min-w-[110px] flex-1 bg-transparent text-sm outline-none placeholder:text-[#a39170]"
+        />
+      </div>
+    </div>
+  );
+}
 
 function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
   return (
@@ -134,8 +276,13 @@ function FacebookSettings({ config, onChange }: { config: PlatformConfig; onChan
             <Field label="Target age range" hint='e.g. "18-35"'>
               <input value={config.facebookTargetAge} onChange={(e) => onChange("facebookTargetAge", e.target.value)} placeholder="18-65" className={inputCls} />
             </Field>
-            <Field label="Target countries" hint="Comma-separated country codes, e.g. US, GB, IN">
-              <input value={config.facebookTargetCountries} onChange={(e) => onChange("facebookTargetCountries", e.target.value)} placeholder="US, GB, AU" className={inputCls} />
+            <Field label="Target countries" hint="Add country codes one by one, e.g. US, GB, IN.">
+              <MultiValueInput
+                value={config.facebookTargetCountries}
+                onChange={(value) => onChange("facebookTargetCountries", value)}
+                placeholder="US"
+                transform={(value) => value.toUpperCase()}
+              />
             </Field>
           </>
         )}
@@ -166,10 +313,20 @@ function InstagramSettings({ config, onChange }: { config: PlatformConfig; onCha
       </Section>
       <Section title="Hashtags & Tags">
         <Field label="Extra hashtags" hint="Added to the post caption or first comment.">
-          <input value={config.instagramHashtags} onChange={(e) => onChange("instagramHashtags", e.target.value)} placeholder="#photography #content" className={inputCls} />
+          <MultiValueInput
+            value={config.instagramHashtags}
+            onChange={(value) => onChange("instagramHashtags", value)}
+            placeholder="#photography"
+            prefix="#"
+          />
         </Field>
-        <Field label="User tags" hint="Comma-separated @handles to tag in the post.">
-          <input value={config.instagramUserTags} onChange={(e) => onChange("instagramUserTags", e.target.value)} placeholder="@username1, @username2" className={inputCls} />
+        <Field label="User tags" hint="Add @handles one by one to tag in the post.">
+          <MultiValueInput
+            value={config.instagramUserTags}
+            onChange={(value) => onChange("instagramUserTags", value)}
+            placeholder="@username"
+            prefix="@"
+          />
         </Field>
         <Field label="Location ID" hint="Instagram place ID for geotagging.">
           <input value={config.instagramLocationId} onChange={(e) => onChange("instagramLocationId", e.target.value)} placeholder="213385402" className={inputCls} />
@@ -216,10 +373,19 @@ function LinkedInSettings({ config, onChange }: { config: PlatformConfig; onChan
           </select>
         </Field>
         <Field label="Extra hashtags" hint="Added to the LinkedIn post body.">
-          <input value={config.linkedinHashtags} onChange={(e) => onChange("linkedinHashtags", e.target.value)} placeholder="#leadership #tech" className={inputCls} />
+          <MultiValueInput
+            value={config.linkedinHashtags}
+            onChange={(value) => onChange("linkedinHashtags", value)}
+            placeholder="#leadership"
+            prefix="#"
+          />
         </Field>
-        <Field label="Content topics" hint="Comma-separated LinkedIn topic URNs.">
-          <input value={config.linkedinContentTopics} onChange={(e) => onChange("linkedinContentTopics", e.target.value)} placeholder="urn:li:topic:123" className={inputCls} />
+        <Field label="Content topics" hint="Add LinkedIn topic URNs one by one.">
+          <MultiValueInput
+            value={config.linkedinContentTopics}
+            onChange={(value) => onChange("linkedinContentTopics", value)}
+            placeholder="urn:li:topic:123"
+          />
         </Field>
         <Toggle checked={config.linkedinMultiImageEnabled} onChange={(v) => onChange("linkedinMultiImageEnabled", v)} label="Multi-image post" description="Publish multiple images as a LinkedIn slideshow." />
       </Section>
@@ -257,8 +423,12 @@ function YouTubeSettings({ config, onChange }: { config: PlatformConfig; onChang
         <Field label="Video title *" hint="Required for YouTube uploads.">
           <input value={config.youtubeTitle} onChange={(e) => onChange("youtubeTitle", e.target.value)} placeholder="My awesome video" className={inputCls} />
         </Field>
-        <Field label="Tags" hint="Comma-separated keywords to help with discovery.">
-          <input value={config.youtubeTags} onChange={(e) => onChange("youtubeTags", e.target.value)} placeholder="marketing, tutorial, tips" className={inputCls} />
+        <Field label="Tags" hint="Add keywords one by one to help with discovery.">
+          <MultiValueInput
+            value={config.youtubeTags}
+            onChange={(value) => onChange("youtubeTags", value)}
+            placeholder="marketing"
+          />
         </Field>
         <Field label="Category ID" hint="YouTube category number, e.g. 22 = People & Blogs.">
           <input value={config.youtubeCategoryId} onChange={(e) => onChange("youtubeCategoryId", e.target.value)} placeholder="22" className={inputCls} />
@@ -301,8 +471,12 @@ function BloggerSettings({ config, onChange }: { config: PlatformConfig; onChang
         <Field label="Post title" hint="Overrides the main caption as the article headline.">
           <input value={config.bloggerTitle} onChange={(e) => onChange("bloggerTitle", e.target.value)} placeholder="My blog post title" className={inputCls} />
         </Field>
-        <Field label="Labels" hint="Comma-separated tags/categories, e.g. tech, news.">
-          <input value={config.bloggerLabels} onChange={(e) => onChange("bloggerLabels", e.target.value)} placeholder="tech, news" className={inputCls} />
+        <Field label="Labels" hint="Add tags or categories one by one.">
+          <MultiValueInput
+            value={config.bloggerLabels}
+            onChange={(value) => onChange("bloggerLabels", value)}
+            placeholder="tech"
+          />
         </Field>
         <Field label="Location" hint="Optional location to associate with the post.">
           <input value={config.bloggerLocation} onChange={(e) => onChange("bloggerLocation", e.target.value)} placeholder="New York, USA" className={inputCls} />
@@ -317,8 +491,12 @@ function BloggerSettings({ config, onChange }: { config: PlatformConfig; onChang
             <option value="DONT_ALLOW_HIDE_EXISTING">Disable all comments</option>
           </select>
         </Field>
-        <Field label="Meta robots tags" hint="e.g. noindex,nofollow — leave blank for default.">
-          <input value={config.bloggerCustomMetaRobotsTags} onChange={(e) => onChange("bloggerCustomMetaRobotsTags", e.target.value)} placeholder="noindex" className={inputCls} />
+        <Field label="Meta robots tags" hint="Leave blank for default.">
+          <MultiValueInput
+            value={config.bloggerCustomMetaRobotsTags}
+            onChange={(value) => onChange("bloggerCustomMetaRobotsTags", value)}
+            placeholder="noindex"
+          />
         </Field>
       </Section>
     </>
@@ -424,11 +602,19 @@ function WordPressSettings({ config, onChange }: { config: PlatformConfig; onCha
         <Toggle checked={config.wordpressFeaturedMediaEnabled} onChange={(v) => onChange("wordpressFeaturedMediaEnabled", v)} label="Use first image as featured media" description="Sets the featured image from attached media." />
       </Section>
       <Section title="Taxonomy">
-        <Field label="Categories" hint="Comma-separated category names or IDs.">
-          <input value={config.wordpressCategories} onChange={(e) => onChange("wordpressCategories", e.target.value)} placeholder="News, Technology" className={inputCls} />
+        <Field label="Categories" hint="Add category names or IDs one by one.">
+          <MultiValueInput
+            value={config.wordpressCategories}
+            onChange={(value) => onChange("wordpressCategories", value)}
+            placeholder="News"
+          />
         </Field>
-        <Field label="Tags" hint="Comma-separated tag names.">
-          <input value={config.wordpressTags} onChange={(e) => onChange("wordpressTags", e.target.value)} placeholder="launch, product, update" className={inputCls} />
+        <Field label="Tags" hint="Add tag names one by one.">
+          <MultiValueInput
+            value={config.wordpressTags}
+            onChange={(value) => onChange("wordpressTags", value)}
+            placeholder="launch"
+          />
         </Field>
       </Section>
       <Section title="Comments & Advanced">
