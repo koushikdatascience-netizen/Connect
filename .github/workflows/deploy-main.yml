@@ -12,179 +12,199 @@ jobs:
 
     steps:
       - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          port: ${{ secrets.SERVER_PORT }}
-          script: |
-            set -e
+        env:
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+          SERVER_PORT: ${{ secrets.SERVER_PORT }}
+        run: |
+          set -euo pipefail
 
-            echo "===================================="
-            echo "DEPLOY STARTED"
-            echo "===================================="
+          if [ -z "${SERVER_HOST:-}" ] || [ -z "${SERVER_USER:-}" ] || [ -z "${SERVER_SSH_KEY:-}" ]; then
+            echo "SERVER_HOST, SERVER_USER, and SERVER_SSH_KEY secrets are required."
+            exit 1
+          fi
+
+          SSH_PORT="${SERVER_PORT:-22}"
+
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$SERVER_SSH_KEY" > ~/.ssh/socialsync_deploy_key
+          chmod 600 ~/.ssh/socialsync_deploy_key
+
+          ssh \
+            -i ~/.ssh/socialsync_deploy_key \
+            -p "$SSH_PORT" \
+            -o StrictHostKeyChecking=accept-new \
+            -o IdentitiesOnly=yes \
+            "$SERVER_USER@$SERVER_HOST" \
+            'bash -s' <<'REMOTE_SCRIPT'
+          set -e
+
+          echo "===================================="
+          echo "DEPLOY STARTED"
+          echo "===================================="
+
+          cd ~/Connect
+
+          restart_backend_services() {
+            echo "Ensuring database and Redis are running..."
+            docker compose up -d db redis
+
+            echo "Building backend images..."
+            docker compose build backend worker beat
+
+            echo "Running database migrations in backend container..."
+            docker compose run --rm -e RUN_MIGRATIONS=false backend uv run alembic upgrade head
+
+            echo "Starting backend services..."
+            docker compose up -d backend worker beat
+          }
+
+          restart_frontend_service() {
+            echo "Reloading frontend..."
+            if pm2 describe socialsync-frontend >/dev/null 2>&1; then
+              pm2 reload socialsync-frontend --update-env || pm2 restart socialsync-frontend --update-env
+            else
+              pm2 start npm --name socialsync-frontend --cwd ~/Connect/frontend -- start
+            fi
+          }
+
+          build_frontend_release() {
+            echo "Building frontend in isolated release directory..."
+            cd ~
+            rm -rf Connect_frontend_release
+            cp -R ~/Connect/frontend ~/Connect_frontend_release
+            cd ~/Connect_frontend_release
+
+            load_frontend_env
+            rm -rf .next
+            npm ci
+            npm run build
 
             cd ~/Connect
+          }
 
-            restart_backend_services() {
-              echo "Ensuring database and Redis are running..."
-              docker compose up -d db redis
-
-              echo "Building backend images..."
-              docker compose build backend worker beat
-
-              echo "Running database migrations in backend container..."
-              docker compose run --rm -e RUN_MIGRATIONS=false backend uv run alembic upgrade head
-
-              echo "Starting backend services..."
-              docker compose up -d backend worker beat
-            }
-
-            restart_frontend_service() {
-              echo "Reloading frontend..."
-              if pm2 describe socialsync-frontend >/dev/null 2>&1; then
-                pm2 reload socialsync-frontend --update-env || pm2 restart socialsync-frontend --update-env
-              else
-                pm2 start npm --name socialsync-frontend --cwd ~/Connect/frontend -- start
-              fi
-            }
-
-            build_frontend_release() {
-              echo "Building frontend in isolated release directory..."
-              cd ~
-              rm -rf Connect_frontend_release
-              cp -R ~/Connect/frontend ~/Connect_frontend_release
-              cd ~/Connect_frontend_release
-
-              load_frontend_env
-              rm -rf .next
-              npm ci
-              npm run build
-
-              cd ~/Connect
-            }
-
-            promote_frontend_release() {
-              echo "Promoting isolated frontend build..."
-              rm -rf ~/Connect/frontend/.next_previous
-              if [ -d ~/Connect/frontend/.next ]; then
-                mv ~/Connect/frontend/.next ~/Connect/frontend/.next_previous
-              fi
-              cp -R ~/Connect_frontend_release/.next ~/Connect/frontend/.next
-              rm -rf ~/Connect_frontend_release
-            }
-
-            load_frontend_env() {
-              FRONTEND_ENV_FILE=""
-              if [ -f ~/Connect/frontend/.env.production.local ]; then
-                FRONTEND_ENV_FILE=~/Connect/frontend/.env.production.local
-              elif [ -f ~/Connect/frontend/.env.production ]; then
-                FRONTEND_ENV_FILE=~/Connect/frontend/.env.production
-              elif [ -f ~/Connect/frontend/.env.local ]; then
-                FRONTEND_ENV_FILE=~/Connect/frontend/.env.local
-              fi
-
-              if [ -z "$FRONTEND_ENV_FILE" ]; then
-                echo "Frontend env file not found. Expected frontend/.env.production.local, frontend/.env.production, or frontend/.env.local"
-                return 1
-              fi
-
-              echo "Loading frontend env from $FRONTEND_ENV_FILE"
-              set -a
-              . "$FRONTEND_ENV_FILE"
-              set +a
-
-              if [ -z "${NEXT_PUBLIC_API_BASE_URL:-}" ]; then
-                echo "NEXT_PUBLIC_API_BASE_URL is required for frontend production builds."
-                return 1
-              fi
-
-              if [ -z "${NEXT_PUBLIC_TENANT_ID:-}" ]; then
-                echo "NEXT_PUBLIC_TENANT_ID is required for frontend production builds."
-                return 1
-              fi
-            }
-
-            rollback_deploy() {
-              echo "Rolling back to $PREV_COMMIT..."
-              git reset --hard "$PREV_COMMIT"
-
-              echo "Restoring backend containers..."
-              restart_backend_services
-
-              echo "Rebuilding frontend from previous commit..."
-              build_frontend_release
-              promote_frontend_release
-
-              restart_frontend_service
-              pm2 save
-              echo "Rollback done"
-            }
-
-            echo "Saving current commit..."
-            PREV_COMMIT=$(git rev-parse HEAD)
-            echo "Previous: $PREV_COMMIT"
-
-            echo "Pull latest code..."
-            git fetch origin
-            git reset --hard origin/main
-
-            echo "Preparing backend environment..."
-            if [ -f "$HOME/.cargo/env" ]; then
-              . "$HOME/.cargo/env"
+          promote_frontend_release() {
+            echo "Promoting isolated frontend build..."
+            rm -rf ~/Connect/frontend/.next_previous
+            if [ -d ~/Connect/frontend/.next ]; then
+              mv ~/Connect/frontend/.next ~/Connect/frontend/.next_previous
             fi
-            if [ -f "$HOME/.local/bin/env" ]; then
-              . "$HOME/.local/bin/env"
+            cp -R ~/Connect_frontend_release/.next ~/Connect/frontend/.next
+            rm -rf ~/Connect_frontend_release
+          }
+
+          load_frontend_env() {
+            FRONTEND_ENV_FILE=""
+            if [ -f ~/Connect/frontend/.env.production.local ]; then
+              FRONTEND_ENV_FILE=~/Connect/frontend/.env.production.local
+            elif [ -f ~/Connect/frontend/.env.production ]; then
+              FRONTEND_ENV_FILE=~/Connect/frontend/.env.production
+            elif [ -f ~/Connect/frontend/.env.local ]; then
+              FRONTEND_ENV_FILE=~/Connect/frontend/.env.local
             fi
 
-            if ! command -v docker >/dev/null 2>&1; then
-              echo "docker is not installed on the server."
-              exit 1
+            if [ -z "$FRONTEND_ENV_FILE" ]; then
+              echo "Frontend env file not found. Expected frontend/.env.production.local, frontend/.env.production, or frontend/.env.local"
+              return 1
             fi
 
-            if ! docker compose version >/dev/null 2>&1; then
-              echo "docker compose is not available on the server."
-              exit 1
+            echo "Loading frontend env from $FRONTEND_ENV_FILE"
+            set -a
+            . "$FRONTEND_ENV_FILE"
+            set +a
+
+            if [ -z "${NEXT_PUBLIC_API_BASE_URL:-}" ]; then
+              echo "NEXT_PUBLIC_API_BASE_URL is required for frontend production builds."
+              return 1
             fi
 
+            if [ -z "${NEXT_PUBLIC_TENANT_ID:-}" ]; then
+              echo "NEXT_PUBLIC_TENANT_ID is required for frontend production builds."
+              return 1
+            fi
+          }
+
+          rollback_deploy() {
+            echo "Rolling back to $PREV_COMMIT..."
+            git reset --hard "$PREV_COMMIT"
+
+            echo "Restoring backend containers..."
             restart_backend_services
 
-            echo "Waiting for backend..."
-            for i in $(seq 1 30); do
-              if curl -fsS http://127.0.0.1:8000/api/v1/health >/dev/null; then
-                echo "Backend is healthy"
-                break
-              fi
-              if [ "$i" -eq 30 ]; then
-                echo "Backend failed health check"
-                docker compose logs backend --tail 80 || true
-                rollback_deploy
-                exit 1
-              fi
-              sleep 2
-            done
-
-            echo "Building frontend..."
+            echo "Rebuilding frontend from previous commit..."
             build_frontend_release
             promote_frontend_release
 
             restart_frontend_service
+            pm2 save
+            echo "Rollback done"
+          }
 
-            echo "Waiting for frontend..."
-            sleep 5
+          echo "Saving current commit..."
+          PREV_COMMIT=$(git rev-parse HEAD)
+          echo "Previous: $PREV_COMMIT"
 
-            echo "Running health checks..."
-            if ! curl -fsS http://127.0.0.1:3000 > /dev/null; then
-              echo "Frontend failed!"
+          echo "Pull latest code..."
+          git fetch origin
+          git reset --hard origin/main
+
+          echo "Preparing backend environment..."
+          if [ -f "$HOME/.cargo/env" ]; then
+            . "$HOME/.cargo/env"
+          fi
+          if [ -f "$HOME/.local/bin/env" ]; then
+            . "$HOME/.local/bin/env"
+          fi
+
+          if ! command -v docker >/dev/null 2>&1; then
+            echo "docker is not installed on the server."
+            exit 1
+          fi
+
+          if ! docker compose version >/dev/null 2>&1; then
+            echo "docker compose is not available on the server."
+            exit 1
+          fi
+
+          restart_backend_services
+
+          echo "Waiting for backend..."
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8000/api/v1/health >/dev/null; then
+              echo "Backend is healthy"
+              break
+            fi
+            if [ "$i" -eq 30 ]; then
+              echo "Backend failed health check"
+              docker compose logs backend --tail 80 || true
               rollback_deploy
               exit 1
             fi
+            sleep 2
+          done
 
-            echo "Saving PM2..."
-            pm2 save
+          echo "Building frontend..."
+          build_frontend_release
+          promote_frontend_release
 
-            echo "===================================="
-            echo "DEPLOY SUCCESS"
-            echo "===================================="
+          restart_frontend_service
 
+          echo "Waiting for frontend..."
+          sleep 5
+
+          echo "Running health checks..."
+          if ! curl -fsS http://127.0.0.1:3000 > /dev/null; then
+            echo "Frontend failed!"
+            rollback_deploy
+            exit 1
+          fi
+
+          echo "Saving PM2..."
+          pm2 save
+
+          echo "===================================="
+          echo "DEPLOY SUCCESS"
+          echo "===================================="
+          REMOTE_SCRIPT
