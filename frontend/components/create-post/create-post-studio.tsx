@@ -501,7 +501,7 @@ export function CreatePostStudio() {
           draftContent
         );
         return acc;
-      }, {} as Record<PlatformName, { valid: boolean; message: string }>),
+      }, {} as Record<PlatformName, ReturnType<typeof getPlatformValidation>>),
     [draftContent, platformConfigs, selectedAssets, selectedPlatformList]
   );
 
