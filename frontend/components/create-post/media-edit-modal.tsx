@@ -256,9 +256,20 @@ export function MediaEditModal({ asset, open, saving, selectedPlatforms, onClose
             </div>
 
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
-              <div className="relative flex shrink-0 items-center justify-center overflow-hidden bg-[#f1e7d6] p-3 sm:p-4 lg:flex-1 lg:p-6">
-                <div className="relative w-full flex items-center justify-center overflow-hidden" onMouseDown={startInteraction} onTouchStart={startInteraction}>
-                  {previewUrl && <img ref={imgRef} src={compareOriginal ? asset.file_url : previewUrl} className="w-full max-w-full max-h-[55vh] sm:max-h-[65vh] lg:max-h-[80vh] object-contain rounded-lg shadow-2xl" alt="Preview" />}
+              <div className="relative flex h-[44dvh] min-h-[260px] shrink-0 items-center justify-center overflow-hidden bg-[#f1e7d6] p-3 sm:h-[48dvh] sm:p-4 lg:h-auto lg:min-h-0 lg:flex-1 lg:shrink lg:p-6">
+                <div className="relative flex h-full w-full items-center justify-center overflow-hidden" onMouseDown={startInteraction} onTouchStart={startInteraction}>
+                  {previewUrl ? (
+                    <img
+                      ref={imgRef}
+                      src={compareOriginal ? asset.file_url : previewUrl}
+                      className="max-h-full max-w-full rounded-lg object-contain shadow-2xl"
+                      alt="Preview"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center rounded-2xl border border-dashed border-[#d8ccb5] bg-white/35 text-xs font-semibold text-[#8b7b62]">
+                      {loading ? "Preparing preview..." : "Preview unavailable"}
+                    </div>
+                  )}
                   {aspect === "free" && !compareOriginal && (
                     <div className="absolute border-2 border-yellow-400 shadow-[0_0_0_9999px_rgba(0,0,0,0.5)] "
                       style={{ left: `${freeCropBox.x * 100}%`, top: `${freeCropBox.y * 100}%`, width: `${freeCropBox.w * 100}%`, height: `${freeCropBox.h * 100}%` }}>
