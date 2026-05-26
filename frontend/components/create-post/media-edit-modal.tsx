@@ -256,11 +256,11 @@ export function MediaEditModal({ asset, open, saving, selectedPlatforms, onClose
             </div>
 
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
-              <div className="relative flex h-[34dvh] shrink-0 items-center justify-center overflow-hidden bg-[#f1e7d6] p-3 sm:h-[42dvh] lg:h-auto lg:min-h-0 lg:flex-1 lg:shrink lg:p-6">
-                <div className="relative max-h-full max-w-full" onMouseDown={startInteraction} onTouchStart={startInteraction}>
-                  {previewUrl && <img ref={imgRef} src={compareOriginal ? asset.file_url : previewUrl} className="max-h-[30dvh] max-w-full rounded-lg object-contain shadow-2xl pointer-events-none sm:max-h-[38dvh] lg:max-h-[78vh]" alt="Preview" />}
+              <div className="relative flex shrink-0 items-center justify-center overflow-hidden bg-[#f1e7d6] p-3 sm:p-4 lg:flex-1 lg:p-6">
+                <div className="relative w-full flex items-center justify-center overflow-hidden" onMouseDown={startInteraction} onTouchStart={startInteraction}>
+                  {previewUrl && <img ref={imgRef} src={compareOriginal ? asset.file_url : previewUrl} className="w-full max-w-full max-h-[55vh] sm:max-h-[65vh] lg:max-h-[80vh] object-contain rounded-lg shadow-2xl" alt="Preview" />}
                   {aspect === "free" && !compareOriginal && (
-                    <div className="absolute border-2 border-yellow-400 shadow-[0_0_0_9999px_rgba(0,0,0,0.5)] pointer-events-none"
+                    <div className="absolute border-2 border-yellow-400 shadow-[0_0_0_9999px_rgba(0,0,0,0.5)] "
                       style={{ left: `${freeCropBox.x * 100}%`, top: `${freeCropBox.y * 100}%`, width: `${freeCropBox.w * 100}%`, height: `${freeCropBox.h * 100}%` }}>
                       <div className="grid h-full w-full grid-cols-3 grid-rows-3 opacity-20"><div className="border border-white col-span-3 row-span-3" /></div>
                       <div className="absolute -left-2 -top-2 h-5 w-5 bg-yellow-400 rounded-full border-2 border-white" />
