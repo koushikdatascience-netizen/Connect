@@ -2,6 +2,8 @@
 
 import { KeyboardEvent, useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { PLATFORM_LABELS } from "@/components/create-post/constants";
+import { PlatformLogo } from "@/components/platform-logo";
 import { MediaAsset, PlatformName } from "@/lib/types";
 
 type Props = {
@@ -182,6 +184,28 @@ export function PostEditor({
 
   return (
     <div className="flex h-full flex-col gap-4 p-4 overflow-y-auto">
+      {selectedPlatforms.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="sticky top-0 z-10 rounded-2xl border border-[#eadfcb] bg-[#fffdf8]/95 px-3 py-2 shadow-sm backdrop-blur md:static md:z-auto"
+        >
+          <div className="flex items-center gap-2 overflow-x-auto">
+            <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wider text-[#9b7b3f]">
+              Selected
+            </span>
+            {selectedPlatforms.map((platform) => (
+              <span
+                key={platform}
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#eadfcb] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#5d4a25]"
+              >
+                <PlatformLogo platform={platform} className="h-3.5 w-3.5" />
+                {PLATFORM_LABELS[platform]}
+              </span>
+            ))}
+          </div>
+        </motion.div>
+      )}
 
       {/* CAPTION CARD */}
       <motion.div

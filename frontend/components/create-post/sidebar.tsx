@@ -32,6 +32,7 @@ type Props = {
     enabled: boolean
   ) => void;
   setMobileTab: (tab: "accounts" | "compose" | "settings") => void;
+  onContinueToCompose?: () => void;
 };
 
 export function Sidebar({
@@ -49,6 +50,7 @@ export function Sidebar({
   onSelectAllAccounts,
   onAccountToggle,
   setMobileTab,
+  onContinueToCompose,
 }: Props) {
   const allSelected =
     totalSelectedAccounts === totalAccounts && totalAccounts > 0;
@@ -202,7 +204,13 @@ export function Sidebar({
       {/* ---------------- NEXT BUTTON (MOBILE) ---------------- */}
         <div className="pt-2 md:hidden">
           <button
-            onClick={() => setMobileTab("compose")}
+            onClick={() => {
+              if (onContinueToCompose) {
+                onContinueToCompose();
+                return;
+              }
+              setMobileTab("compose");
+            }}
             disabled={totalSelectedAccounts === 0}
             className={`w-full py-3 rounded-xl text-sm font-semibold ${
               totalSelectedAccounts === 0

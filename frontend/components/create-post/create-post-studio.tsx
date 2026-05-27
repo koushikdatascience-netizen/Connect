@@ -545,6 +545,27 @@ export function CreatePostStudio() {
     }, 2400);
   };
 
+  const openComposeAtCaption = () => {
+    setMobileTab("compose");
+    setHighlightedFixTargetId("post-caption");
+
+    window.setTimeout(() => {
+      const caption = document.getElementById("post-caption");
+      const section = document.getElementById("compose-caption");
+      const target = caption ?? section;
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+      if (caption instanceof HTMLTextAreaElement) {
+        caption.focus({ preventScroll: true });
+      }
+    }, 220);
+
+    window.setTimeout(() => {
+      setHighlightedFixTargetId((current) => (current === "post-caption" ? null : current));
+    }, 2200);
+  };
+
   const sidebarPlatforms = useMemo(
     () =>
       PLATFORM_ORDER.map((p) => ({
@@ -628,6 +649,7 @@ export function CreatePostStudio() {
             onSelectAllAccounts={handleSelectAllAccounts}
             onAccountToggle={handleAccountToggle}
             setMobileTab={setMobileTab}
+            onContinueToCompose={openComposeAtCaption}
           />
         </div>
 
