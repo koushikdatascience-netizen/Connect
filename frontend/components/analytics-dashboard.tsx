@@ -124,10 +124,10 @@ function ChartCard({
   className?: string;
 }) {
   return (
-    <section className={`rounded-[28px] border border-[#eadfcf] bg-[linear-gradient(180deg,rgba(255,252,245,0.98),rgba(248,243,232,0.96))] p-4 shadow-[0_18px_40px_rgba(108,84,24,0.08)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_24px_48px_rgba(108,84,24,0.14)] sm:p-5 ${className}`}>
-      <div className="mb-4 flex items-start justify-between gap-3">
-        <div>
-          <h2 className="font-display text-2xl font-semibold tracking-[-0.05em] text-[#171311]">{title}</h2>
+    <section className={`rounded-[20px] border border-[#eadfcf] bg-[linear-gradient(180deg,rgba(255,252,245,0.98),rgba(248,243,232,0.96))] p-3 shadow-[0_18px_40px_rgba(108,84,24,0.08)] transition duration-300 hover:shadow-[0_24px_48px_rgba(108,84,24,0.14)] sm:rounded-[28px] sm:p-5 sm:hover:-translate-y-1 ${className}`}>
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h2 className="font-display text-xl font-semibold tracking-[-0.03em] text-[#171311] sm:text-2xl">{title}</h2>
           <p className="mt-1 text-sm text-[#6a5d47]">{subtitle}</p>
         </div>
         {action}
@@ -156,8 +156,8 @@ function TrendChart({ points }: { points: AnalyticsTimeseriesResponse["points"] 
     .join(" ");
 
   return (
-    <div className="overflow-x-auto">
-      <svg viewBox={`0 0 ${width} ${height}`} className="h-[260px] min-w-[640px] w-full">
+    <div className="overflow-x-auto pb-1">
+      <svg viewBox={`0 0 ${width} ${height}`} className="h-[220px] min-w-[540px] w-full sm:h-[260px] sm:min-w-[640px]">
         <defs>
           <linearGradient id="analyticsImpressions" x1="0%" x2="100%">
             <stop offset="0%" stopColor="#f2b742" />
@@ -196,8 +196,8 @@ function RadialShare({ items }: { items: AnalyticsPlatformBreakdownItem[] }) {
   return (
     <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
       <div className="flex items-center justify-center">
-        <div className="relative flex h-[240px] w-[240px] items-center justify-center rounded-full bg-[radial-gradient(circle_at_center,rgba(255,250,239,0.95),rgba(243,233,214,0.86))] shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
-          <svg viewBox="0 0 180 180" className="h-[180px] w-[180px] -rotate-90">
+        <div className="relative flex h-[210px] w-[210px] items-center justify-center rounded-full bg-[radial-gradient(circle_at_center,rgba(255,250,239,0.95),rgba(243,233,214,0.86))] shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] sm:h-[240px] sm:w-[240px]">
+          <svg viewBox="0 0 180 180" className="h-[160px] w-[160px] -rotate-90 sm:h-[180px] sm:w-[180px]">
             <circle cx="90" cy="90" r="62" fill="none" stroke="#efe4d2" strokeWidth="22" />
             {items.map((item) => {
               const share = item.engagements / total;
@@ -222,10 +222,10 @@ function RadialShare({ items }: { items: AnalyticsPlatformBreakdownItem[] }) {
           </svg>
           <div className="absolute text-center">
             <div className="text-[11px] uppercase tracking-[0.22em] text-[#8c7b66]">Engagement Mix</div>
-            <div className="mt-2 font-display text-4xl font-semibold tracking-[-0.05em] text-[#171311]">
+            <div className="mt-2 font-display text-3xl font-semibold tracking-[-0.05em] text-[#171311] sm:text-4xl">
               {formatCompactNumber(total)}
             </div>
-            <div className="mt-1 text-sm text-[#6a5d47]">latest cross-platform interactions</div>
+            <div className="mx-auto mt-1 max-w-[150px] text-xs text-[#6a5d47] sm:max-w-none sm:text-sm">latest cross-platform interactions</div>
           </div>
         </div>
       </div>
@@ -284,8 +284,8 @@ function BubbleChart({ items }: { items: AnalyticsTopPostItem[] }) {
   const maxViews = Math.max(10, ...items.map((item) => item.views || item.engagements));
 
   return (
-    <div className="overflow-x-auto">
-      <svg viewBox={`0 0 ${width} ${height}`} className="h-[260px] min-w-[620px] w-full">
+    <div className="overflow-x-auto pb-1">
+      <svg viewBox={`0 0 ${width} ${height}`} className="h-[220px] min-w-[540px] w-full sm:h-[260px] sm:min-w-[620px]">
         {[0, 1, 2, 3].map((row) => {
           const y = padding + ((height - padding * 2) * row) / 3;
           return <line key={row} x1={padding} y1={y} x2={width - padding} y2={y} stroke="#eadfcf" strokeDasharray="6 8" />;
@@ -320,7 +320,7 @@ function Heatmap({ cells }: { cells: AnalyticsHeatmapCell[] }) {
   const maxRate = Math.max(0.001, ...cells.map((cell) => cell.engagement_rate));
   return (
     <div className="overflow-x-auto">
-      <div className="min-w-[700px]">
+      <div className="min-w-[620px] sm:min-w-[700px]">
         <div className="grid grid-cols-[80px_repeat(24,minmax(0,1fr))] gap-1">
           <div />
           {Array.from({ length: 24 }).map((_, hour) => (
@@ -536,18 +536,18 @@ export function AnalyticsDashboard() {
   }
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(255,214,110,0.22),transparent_30%),radial-gradient(circle_at_top_right,rgba(28,144,207,0.16),transparent_26%),linear-gradient(180deg,#f9f3e7_0%,#f3ead9_52%,#efe6d4_100%)] px-3 py-4 sm:px-4 lg:px-6">
-      <div className="mx-auto max-w-[1480px] space-y-5">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(255,214,110,0.22),transparent_30%),radial-gradient(circle_at_top_right,rgba(28,144,207,0.16),transparent_26%),linear-gradient(180deg,#f9f3e7_0%,#f3ead9_52%,#efe6d4_100%)] px-2 py-3 sm:px-4 sm:py-4 lg:px-6">
+      <div className="mx-auto max-w-[1480px] space-y-4 sm:space-y-5">
         <ErrorNotice error={error} fallback="We couldn't load analytics right now." />
         <ReviewCountdownAlert />
 
-        <section className="overflow-hidden rounded-[34px] border border-[#e7d8bd] bg-[linear-gradient(120deg,rgba(255,252,244,0.96),rgba(255,246,221,0.94)_44%,rgba(242,230,204,0.96))] p-5 shadow-[0_24px_60px_rgba(100,76,18,0.12)] sm:p-6">
+        <section className="overflow-hidden rounded-[22px] border border-[#e7d8bd] bg-[linear-gradient(120deg,rgba(255,252,244,0.96),rgba(255,246,221,0.94)_44%,rgba(242,230,204,0.96))] p-4 shadow-[0_24px_60px_rgba(100,76,18,0.12)] sm:rounded-[34px] sm:p-6">
           <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
             <div className="max-w-3xl">
               <div className="inline-flex rounded-full border border-[#e2ca80] bg-[#fff2c7] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8e6a09]">
                 Live Analytics
               </div>
-              <h1 className="mt-4 font-display text-4xl font-semibold tracking-[-0.06em] text-[#171311] sm:text-5xl">
+              <h1 className="mt-4 font-display text-3xl font-semibold tracking-[-0.03em] text-[#171311] sm:text-5xl sm:tracking-[-0.06em]">
                 Performance analytics for your connected publishing channels.
               </h1>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-[#615541] sm:text-[15px]">
@@ -574,7 +574,7 @@ export function AnalyticsDashboard() {
               </div>
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap xl:justify-end">
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-row sm:flex-wrap xl:justify-end">
               {TIME_RANGES.map((range) => (
                 <button
                   key={range.id}
@@ -589,7 +589,7 @@ export function AnalyticsDashboard() {
                 type="button"
                 onClick={() => void handleSyncNow()}
                 disabled={syncing}
-                className="rounded-full bg-[linear-gradient(135deg,#171311,#3d3016)] px-5 py-2.5 text-sm font-semibold text-[#fff4da] shadow-[0_14px_30px_rgba(23,19,17,0.22)] transition hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-70"
+                className="col-span-2 rounded-full bg-[linear-gradient(135deg,#171311,#3d3016)] px-5 py-2.5 text-sm font-semibold text-[#fff4da] shadow-[0_14px_30px_rgba(23,19,17,0.22)] transition hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-70 sm:col-auto"
               >
                 {syncing ? "Syncing..." : "Refresh Snapshots"}
               </button>
@@ -597,7 +597,7 @@ export function AnalyticsDashboard() {
           </div>
 
           <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1.35fr)_320px]">
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
               {platformPills.map((platform) => {
                 const active = selectedPlatforms.includes(platform.value);
                 return (
@@ -605,7 +605,7 @@ export function AnalyticsDashboard() {
                     key={platform.value}
                     type="button"
                     onClick={() => togglePlatform(platform.value)}
-                    className="group inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_22px_rgba(109,84,23,0.12)]"
+                    className="group inline-flex min-w-0 items-center justify-center gap-2 rounded-full border px-3 py-2 text-sm font-semibold transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_22px_rgba(109,84,23,0.12)] sm:justify-start sm:px-4"
                     style={{
                       borderColor: active ? PLATFORM_COLORS[platform.value].strong : "#e3d8c8",
                       backgroundColor: active ? PLATFORM_COLORS[platform.value].soft : "rgba(255,255,255,0.68)",
@@ -613,7 +613,7 @@ export function AnalyticsDashboard() {
                     }}
                   >
                           <PlatformIcon platform={platform.value} className="text-sm transition duration-300 group-hover:scale-110" />
-                    {platform.label}
+                    <span className="truncate">{platform.label}</span>
                   </button>
                 );
               })}
@@ -679,7 +679,41 @@ export function AnalyticsDashboard() {
                 className="w-full rounded-2xl border border-[#dfd3c1] bg-white/76 px-4 py-3 text-sm text-[#171311] outline-none"
               />
             </div>
-            <div className="overflow-x-auto">
+            <div className="grid gap-3 md:hidden">
+              {filteredTopPosts.map((post) => (
+                <article key={post.post_id} className="rounded-2xl border border-[#eadfcf] bg-white/70 p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="truncate font-semibold text-[#171311]">{post.account_name ?? "Unknown account"}</div>
+                      <div className="mt-1 line-clamp-2 text-sm leading-5 text-[#665946]">{post.content_preview ?? "No content preview"}</div>
+                    </div>
+                    <span
+                      className="inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                      style={{ backgroundColor: PLATFORM_COLORS[post.platform]?.soft ?? "rgba(0,0,0,0.06)", color: PLATFORM_COLORS[post.platform]?.strong ?? "#171311" }}
+                    >
+                      <PlatformIcon platform={post.platform} className="text-xs" />
+                      {PLATFORM_LABELS[post.platform] ?? post.platform}
+                    </span>
+                  </div>
+                  <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
+                    <div className="rounded-xl bg-[#f8f1e5] p-2">
+                      <div className="text-[#7d725e]">Eng.</div>
+                      <div className="mt-1 font-semibold text-[#171311]">{formatCompactNumber(post.engagements)}</div>
+                    </div>
+                    <div className="rounded-xl bg-[#f8f1e5] p-2">
+                      <div className="text-[#7d725e]">Impr.</div>
+                      <div className="mt-1 font-semibold text-[#171311]">{formatCompactNumber(post.impressions)}</div>
+                    </div>
+                    <div className="rounded-xl bg-[#f8f1e5] p-2">
+                      <div className="text-[#7d725e]">Rate</div>
+                      <div className="mt-1 font-semibold text-[#1a8a63]">{formatPercent(post.engagement_rate)}</div>
+                    </div>
+                  </div>
+                  <div className="mt-2 text-xs text-[#8c7f68]">{formatDateLabel(post.posted_at)}</div>
+                </article>
+              ))}
+            </div>
+            <div className="hidden overflow-x-auto md:block">
               <table className="min-w-full text-left">
                 <thead>
                   <tr className="border-b border-[#eadfcf] text-xs uppercase tracking-[0.16em] text-[#7d725e]">

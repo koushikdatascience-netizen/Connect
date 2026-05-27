@@ -10,6 +10,7 @@ type PlatformValidation = {
   fixTarget?: {
     panel: "compose" | "settings";
     sectionId: string;
+    fieldId?: string;
     actionLabel: string;
   };
 };
@@ -157,6 +158,7 @@ export function getPlatformValidation(
       fixTarget: {
         panel: "compose",
         sectionId: "compose-caption",
+        fieldId: "post-caption",
         actionLabel: "Open composer",
       },
     };
@@ -170,6 +172,7 @@ export function getPlatformValidation(
         fixTarget: {
           panel: "compose",
           sectionId: "compose-media",
+          fieldId: "compose-media",
           actionLabel: "Review media",
         },
       };
@@ -181,6 +184,7 @@ export function getPlatformValidation(
         fixTarget: {
           panel: "compose",
           sectionId: "compose-media",
+          fieldId: "compose-media",
           actionLabel: "Review media",
         },
       };
@@ -194,6 +198,7 @@ export function getPlatformValidation(
           fixTarget: {
             panel: "compose",
             sectionId: "compose-media",
+            fieldId: "compose-media",
             actionLabel: "Review media",
           },
         };
@@ -210,6 +215,7 @@ export function getPlatformValidation(
         fixTarget: {
           panel: "compose",
           sectionId: "compose-media",
+          fieldId: "compose-media",
           actionLabel: "Review media",
         },
       };
@@ -221,6 +227,7 @@ export function getPlatformValidation(
         fixTarget: {
           panel: "compose",
           sectionId: "compose-media",
+          fieldId: "compose-media",
           actionLabel: "Review media",
         },
       };
@@ -234,6 +241,7 @@ export function getPlatformValidation(
           fixTarget: {
             panel: "compose",
             sectionId: "compose-media",
+            fieldId: "compose-media",
             actionLabel: "Review media",
           },
         };
@@ -246,6 +254,7 @@ export function getPlatformValidation(
         fixTarget: {
           panel: "settings",
           sectionId: "instagram-format",
+          fieldId: "instagram-post-type-field",
           actionLabel: "Open Instagram settings",
         },
       };
@@ -257,6 +266,7 @@ export function getPlatformValidation(
         fixTarget: {
           panel: "settings",
           sectionId: "instagram-format",
+          fieldId: "instagram-post-type-field",
           actionLabel: "Open Instagram settings",
         },
       };
@@ -268,6 +278,7 @@ export function getPlatformValidation(
         fixTarget: {
           panel: "settings",
           sectionId: "instagram-format",
+          fieldId: "instagram-post-type-field",
           actionLabel: "Open Instagram settings",
         },
       };
@@ -281,6 +292,7 @@ export function getPlatformValidation(
           fixTarget: {
             panel: "compose",
             sectionId: "compose-media",
+            fieldId: "compose-media",
             actionLabel: "Review media",
           },
         };
@@ -297,6 +309,7 @@ export function getPlatformValidation(
         fixTarget: {
           panel: "compose",
           sectionId: "compose-media",
+          fieldId: "compose-media",
           actionLabel: "Review media",
         },
       };
@@ -308,6 +321,7 @@ export function getPlatformValidation(
         fixTarget: {
           panel: "compose",
           sectionId: "compose-media",
+          fieldId: "compose-media",
           actionLabel: "Review media",
         },
       };
@@ -323,6 +337,7 @@ export function getPlatformValidation(
         fixTarget: {
           panel: "compose",
           sectionId: "compose-media",
+          fieldId: "compose-media",
           actionLabel: "Review media",
         },
       };
@@ -334,6 +349,7 @@ export function getPlatformValidation(
         fixTarget: {
           panel: "compose",
           sectionId: "compose-media",
+          fieldId: "compose-media",
           actionLabel: "Review media",
         },
       };
@@ -345,6 +361,7 @@ export function getPlatformValidation(
         fixTarget: {
           panel: "compose",
           sectionId: "compose-media",
+          fieldId: "compose-media",
           actionLabel: "Review media",
         },
       };
@@ -360,6 +377,7 @@ export function getPlatformValidation(
         fixTarget: {
           panel: "settings",
           sectionId: "youtube-video-details",
+          fieldId: "youtube-title-field",
           actionLabel: "Open YouTube settings",
         },
       };
@@ -371,6 +389,7 @@ export function getPlatformValidation(
         fixTarget: {
           panel: "compose",
           sectionId: "compose-media",
+          fieldId: "compose-media",
           actionLabel: "Review media",
         },
       };
@@ -386,6 +405,7 @@ export function getPlatformValidation(
         fixTarget: {
           panel: "compose",
           sectionId: "compose-caption",
+          fieldId: "post-caption",
           actionLabel: "Open composer",
         },
       };
@@ -401,6 +421,7 @@ export function getPlatformValidation(
         fixTarget: {
           panel: "compose",
           sectionId: "compose-caption",
+          fieldId: "post-caption",
           actionLabel: "Open composer",
         },
       };
@@ -412,6 +433,7 @@ export function getPlatformValidation(
         fixTarget: {
           panel: "compose",
           sectionId: "compose-media",
+          fieldId: "compose-media",
           actionLabel: "Review media",
         },
       };
@@ -423,6 +445,7 @@ export function getPlatformValidation(
         fixTarget: {
           panel: "compose",
           sectionId: "compose-media",
+          fieldId: "compose-media",
           actionLabel: "Review media",
         },
       };
@@ -438,6 +461,7 @@ export function getPlatformValidation(
         fixTarget: {
           panel: "compose",
           sectionId: "compose-caption",
+          fieldId: "post-caption",
           actionLabel: "Open composer",
         },
       };
@@ -449,6 +473,7 @@ export function getPlatformValidation(
         fixTarget: {
           panel: "compose",
           sectionId: "compose-media",
+          fieldId: "compose-media",
           actionLabel: "Review media",
         },
       };

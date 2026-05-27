@@ -241,6 +241,8 @@ export function MediaEditModal({ asset, open, saving, selectedPlatforms, onClose
     }, mime, 0.9);
   }, [rotation, zoom, panX, panY, aspect, freeCropBox, sourceImage, open, asset?.mime_type]);
 
+  const isFreeCrop = aspect === "free" && !compareOriginal;
+
   return (
     <AnimatePresence>
       {open && asset && (
@@ -256,8 +258,8 @@ export function MediaEditModal({ asset, open, saving, selectedPlatforms, onClose
             </div>
 
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
-              <div className="relative flex h-[44dvh] min-h-[260px] shrink-0 items-center justify-center overflow-hidden bg-[#f1e7d6] p-3 sm:h-[48dvh] sm:p-4 lg:h-auto lg:min-h-0 lg:flex-1 lg:shrink lg:p-6">
-                <div className="relative flex h-full w-full items-center justify-center overflow-hidden" onMouseDown={startInteraction} onTouchStart={startInteraction}>
+              <div className={`relative flex shrink-0 items-center justify-center overflow-hidden bg-[#f1e7d6] p-2 sm:p-4 lg:h-auto lg:min-h-0 lg:flex-1 lg:shrink lg:p-6 ${isFreeCrop ? "h-[62dvh] min-h-[380px] sm:h-[64dvh]" : "h-[44dvh] min-h-[260px] sm:h-[48dvh]"}`}>
+                <div className="relative flex h-full w-full touch-none items-center justify-center overflow-hidden" onMouseDown={startInteraction} onTouchStart={startInteraction}>
                   {previewUrl ? (
                     <img
                       ref={imgRef}
@@ -270,7 +272,7 @@ export function MediaEditModal({ asset, open, saving, selectedPlatforms, onClose
                       {loading ? "Preparing preview..." : "Preview unavailable"}
                     </div>
                   )}
-                  {aspect === "free" && !compareOriginal && (
+                  {isFreeCrop && (
                     <div className="absolute border-2 border-yellow-400 shadow-[0_0_0_9999px_rgba(0,0,0,0.5)] "
                       style={{ left: `${freeCropBox.x * 100}%`, top: `${freeCropBox.y * 100}%`, width: `${freeCropBox.w * 100}%`, height: `${freeCropBox.h * 100}%` }}>
                       <div className="grid h-full w-full grid-cols-3 grid-rows-3 opacity-20"><div className="border border-white col-span-3 row-span-3" /></div>
@@ -280,11 +282,16 @@ export function MediaEditModal({ asset, open, saving, selectedPlatforms, onClose
                       <div className="absolute -right-2 -bottom-2 h-5 w-5 bg-yellow-400 rounded-full border-2 border-white" />
                     </div>
                   )}
+                  {isFreeCrop && (
+                    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-black/65 px-3 py-1 text-[11px] font-semibold text-white">
+                      Drag crop area or corners
+                    </div>
+                  )}
                 </div>
               </div>
 
               <div className="min-h-0 w-full flex-1 overflow-y-auto border-t border-[#eadfcb] bg-white p-4 lg:w-[380px] lg:flex-none lg:border-l lg:border-t-0 lg:p-6 space-y-5 sm:space-y-6 lg:space-y-8">
-                <section>
+                {!isFreeCrop && <section>
                   <label className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Recommended</label>
                   <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3 lg:grid-cols-1">
                     {QUICK_PRESETS.map((p) => (
@@ -298,7 +305,7 @@ export function MediaEditModal({ asset, open, saving, selectedPlatforms, onClose
                       </button>
                     ))}
                   </div>
-                </section>
+                </section>}
 
                 <section>
                   <label className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Aspects</label>

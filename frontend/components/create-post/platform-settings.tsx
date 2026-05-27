@@ -15,6 +15,7 @@ type Props = {
   selectedPlatforms: PlatformName[];
   platformConfigs: PlatformConfigMap;
   activePlatformTab: PlatformName | null;
+  highlightedFixTargetId?: string | null;
   onTabChange: (platform: PlatformName) => void;
   onConfigChange: (
     platform: PlatformName,
@@ -29,6 +30,7 @@ const inputCls =
   "w-full rounded-[14px] border border-[#e7dcc9] bg-[#fffdfa] px-3 py-2 text-sm outline-none focus:border-[#d1ac63] focus:ring-2 focus:ring-[#f7ebcb] transition-colors";
 
 const selectCls = inputCls;
+const highlightedFieldCls = "border-[#d1ac63] bg-[#fff8dd] ring-2 ring-[#f7cc47]";
 
 type MultiValueInputProps = {
   value: string;
@@ -291,12 +293,25 @@ function FacebookSettings({ config, onChange }: { config: PlatformConfig; onChan
   );
 }
 
-function InstagramSettings({ config, onChange }: { config: PlatformConfig; onChange: (key: keyof PlatformConfig, value: any) => void }) {
+function InstagramSettings({
+  config,
+  highlightedFixTargetId,
+  onChange,
+}: {
+  config: PlatformConfig;
+  highlightedFixTargetId?: string | null;
+  onChange: (key: keyof PlatformConfig, value: any) => void;
+}) {
   return (
     <>
       <Section title="Format" sectionId="instagram-format">
         <Field label="Post type">
-          <select value={config.instagramPostType} onChange={(e) => onChange("instagramPostType", e.target.value)} className={selectCls}>
+          <select
+            id="instagram-post-type-field"
+            value={config.instagramPostType}
+            onChange={(e) => onChange("instagramPostType", e.target.value)}
+            className={`${selectCls} ${highlightedFixTargetId === "instagram-post-type-field" ? highlightedFieldCls : ""}`}
+          >
             <option value="post">Feed post</option>
             <option value="reel">Reel</option>
             <option value="story">Story</option>
@@ -416,12 +431,26 @@ function TwitterSettings({ config, onChange }: { config: PlatformConfig; onChang
   );
 }
 
-function YouTubeSettings({ config, onChange }: { config: PlatformConfig; onChange: (key: keyof PlatformConfig, value: any) => void }) {
+function YouTubeSettings({
+  config,
+  highlightedFixTargetId,
+  onChange,
+}: {
+  config: PlatformConfig;
+  highlightedFixTargetId?: string | null;
+  onChange: (key: keyof PlatformConfig, value: any) => void;
+}) {
   return (
     <>
       <Section title="Video details" sectionId="youtube-video-details">
         <Field label="Video title *" hint="Required for YouTube uploads.">
-          <input value={config.youtubeTitle} onChange={(e) => onChange("youtubeTitle", e.target.value)} placeholder="My awesome video" className={inputCls} />
+          <input
+            id="youtube-title-field"
+            value={config.youtubeTitle}
+            onChange={(e) => onChange("youtubeTitle", e.target.value)}
+            placeholder="My awesome video"
+            className={`${inputCls} ${highlightedFixTargetId === "youtube-title-field" ? highlightedFieldCls : ""}`}
+          />
         </Field>
         <Field label="Tags" hint="Add keywords one by one to help with discovery.">
           <MultiValueInput
@@ -647,6 +676,7 @@ export function PlatformSettings({
   selectedPlatforms,
   platformConfigs,
   activePlatformTab,
+  highlightedFixTargetId,
   onTabChange,
   onConfigChange,
 }: Props) {
@@ -717,10 +747,10 @@ export function PlatformSettings({
 
         {/* PLATFORM-SPECIFIC */}
         {activeTab === "facebook" && <FacebookSettings config={config} onChange={handleChange} />}
-        {activeTab === "instagram" && <InstagramSettings config={config} onChange={handleChange} />}
+        {activeTab === "instagram" && <InstagramSettings config={config} highlightedFixTargetId={highlightedFixTargetId} onChange={handleChange} />}
         {activeTab === "linkedin" && <LinkedInSettings config={config} onChange={handleChange} />}
         {activeTab === "twitter" && <TwitterSettings config={config} onChange={handleChange} />}
-        {activeTab === "youtube" && <YouTubeSettings config={config} onChange={handleChange} />}
+        {activeTab === "youtube" && <YouTubeSettings config={config} highlightedFixTargetId={highlightedFixTargetId} onChange={handleChange} />}
         {activeTab === "blogger" && <BloggerSettings config={config} onChange={handleChange} />}
         {activeTab === "google_business" && <GoogleBusinessSettings config={config} onChange={handleChange} />}
         {activeTab === "wordpress" && <WordPressSettings config={config} onChange={handleChange} />}

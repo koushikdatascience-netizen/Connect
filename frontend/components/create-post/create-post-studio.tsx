@@ -176,7 +176,6 @@ export function CreatePostStudio() {
   const [caption, setCaption] = useState("");
   const [hashtags, setHashtags] = useState("");
   const [mentions, setMentions] = useState("");
-  const [altText, setAltText] = useState("");
 
   const [loading, setLoading] = useState(true);
   const [mobileTab, setMobileTab] = useState<"accounts" | "compose" | "settings">("accounts");
@@ -190,6 +189,7 @@ export function CreatePostStudio() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [mediaEditorAsset, setMediaEditorAsset] = useState<MediaAsset | null>(null);
   const [savingEditedMedia, setSavingEditedMedia] = useState(false);
+  const [highlightedFixTargetId, setHighlightedFixTargetId] = useState<string | null>(null);
 
   /* ---------------- LOAD ---------------- */
 
@@ -220,9 +220,6 @@ export function CreatePostStudio() {
           Array.from(files).map((file) => {
             const fd = new FormData();
             fd.append("file", file);
-            if (altText.trim()) {
-              fd.append("alt_text", altText.trim());
-            }
             return uploadMedia(fd);
           })
         );
@@ -232,7 +229,6 @@ export function CreatePostStudio() {
           ...uploaded.map((item) => item.id),
           ...current.filter((id) => !uploaded.some((item) => item.id === id)),
         ]);
-        setAltText("");
       } catch (err) {
         setUploadError(err instanceof Error ? err.message : "Upload failed.");
       }
@@ -526,13 +522,27 @@ export function CreatePostStudio() {
 
     setActivePlatformTab(item.platform);
     setMobileTab(fixTarget.panel);
+    const targetId = fixTarget.fieldId ?? fixTarget.sectionId;
+    setHighlightedFixTargetId(targetId);
 
     window.setTimeout(() => {
-      const target = document.getElementById(fixTarget.sectionId);
+      const target = document.getElementById(targetId) ?? document.getElementById(fixTarget.sectionId);
       if (target) {
-        target.scrollIntoView({ behavior: "smooth", block: "start" });
+        target.scrollIntoView({ behavior: "smooth", block: "center" });
+        if (
+          target instanceof HTMLInputElement ||
+          target instanceof HTMLTextAreaElement ||
+          target instanceof HTMLSelectElement ||
+          target instanceof HTMLButtonElement
+        ) {
+          target.focus({ preventScroll: true });
+        }
       }
     }, 180);
+
+    window.setTimeout(() => {
+      setHighlightedFixTargetId((current) => (current === targetId ? null : current));
+    }, 2400);
   };
 
   const sidebarPlatforms = useMemo(
@@ -631,16 +641,15 @@ export function CreatePostStudio() {
             caption={caption}
             hashtags={hashtags}
             mentions={mentions}
-            altText={altText}
             media={media}
             selectedMediaIds={selectedMediaIds}
             editedMediaIds={editedMediaIds}
             selectedPlatforms={selectedPlatforms}
             editingMediaId={mediaEditorAsset?.id ?? null}
+            highlightedFixTargetId={highlightedFixTargetId}
             onCaptionChange={setCaption}
             onHashtagsChange={setHashtags}
             onMentionsChange={setMentions}
-            onAltTextChange={setAltText}
             onMediaSelectionToggle={toggleMedia}
             onFilesSelected={handleFilesSelected}
             onEditMedia={handleOpenMediaEditor}
@@ -658,6 +667,7 @@ export function CreatePostStudio() {
             selectedPlatforms={selectedPlatforms}
             platformConfigs={platformConfigs}
             activePlatformTab={activePlatformTab}
+            highlightedFixTargetId={highlightedFixTargetId}
             onTabChange={setActivePlatformTab}
             onConfigChange={(platform, key, value) =>
               setPlatformConfigs((prev) => ({

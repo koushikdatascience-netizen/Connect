@@ -9,10 +9,10 @@ import { clearStoredAuthToken, logoutSession } from "@/lib/api";
 import { PendingApprovalBanner, useSessionState } from "@/components/session-state";
 
 const navigation = [
-  { href: "/compose", label: "Create Post", icon: "compose" },
-  { href: "/analytics", label: "Analytics", icon: "analytics" },
-  { href: "/posts", label: "Scheduled Posts", icon: "clock" },
-  { href: "/connections", label: "Manage Accounts", icon: "spark" },
+  { href: "/compose", label: "Create Post", mobileLabel: "Create", icon: "compose" },
+  { href: "/analytics", label: "Analytics", mobileLabel: "Analytics", icon: "analytics" },
+  { href: "/posts", label: "Scheduled Posts", mobileLabel: "Posts", icon: "clock" },
+  { href: "/connections", label: "Manage Accounts", mobileLabel: "Accounts", icon: "spark" },
 ] as const;
 
 const adminNavigation = { href: "/admin/users", label: "Admin Users", icon: "admin" } as const;
@@ -136,14 +136,14 @@ export function AppShellUx({ children }: { children: ReactNode }) {
         </div>
       </div>
 
-      <nav className="fixed inset-x-4 bottom-4 z-40 rounded-[26px] border border-[#2b2414] bg-[rgba(10,10,10,0.96)] p-2 shadow-[0_18px_40px_rgba(0,0,0,0.3)] backdrop-blur lg:hidden">
+      <nav className="fixed inset-x-2 bottom-2 z-40 rounded-[22px] border border-[#2b2414] bg-[rgba(10,10,10,0.96)] p-1.5 shadow-[0_18px_40px_rgba(0,0,0,0.3)] backdrop-blur sm:inset-x-4 sm:bottom-4 sm:rounded-[26px] sm:p-2 lg:hidden">
         <div className="grid grid-cols-4 gap-1">
           {visibleNavigation.slice(0, 4).map((item) => {
             const active = pathname === item.href || pathname?.startsWith(`${item.href}/`);
             return (
-              <Link key={item.href} href={item.href} className={`flex flex-col items-center justify-center rounded-[18px] px-2 py-2 text-[11px] font-medium ${active ? "bg-[#1d1a10] text-[#f4d24a]" : "text-[#d8cfa7] hover:bg-[#171717] hover:text-white"}`}>
+              <Link key={item.href} href={item.href} className={`flex min-w-0 flex-col items-center justify-center rounded-[16px] px-1 py-2 text-[10px] font-medium sm:rounded-[18px] sm:px-2 sm:text-[11px] ${active ? "bg-[#1d1a10] text-[#f4d24a]" : "text-[#d8cfa7] hover:bg-[#171717] hover:text-white"}`}>
                 <NavIcon icon={item.icon} />
-                <span className="mt-1">{item.label.replace("Scheduled ", "")}</span>
+                <span className="mt-1 block max-w-full truncate leading-none">{item.mobileLabel}</span>
                 {active ? <span className="mt-0.5 h-1 w-1 rounded-full bg-[#f4d24a] block" /> : null}
               </Link>
             );

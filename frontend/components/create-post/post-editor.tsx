@@ -8,18 +8,17 @@ type Props = {
   caption: string;
   hashtags: string;
   mentions: string;
-  altText: string;
   media: MediaAsset[];
   selectedMediaIds: number[];
   editedMediaIds: number[];
   selectedPlatforms: PlatformName[];
   uploadError: string | null;
   editingMediaId: number | null;
+  highlightedFixTargetId?: string | null;
 
   onCaptionChange: (v: string) => void;
   onHashtagsChange: (v: string) => void;
   onMentionsChange: (v: string) => void;
-  onAltTextChange: (v: string) => void;
 
   onMediaSelectionToggle: (id: number) => void;
   onFilesSelected: (files: FileList | null) => void;
@@ -139,8 +138,17 @@ function TokenInput({
           onKeyDown={handleKeyDown}
           onBlur={commitDraft}
           placeholder={tokens.length === 0 ? placeholder : `Add another ${label.toLowerCase().slice(0, -1)}`}
-          className="min-w-[120px] flex-1 bg-transparent text-sm outline-none placeholder:text-[#a39170]"
+          className="min-w-[100px] flex-1 bg-transparent text-sm outline-none placeholder:text-[#a39170]"
         />
+        <button
+          type="button"
+          disabled={!draft.trim()}
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={commitDraft}
+          className="shrink-0 rounded-full bg-[#1f170c] px-3 py-1.5 text-[11px] font-bold text-[#f6d48f] transition-colors hover:bg-[#3a2b10] disabled:cursor-not-allowed disabled:bg-[#e5dccb] disabled:text-[#9a8d77]"
+        >
+          Add
+        </button>
       </div>
     </label>
   );
@@ -150,17 +158,16 @@ export function PostEditor({
   caption,
   hashtags,
   mentions,
-  altText,
   media,
   selectedMediaIds,
   editedMediaIds,
   selectedPlatforms,
   uploadError,
   editingMediaId,
+  highlightedFixTargetId,
   onCaptionChange,
   onHashtagsChange,
   onMentionsChange,
-  onAltTextChange,
   onMediaSelectionToggle,
   onFilesSelected,
   onEditMedia,
@@ -206,12 +213,13 @@ export function PostEditor({
           value={caption}
           onChange={(e) => onCaptionChange(e.target.value)}
           placeholder="Write your post caption..."
-          className="
+          className={`
             mt-2 w-full min-h-[140px] resize-none
             rounded-xl border border-[#eee3d0] bg-white/70 p-3 text-sm
             outline-none transition-all duration-200
             focus:ring-2 focus:ring-[#d4a94f]/40 focus:border-[#d4a94f]
-          "
+            ${highlightedFixTargetId === "post-caption" ? "border-[#d1ac63] bg-[#fff8dd] ring-2 ring-[#f7cc47]" : ""}
+          `}
         />
       </motion.div>
 
@@ -247,12 +255,13 @@ export function PostEditor({
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="
+        className={`
           rounded-2xl border border-[#eadfcb]
           bg-white/80 backdrop-blur p-4
           shadow-sm transition-all duration-200
           hover:shadow-md
-        "
+          ${highlightedFixTargetId === "compose-media" ? "border-[#d1ac63] ring-2 ring-[#f7cc47]" : ""}
+        `}
       >
         <p className="text-[11px] font-semibold uppercase tracking-wider text-[#9b7b3f]">
           Media
@@ -386,34 +395,6 @@ export function PostEditor({
         )}
       </motion.div>
 
-      {/* ALT TEXT */}
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.15 }}
-        className="
-          rounded-xl border border-[#eadfcb]
-          bg-white/80 backdrop-blur p-3
-        "
-      >
-        <label className="block">
-          <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-[#9b7b3f]">
-            Upload Alt Text
-          </div>
-          <input
-            aria-label="Default alt text for next upload"
-            value={altText}
-            onChange={(e) => onAltTextChange(e.target.value)}
-            placeholder="Optional default alt text for the next upload"
-            className="
-              w-full bg-transparent text-sm outline-none
-            "
-          />
-          <p className="mt-2 text-xs text-[#7d7f88]">
-            Use the image editor for per-asset alt text after upload.
-          </p>
-        </label>
-      </motion.div>
     </div>
   );
 }
