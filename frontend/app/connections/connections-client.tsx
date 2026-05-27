@@ -346,11 +346,8 @@ export default function ConnectionsClient() {
             <h1 style={{ fontSize: "clamp(22px, 4vw, 32px)", fontWeight: 800, letterSpacing: "-0.04em", color: "#2d1f00", margin: 0, lineHeight: 1.1 }}>
               Manage Connected Accounts
             </h1>
-            <p style={{ fontSize: 13.5, color: "#9b7d42", marginTop: 6, lineHeight: 1.6 }}>
-              Tap any platform to expand, review connected accounts, add new ones, or remove existing ones.
-            </p>
-            <p style={{ fontSize: 13.5, color: "#8b6b33", marginTop: 8, lineHeight: 1.6 }}>
-              Accounts are connected securely using official authorization flows and platform permissions.
+            <p style={{ fontSize: 12.5, color: "#9b7d42", marginTop: 6, lineHeight: 1.45 }}>
+              Connect, review, or remove authorized social accounts.
             </p>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 7, borderRadius: 100, padding: "7px 16px", background: "rgba(255,255,255,0.72)", border: "1.5px solid rgba(212,170,90,0.42)", boxShadow: "0 2px 8px rgba(0,0,0,0.05)", fontSize: 13, fontWeight: 700, color: "#8a6520", whiteSpace: "nowrap" }}>

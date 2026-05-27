@@ -296,14 +296,30 @@ export function CreatePostStudio() {
   /* ---------------- PLATFORM ---------------- */
 
   const handlePlatformToggle = (platform: PlatformName, enabled?: boolean) => {
+    const platformAccounts = accountsByPlatform[platform];
+    if (platformAccounts.length === 0) {
+      setUploadError(`Connect a ${PLATFORM_LABELS[platform]} account before selecting this platform.`);
+      return;
+    }
+
     setSelectedPlatforms((prev) => {
       const isSelected = prev.includes(platform);
       const shouldEnable = enabled !== undefined ? enabled : !isSelected;
       if (shouldEnable && !isSelected) {
         setActivePlatformTab(platform);
+        setSelectedAccounts((current) => ({
+          ...current,
+          [platform]: current[platform].length
+            ? current[platform]
+            : platformAccounts.map((account) => account.id),
+        }));
         return [...prev, platform];
       }
       if (!shouldEnable && isSelected) {
+        setSelectedAccounts((current) => ({
+          ...current,
+          [platform]: [],
+        }));
         return prev.filter((p) => p !== platform);
       }
       return prev;
@@ -311,9 +327,27 @@ export function CreatePostStudio() {
   };
 
   const handleSelectAll = (enabled: boolean) => {
-    setSelectedPlatforms(enabled ? PLATFORM_ORDER : []);
-    if (enabled && PLATFORM_ORDER.length > 0) {
-      setActivePlatformTab(PLATFORM_ORDER[0]);
+    if (!enabled) {
+      setSelectedPlatforms([]);
+      setSelectedAccounts(createEmptySelectedAccounts());
+      return;
+    }
+
+    const platformsWithAccounts = PLATFORM_ORDER.filter(
+      (platform) => accountsByPlatform[platform].length > 0
+    );
+
+    setSelectedPlatforms(platformsWithAccounts);
+    setSelectedAccounts(() => {
+      const next = createEmptySelectedAccounts();
+      for (const platform of platformsWithAccounts) {
+        next[platform] = accountsByPlatform[platform].map((account) => account.id);
+      }
+      return next;
+    });
+
+    if (platformsWithAccounts.length > 0) {
+      setActivePlatformTab(platformsWithAccounts[0]);
     }
   };
 
@@ -322,11 +356,26 @@ export function CreatePostStudio() {
     enabled: boolean
   ) => {
     const accs = accountsByPlatform[platform];
+    if (accs.length === 0) {
+      setUploadError(`Connect a ${PLATFORM_LABELS[platform]} account before selecting this platform.`);
+      return;
+    }
 
     setSelectedAccounts((prev) => ({
       ...prev,
       [platform]: enabled ? accs.map((a) => a.id) : [],
     }));
+
+    setSelectedPlatforms((prev) => {
+      if (enabled) {
+        return prev.includes(platform) ? prev : [...prev, platform];
+      }
+      return prev.filter((item) => item !== platform);
+    });
+
+    if (enabled) {
+      setActivePlatformTab(platform);
+    }
   };
 
   const handleAccountToggle = (
@@ -336,12 +385,26 @@ export function CreatePostStudio() {
   ) => {
     setSelectedAccounts((prev) => {
       const current = prev[platform];
+      const next = enabled
+        ? current.includes(accountId)
+          ? current
+          : [...current, accountId]
+        : current.filter((id) => id !== accountId);
+
+      setSelectedPlatforms((platforms) => {
+        if (next.length > 0) {
+          return platforms.includes(platform) ? platforms : [...platforms, platform];
+        }
+        return platforms.filter((item) => item !== platform);
+      });
+
+      if (next.length > 0) {
+        setActivePlatformTab(platform);
+      }
 
       return {
         ...prev,
-        [platform]: enabled
-          ? [...current, accountId]
-          : current.filter((id) => id !== accountId),
+        [platform]: next,
       };
     });
   };
@@ -650,6 +713,7 @@ export function CreatePostStudio() {
             onAccountToggle={handleAccountToggle}
             setMobileTab={setMobileTab}
             onContinueToCompose={openComposeAtCaption}
+            onManageAccounts={() => router.push("/connections")}
           />
         </div>
 
@@ -728,6 +792,8 @@ export function CreatePostStudio() {
               } across ${selectedPlatforms.length} platform${
                 selectedPlatforms.length !== 1 ? "s" : ""
               }`
+            : accounts.length === 0
+            ? "Connect a social account before publishing"
             : "Select accounts to publish"}
         </div>
         <motion.button
@@ -767,7 +833,7 @@ export function CreatePostStudio() {
       {isPendingApproval ? (
         <div className="shrink-0 overflow-y-auto border-t border-[#f1dacd] bg-[#fff8f2] px-4 py-3 sm:px-5 sm:py-4">
           <div className="rounded-2xl border border-[#f0d2ca] bg-white px-4 py-3 text-sm text-[#7c3f36]">
-            <span className="font-semibold text-[#5b271f]">Publishing locked:</span> Your account is pending approval, so create, publish, and schedule actions are temporarily disabled.
+            <span className="font-semibold text-[#5b271f]">Publishing locked:</span> Approval is required before connecting accounts or publishing.
           </div>
         </div>
       ) : blockingValidationItems.length > 0 && (
@@ -841,7 +907,7 @@ export function CreatePostStudio() {
                           <div
                             className={`flex h-10 w-10 items-center justify-center rounded-full text-lg ${
                               allOk
-                                ? "bg-[#22d48a]/20 text-[#22d48a]"
+                                ? "bg-[#ffd52a]/18 text-[#ffd52a]"
                                 : "bg-[#ff6b5b]/20 text-[#ff6b5b]"
                             }`}
                           >
@@ -879,7 +945,7 @@ export function CreatePostStudio() {
                           key={i}
                           className={`flex items-start gap-3 rounded-[16px] border p-3.5 ${
                             result.status === "success"
-                              ? "border-[#1a3a20] bg-[#0d1f12]"
+                              ? "border-[#4b3f17] bg-[#211d08]"
                               : "border-[#3a1a1a] bg-[#1f0d0d]"
                           }`}
                         >
@@ -895,7 +961,7 @@ export function CreatePostStudio() {
                               <span
                                 className={`flex-shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${
                                   result.status === "success"
-                                    ? "bg-[#22d48a]/15 text-[#22d48a]"
+                                    ? "bg-[#ffd52a]/16 text-[#ffd52a]"
                                     : "bg-[#ff6b5b]/15 text-[#ff6b5b]"
                                 }`}
                               >
@@ -912,7 +978,7 @@ export function CreatePostStudio() {
                             {result.status === "success" && (
                               <div className="mt-1.5 flex items-center gap-3">
                                 {result.postId && (
-                                  <span className="text-[11px] text-[#5a7a6a]">
+                                  <span className="text-[11px] text-[#a9975a]">
                                     Post #{result.postId}
                                   </span>
                                 )}
@@ -921,7 +987,7 @@ export function CreatePostStudio() {
                                     href={result.postUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#4de8a3] transition-colors hover:text-[#7ef5c0]"
+                                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#ffd52a] transition-colors hover:text-[#ffe566]"
                                   >
                                     View live post
                                     <svg

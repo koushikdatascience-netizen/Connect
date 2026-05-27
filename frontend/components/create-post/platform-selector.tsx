@@ -24,6 +24,7 @@ type Props = {
   onPlatformToggle: (enabled: boolean) => void;
   onSelectAllAccounts: (enabled: boolean) => void;
   onAccountToggle: (accountId: number, enabled: boolean) => void;
+  onManageAccounts: () => void;
 };
 
 export function PlatformSelector({
@@ -31,6 +32,7 @@ export function PlatformSelector({
   onPlatformToggle,
   onSelectAllAccounts,
   onAccountToggle,
+  onManageAccounts,
 }: Props) {
   const hasAccounts = platform.accounts.length > 0;
 
@@ -62,12 +64,14 @@ export function PlatformSelector({
         whileTap={{ scale: 0.98 }}
         onClick={() => hasAccounts && onPlatformToggle(!platform.selected)}
         className={`
-          relative flex items-center gap-3 cursor-pointer
+          relative flex items-center gap-3
           rounded-xl border p-3 transition-all duration-200
           ${
             platform.selected
               ? `bg-gradient-to-r ${style} shadow-md`
-              : "bg-white/60 hover:bg-white/90 border-[#eee3d0]"
+              : hasAccounts
+              ? "cursor-pointer bg-white/60 hover:bg-white/90 border-[#eee3d0]"
+              : "cursor-not-allowed bg-[#f8f5ef] border-[#eee3d0] opacity-85"
           }
         `}
       >
@@ -80,10 +84,15 @@ export function PlatformSelector({
         <input
           type="checkbox"
           checked={platform.selected}
-          onChange={(e) => onPlatformToggle(e.target.checked)}
+          disabled={!hasAccounts}
+          onChange={(e) => {
+            if (hasAccounts) {
+              onPlatformToggle(e.target.checked);
+            }
+          }}
           onClick={(e) => e.stopPropagation()}
           aria-label={`Select ${platformLabel}`}
-          className="h-4 w-4 accent-[#d4a94f]"
+          className="h-4 w-4 accent-[#d4a94f] disabled:cursor-not-allowed"
         />
 
         {/* ICON */}
@@ -92,8 +101,15 @@ export function PlatformSelector({
         </div>
 
         {/* NAME — FIX: use label, not raw id */}
-        <div className="min-w-0 flex-1 truncate text-sm font-medium text-[#2a2116]">
-          {platformLabel}
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-sm font-medium text-[#2a2116]">
+            {platformLabel}
+          </div>
+          {!hasAccounts ? (
+            <div className="truncate text-[10px] font-medium text-[#9d6b2f]">
+              No account connected
+            </div>
+          ) : null}
         </div>
 
         {/* COUNT */}
@@ -118,6 +134,23 @@ export function PlatformSelector({
           </button>
         )}
       </motion.div>
+
+      {!hasAccounts ? (
+        <div className="mt-2 rounded-xl border border-dashed border-[#eadfcb] bg-[#fffaf0] px-3 py-2">
+          <div className="flex items-center justify-between gap-3">
+            <p className="min-w-0 text-[11px] leading-4 text-[#7a6f5c]">
+              Connect {platformLabel} before selecting it for this post.
+            </p>
+            <button
+              type="button"
+              onClick={onManageAccounts}
+              className="shrink-0 rounded-lg border border-[#d4a94f]/35 bg-white px-2.5 py-1.5 text-[10px] font-semibold text-[#7a5716] transition-colors hover:bg-[#fff3ce]"
+            >
+              Connect
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       {/* ACCOUNTS LIST */}
       <AnimatePresence>

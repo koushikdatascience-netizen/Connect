@@ -33,6 +33,7 @@ type Props = {
   ) => void;
   setMobileTab: (tab: "accounts" | "compose" | "settings") => void;
   onContinueToCompose?: () => void;
+  onManageAccounts: () => void;
 };
 
 export function Sidebar({
@@ -51,6 +52,7 @@ export function Sidebar({
   onAccountToggle,
   setMobileTab,
   onContinueToCompose,
+  onManageAccounts,
 }: Props) {
   const allSelected =
     totalSelectedAccounts === totalAccounts && totalAccounts > 0;
@@ -77,15 +79,35 @@ export function Sidebar({
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => onSelectAll(!allSelected)}
+            disabled={totalAccounts === 0}
             className="
               rounded-full px-3 py-1 text-[10px] font-semibold
               bg-gradient-to-r from-[#1f170c] to-[#3a2b10]
               text-[#f6d48f] shadow-sm
+              disabled:cursor-not-allowed disabled:opacity-40
             "
           >
             {allSelected ? "Clear" : "All"}
           </motion.button>
         </div>
+
+        {totalAccounts === 0 ? (
+          <div className="mb-4 rounded-2xl border border-[#eadfcb] bg-[#fff8e8] px-4 py-3">
+            <p className="text-sm font-semibold text-[#2a2116]">
+              Connect your social accounts first
+            </p>
+            <p className="mt-1 text-xs leading-5 text-[#7a6f5c]">
+              Add at least one account before choosing YouTube, Instagram, Facebook, or any other publishing channel.
+            </p>
+            <button
+              type="button"
+              onClick={onManageAccounts}
+              className="mt-3 w-full rounded-xl bg-[#212121] px-4 py-2.5 text-xs font-semibold uppercase text-white transition-colors hover:bg-[#333]"
+            >
+              Manage Accounts
+            </button>
+          </div>
+        ) : null}
 
         <div className="space-y-2">
           {platforms.map((platform) => (
@@ -101,6 +123,7 @@ export function Sidebar({
               onAccountToggle={(accountId, enabled) =>
                 onAccountToggle(platform.id, accountId, enabled)
               }
+              onManageAccounts={onManageAccounts}
             />
           ))}
         </div>
@@ -218,7 +241,7 @@ export function Sidebar({
                 : "bg-gradient-to-r from-[#1f170c] to-[#3a2b10] text-[#f6d48f]"
            }`}
           >
-            Next
+            {totalAccounts === 0 ? "Connect accounts first" : "Next"}
           </button>
         </div>
 

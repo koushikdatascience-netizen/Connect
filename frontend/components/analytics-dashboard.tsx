@@ -5,7 +5,6 @@ import { FaFacebookF, FaInstagram, FaLinkedinIn, FaYoutube } from "react-icons/f
 import { RiTwitterXFill } from "react-icons/ri";
 
 import { ErrorNotice } from "@/components/error-notice";
-import { ReviewCountdownAlert } from "@/components/review-countdown-alert";
 import {
   fetchAccounts,
   fetchAnalyticsHeatmap,
@@ -539,7 +538,6 @@ export function AnalyticsDashboard() {
     <main className="min-h-screen overflow-x-hidden bg-[radial-gradient(circle_at_top_left,rgba(255,214,110,0.22),transparent_30%),radial-gradient(circle_at_top_right,rgba(28,144,207,0.16),transparent_26%),linear-gradient(180deg,#f9f3e7_0%,#f3ead9_52%,#efe6d4_100%)] px-2 py-3 text-[13px] sm:px-4 sm:py-4 sm:text-base lg:px-6">
       <div className="mx-auto max-w-[1480px] space-y-4 sm:space-y-5">
         <ErrorNotice error={error} fallback="We couldn't load analytics right now." />
-        <ReviewCountdownAlert />
 
         <section className="min-w-0 overflow-hidden rounded-[18px] border border-[#e7d8bd] bg-[linear-gradient(120deg,rgba(255,252,244,0.96),rgba(255,246,221,0.94)_44%,rgba(242,230,204,0.96))] p-3 shadow-[0_24px_60px_rgba(100,76,18,0.12)] sm:rounded-[34px] sm:p-6">
           <div className="flex min-w-0 flex-col gap-4 sm:gap-5 xl:flex-row xl:items-end xl:justify-between">
@@ -547,11 +545,11 @@ export function AnalyticsDashboard() {
               <div className="inline-flex rounded-full border border-[#e2ca80] bg-[#fff2c7] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-[#8e6a09] sm:px-3 sm:text-[11px] sm:tracking-[0.18em]">
                 Live Analytics
               </div>
-              <h1 className="mt-3 font-display text-2xl font-semibold leading-tight text-[#171311] sm:mt-4 sm:text-5xl sm:tracking-[-0.06em]">
-                Performance analytics for your connected publishing channels.
+              <h1 className="mt-2 font-display text-2xl font-semibold leading-tight text-[#171311] sm:mt-3 sm:text-4xl sm:tracking-[-0.05em]">
+                Publishing Analytics
               </h1>
-              <p className="mt-2 max-w-2xl text-xs leading-5 text-[#615541] sm:mt-3 sm:text-[15px] sm:leading-6">
-                Review impressions, reach, engagement, clicks, and publishing performance from official platform metrics snapshots across your connected accounts.
+              <p className="mt-1 max-w-2xl text-xs leading-5 text-[#615541] sm:mt-2 sm:text-sm">
+                Review reach, engagement, clicks, and post performance.
               </p>
               <div className="mt-3 flex flex-wrap gap-1.5 sm:mt-4 sm:gap-2">
                 {featuredPlatforms.map((platform) => (

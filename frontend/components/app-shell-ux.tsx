@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ReactNode, useMemo, useState } from "react";
 
-import { ConnectComplianceBanner, ConnectComplianceFooter } from "@/components/connect-compliance";
+import { ConnectComplianceFooter } from "@/components/connect-compliance";
 import { clearStoredAuthToken, logoutSession } from "@/lib/api";
 import { PendingApprovalBanner, useSessionState } from "@/components/session-state";
 
@@ -129,7 +129,6 @@ export function AppShellUx({ children }: { children: ReactNode }) {
         </aside>
 
           <div className="min-w-0 flex-1">
-          <ConnectComplianceBanner />
           <PendingApprovalBanner />
           {children}
           <ConnectComplianceFooter />
