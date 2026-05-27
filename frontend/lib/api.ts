@@ -19,6 +19,7 @@ const TENANT_ID = process.env.NEXT_PUBLIC_TENANT_ID ?? "tenant_123";
 const TOKEN_STORAGE_KEY =
   process.env.NEXT_PUBLIC_AUTH_TOKEN_STORAGE_KEY ?? "snapkey_jwt";
 const DEMO_BEARER_TOKEN = process.env.NEXT_PUBLIC_DEBUG_BEARER_TOKEN ?? "";
+const GOOGLE_AUTH_URL = process.env.NEXT_PUBLIC_GOOGLE_AUTH_URL ?? "";
 const TENANT_CLAIMS = ["TenantId", "tenant_id"];
 
 function readJwtClaim(token: string, claim: string) {
@@ -83,6 +84,20 @@ export function clearStoredAuthToken() {
 
 export function getDemoBearerToken() {
   return DEMO_BEARER_TOKEN;
+}
+
+export function getGoogleAuthUrl(nextPath = "/") {
+  if (!GOOGLE_AUTH_URL) {
+    return "";
+  }
+
+  try {
+    const url = new URL(GOOGLE_AUTH_URL);
+    url.searchParams.set("next", nextPath);
+    return url.toString();
+  } catch {
+    return GOOGLE_AUTH_URL;
+  }
 }
 
 function getRuntimeTenantId() {

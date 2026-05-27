@@ -4,8 +4,10 @@ import Link from "next/link";
 import { FormEvent, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
+import { AuthPasswordField } from "@/components/auth-password-field";
 import { AuthSideShell } from "@/components/auth-side-shell";
-import { getDemoBearerToken, loginConnectUser, setStoredAuthToken } from "@/lib/api";
+import { GoogleAuthButton } from "@/components/google-auth-button";
+import { getDemoBearerToken, getGoogleAuthUrl, loginConnectUser, setStoredAuthToken } from "@/lib/api";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -18,6 +20,7 @@ export default function LoginPage() {
   const nextPath = useMemo(() => searchParams.get("next") || "/", [searchParams]);
   const approvalNotice = useMemo(() => searchParams.get("approval"), [searchParams]);
   const hasDemoToken = Boolean(getDemoBearerToken());
+  const googleAuthUrl = useMemo(() => getGoogleAuthUrl(nextPath), [nextPath]);
 
   async function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -56,6 +59,15 @@ export default function LoginPage() {
     }
   }
 
+  function handleGoogleLogin() {
+    if (!googleAuthUrl) {
+      setError("Google sign-in is not configured yet. Ask the admin to set NEXT_PUBLIC_GOOGLE_AUTH_URL.");
+      return;
+    }
+
+    window.location.href = googleAuthUrl;
+  }
+
   return (
     <AuthSideShell
       title="Welcome back"
@@ -72,6 +84,18 @@ export default function LoginPage() {
           {error}
         </div>
       ) : null}
+
+      <GoogleAuthButton
+        label="Continue with Google"
+        onClick={handleGoogleLogin}
+        disabled={submitting}
+      />
+
+      <div className="my-5 flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.14em] text-[#9b8a6b]">
+        <span className="h-px flex-1 bg-[#eadba6]" />
+        Or
+        <span className="h-px flex-1 bg-[#eadba6]" />
+      </div>
 
       <form className="space-y-4" onSubmit={handleLogin}>
         <div>
@@ -98,15 +122,12 @@ export default function LoginPage() {
               Forgot password?
             </Link>
           </div>
-          <input
+          <AuthPasswordField
             id="password"
-            type="password"
             value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            className="auth-input"
+            onChange={setPassword}
             placeholder="Enter your password"
             autoComplete="current-password"
-            required
           />
         </div>
         <button

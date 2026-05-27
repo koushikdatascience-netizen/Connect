@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 
+import { AuthPasswordField } from "@/components/auth-password-field";
 import { AuthSideShell } from "@/components/auth-side-shell";
-import { registerConnectUser } from "@/lib/api";
+import { GoogleAuthButton } from "@/components/google-auth-button";
+import { getGoogleAuthUrl, registerConnectUser } from "@/lib/api";
 
 export default function RegisterPage() {
   const [email, setEmail] = useState("");
@@ -14,6 +16,7 @@ export default function RegisterPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const googleAuthUrl = getGoogleAuthUrl("/");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -35,6 +38,15 @@ export default function RegisterPage() {
     }
   }
 
+  function handleGoogleLogin() {
+    if (!googleAuthUrl) {
+      setError("Google sign-up is not configured yet. Ask the admin to set NEXT_PUBLIC_GOOGLE_AUTH_URL.");
+      return;
+    }
+
+    window.location.href = googleAuthUrl;
+  }
+
   return (
     <AuthSideShell
       title="Create account"
@@ -51,6 +63,18 @@ export default function RegisterPage() {
           {error}
         </div>
       ) : null}
+
+      <GoogleAuthButton
+        label="Sign up with Google"
+        onClick={handleGoogleLogin}
+        disabled={submitting}
+      />
+
+      <div className="my-5 flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.14em] text-[#9b8a6b]">
+        <span className="h-px flex-1 bg-[#eadba6]" />
+        Or
+        <span className="h-px flex-1 bg-[#eadba6]" />
+      </div>
 
       <form className="space-y-4" onSubmit={handleSubmit}>
         <input
@@ -71,23 +95,19 @@ export default function RegisterPage() {
           autoComplete="tel"
           required
         />
-        <input
-          type="password"
+        <AuthPasswordField
+          id="password"
           value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          className="auth-input"
+          onChange={setPassword}
           placeholder="Password"
           autoComplete="new-password"
-          required
         />
-        <input
-          type="password"
+        <AuthPasswordField
+          id="confirm-password"
           value={confirmPassword}
-          onChange={(event) => setConfirmPassword(event.target.value)}
-          className="auth-input"
+          onChange={setConfirmPassword}
           placeholder="Confirm password"
           autoComplete="new-password"
-          required
         />
         <button
           type="submit"
