@@ -26,6 +26,7 @@ jobs:
           fi
 
           SSH_PORT="${SERVER_PORT:-22}"
+          TARGET_COMMIT="${GITHUB_SHA}"
 
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
@@ -38,7 +39,7 @@ jobs:
             -o StrictHostKeyChecking=accept-new \
             -o IdentitiesOnly=yes \
             "$SERVER_USER@$SERVER_HOST" \
-            'bash -s' <<'REMOTE_SCRIPT'
+            "TARGET_COMMIT=$TARGET_COMMIT bash -s" <<'REMOTE_SCRIPT'
           set -e
 
           echo "===================================="
@@ -146,8 +147,15 @@ jobs:
           echo "Previous: $PREV_COMMIT"
 
           echo "Pull latest code..."
-          git fetch origin
-          git reset --hard origin/main
+          echo "Target: $TARGET_COMMIT"
+          git fetch origin main
+          git reset --hard "$TARGET_COMMIT"
+          CURRENT_COMMIT=$(git rev-parse HEAD)
+          echo "Current: $CURRENT_COMMIT"
+          if [ "$CURRENT_COMMIT" != "$TARGET_COMMIT" ]; then
+            echo "Server checkout mismatch. Expected $TARGET_COMMIT but got $CURRENT_COMMIT"
+            exit 1
+          fi
 
           echo "Preparing backend environment..."
           if [ -f "$HOME/.cargo/env" ]; then

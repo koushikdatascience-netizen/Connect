@@ -11,6 +11,9 @@ on:
       - main
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   backend-tests:
     name: Backend Tests
@@ -40,11 +43,43 @@ jobs:
           - 6379:6379
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          token: ""
-          persist-credentials: false
+      - name: Checkout repository
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          curl -fsSL \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "${{ github.api_url }}/repos/${{ github.repository }}/zipball/${{ github.sha }}" \
+            -o repo.zip
+          python3 - <<'PY'
+          import os
+          import shutil
+          import zipfile
+
+          workspace = os.getcwd()
+          extract_dir = os.path.join(workspace, "repo_src")
+
+          with zipfile.ZipFile("repo.zip") as archive:
+              archive.extractall(extract_dir)
+
+          [root_name] = os.listdir(extract_dir)
+          root = os.path.join(extract_dir, root_name)
+
+          for name in os.listdir(root):
+              src = os.path.join(root, name)
+              dst = os.path.join(workspace, name)
+              if os.path.isdir(dst) and not os.path.islink(dst):
+                  shutil.rmtree(dst)
+              elif os.path.exists(dst):
+                  os.remove(dst)
+              shutil.move(src, dst)
+
+          shutil.rmtree(extract_dir)
+          os.remove("repo.zip")
+          PY
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -143,11 +178,43 @@ jobs:
         working-directory: frontend
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          token: ""
-          persist-credentials: false
+      - name: Checkout repository
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          curl -fsSL \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "${{ github.api_url }}/repos/${{ github.repository }}/zipball/${{ github.sha }}" \
+            -o repo.zip
+          python3 - <<'PY'
+          import os
+          import shutil
+          import zipfile
+
+          workspace = os.getcwd()
+          extract_dir = os.path.join(workspace, "repo_src")
+
+          with zipfile.ZipFile("repo.zip") as archive:
+              archive.extractall(extract_dir)
+
+          [root_name] = os.listdir(extract_dir)
+          root = os.path.join(extract_dir, root_name)
+
+          for name in os.listdir(root):
+              src = os.path.join(root, name)
+              dst = os.path.join(workspace, name)
+              if os.path.isdir(dst) and not os.path.islink(dst):
+                  shutil.rmtree(dst)
+              elif os.path.exists(dst):
+                  os.remove(dst)
+              shutil.move(src, dst)
+
+          shutil.rmtree(extract_dir)
+          os.remove("repo.zip")
+          PY
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
