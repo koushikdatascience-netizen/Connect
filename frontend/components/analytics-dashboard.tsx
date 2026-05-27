@@ -124,11 +124,11 @@ function ChartCard({
   className?: string;
 }) {
   return (
-    <section className={`rounded-[20px] border border-[#eadfcf] bg-[linear-gradient(180deg,rgba(255,252,245,0.98),rgba(248,243,232,0.96))] p-3 shadow-[0_18px_40px_rgba(108,84,24,0.08)] transition duration-300 hover:shadow-[0_24px_48px_rgba(108,84,24,0.14)] sm:rounded-[28px] sm:p-5 sm:hover:-translate-y-1 ${className}`}>
+    <section className={`min-w-0 rounded-[18px] border border-[#eadfcf] bg-[linear-gradient(180deg,rgba(255,252,245,0.98),rgba(248,243,232,0.96))] p-3 shadow-[0_18px_40px_rgba(108,84,24,0.08)] transition duration-300 hover:shadow-[0_24px_48px_rgba(108,84,24,0.14)] sm:rounded-[28px] sm:p-5 sm:hover:-translate-y-1 ${className}`}>
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <h2 className="font-display text-xl font-semibold tracking-[-0.03em] text-[#171311] sm:text-2xl">{title}</h2>
-          <p className="mt-1 text-sm text-[#6a5d47]">{subtitle}</p>
+          <h2 className="font-display text-lg font-semibold text-[#171311] sm:text-2xl">{title}</h2>
+          <p className="mt-1 text-xs leading-5 text-[#6a5d47] sm:text-sm">{subtitle}</p>
         </div>
         {action}
       </div>
@@ -157,7 +157,7 @@ function TrendChart({ points }: { points: AnalyticsTimeseriesResponse["points"] 
 
   return (
     <div className="overflow-x-auto pb-1">
-      <svg viewBox={`0 0 ${width} ${height}`} className="h-[220px] min-w-[540px] w-full sm:h-[260px] sm:min-w-[640px]">
+      <svg viewBox={`0 0 ${width} ${height}`} className="h-[190px] min-w-[420px] w-full sm:h-[260px] sm:min-w-[640px]">
         <defs>
           <linearGradient id="analyticsImpressions" x1="0%" x2="100%">
             <stop offset="0%" stopColor="#f2b742" />
@@ -194,10 +194,10 @@ function RadialShare({ items }: { items: AnalyticsPlatformBreakdownItem[] }) {
   const circumference = 2 * Math.PI * 62;
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
+    <div className="grid min-w-0 gap-3 sm:gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
       <div className="flex items-center justify-center">
-        <div className="relative flex h-[210px] w-[210px] items-center justify-center rounded-full bg-[radial-gradient(circle_at_center,rgba(255,250,239,0.95),rgba(243,233,214,0.86))] shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] sm:h-[240px] sm:w-[240px]">
-          <svg viewBox="0 0 180 180" className="h-[160px] w-[160px] -rotate-90 sm:h-[180px] sm:w-[180px]">
+        <div className="relative flex h-[180px] w-[180px] items-center justify-center rounded-full bg-[radial-gradient(circle_at_center,rgba(255,250,239,0.95),rgba(243,233,214,0.86))] shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] sm:h-[240px] sm:w-[240px]">
+          <svg viewBox="0 0 180 180" className="h-[138px] w-[138px] -rotate-90 sm:h-[180px] sm:w-[180px]">
             <circle cx="90" cy="90" r="62" fill="none" stroke="#efe4d2" strokeWidth="22" />
             {items.map((item) => {
               const share = item.engagements / total;
@@ -221,22 +221,22 @@ function RadialShare({ items }: { items: AnalyticsPlatformBreakdownItem[] }) {
             })}
           </svg>
           <div className="absolute text-center">
-            <div className="text-[11px] uppercase tracking-[0.22em] text-[#8c7b66]">Engagement Mix</div>
-            <div className="mt-2 font-display text-3xl font-semibold tracking-[-0.05em] text-[#171311] sm:text-4xl">
+            <div className="text-[9px] uppercase tracking-[0.18em] text-[#8c7b66] sm:text-[11px]">Engagement Mix</div>
+            <div className="mt-1 font-display text-2xl font-semibold text-[#171311] sm:mt-2 sm:text-4xl">
               {formatCompactNumber(total)}
             </div>
-            <div className="mx-auto mt-1 max-w-[150px] text-xs text-[#6a5d47] sm:max-w-none sm:text-sm">latest cross-platform interactions</div>
+            <div className="mx-auto mt-1 max-w-[130px] text-[10px] leading-4 text-[#6a5d47] sm:max-w-none sm:text-sm">latest cross-platform interactions</div>
           </div>
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid min-w-0 gap-2 sm:grid-cols-2 sm:gap-3">
         {items.map((item) => (
-          <div key={item.platform} className="group rounded-[22px] border border-[#efe4d2] bg-white/70 p-4 transition duration-300 hover:-translate-y-1 hover:border-white hover:bg-white/88 hover:shadow-[0_18px_32px_rgba(96,73,20,0.12)]">
+          <div key={item.platform} className="group rounded-[18px] border border-[#efe4d2] bg-white/70 p-3 transition duration-300 hover:-translate-y-1 hover:border-white hover:bg-white/88 hover:shadow-[0_18px_32px_rgba(96,73,20,0.12)] sm:rounded-[22px] sm:p-4">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <span
-                  className="flex h-9 w-9 items-center justify-center rounded-full transition duration-300 group-hover:scale-110"
+                  className="flex h-8 w-8 items-center justify-center rounded-full transition duration-300 group-hover:scale-110 sm:h-9 sm:w-9"
                   style={{
                     backgroundColor: PLATFORM_COLORS[item.platform]?.soft ?? "rgba(0,0,0,0.06)",
                     color: PLATFORM_COLORS[item.platform]?.strong ?? "#8c7b66",
@@ -244,28 +244,28 @@ function RadialShare({ items }: { items: AnalyticsPlatformBreakdownItem[] }) {
                 >
                   <PlatformIcon platform={item.platform} className="text-sm" />
                 </span>
-                <div className="font-semibold text-[#171311]">{PLATFORM_LABELS[item.platform] ?? item.platform}</div>
+                <div className="text-sm font-semibold text-[#171311] sm:text-base">{PLATFORM_LABELS[item.platform] ?? item.platform}</div>
               </div>
               <div className="rounded-full px-2 py-1 text-[11px] font-semibold" style={{ backgroundColor: PLATFORM_COLORS[item.platform]?.soft ?? "rgba(0,0,0,0.06)", color: PLATFORM_COLORS[item.platform]?.strong ?? "#171311" }}>
                 {formatPercent(item.engagement_rate)}
               </div>
             </div>
-            <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+            <div className="mt-3 grid grid-cols-2 gap-2 text-xs sm:mt-4 sm:gap-3 sm:text-sm">
               <div>
                 <div className="text-[#7d725e]">Posts</div>
-                <div className="mt-1 text-lg font-semibold text-[#171311]">{item.post_count}</div>
+                <div className="mt-1 text-base font-semibold text-[#171311] sm:text-lg">{item.post_count}</div>
               </div>
               <div>
                 <div className="text-[#7d725e]">Engagements</div>
-                <div className="mt-1 text-lg font-semibold text-[#171311]">{formatCompactNumber(item.engagements)}</div>
+                <div className="mt-1 text-base font-semibold text-[#171311] sm:text-lg">{formatCompactNumber(item.engagements)}</div>
               </div>
               <div>
                 <div className="text-[#7d725e]">Impressions</div>
-                <div className="mt-1 text-lg font-semibold text-[#171311]">{formatCompactNumber(item.impressions)}</div>
+                <div className="mt-1 text-base font-semibold text-[#171311] sm:text-lg">{formatCompactNumber(item.impressions)}</div>
               </div>
               <div>
                 <div className="text-[#7d725e]">Views</div>
-                <div className="mt-1 text-lg font-semibold text-[#171311]">{formatCompactNumber(item.views)}</div>
+                <div className="mt-1 text-base font-semibold text-[#171311] sm:text-lg">{formatCompactNumber(item.views)}</div>
               </div>
             </div>
           </div>
@@ -285,7 +285,7 @@ function BubbleChart({ items }: { items: AnalyticsTopPostItem[] }) {
 
   return (
     <div className="overflow-x-auto pb-1">
-      <svg viewBox={`0 0 ${width} ${height}`} className="h-[220px] min-w-[540px] w-full sm:h-[260px] sm:min-w-[620px]">
+      <svg viewBox={`0 0 ${width} ${height}`} className="h-[190px] min-w-[420px] w-full sm:h-[260px] sm:min-w-[620px]">
         {[0, 1, 2, 3].map((row) => {
           const y = padding + ((height - padding * 2) * row) / 3;
           return <line key={row} x1={padding} y1={y} x2={width - padding} y2={y} stroke="#eadfcf" strokeDasharray="6 8" />;
@@ -320,11 +320,11 @@ function Heatmap({ cells }: { cells: AnalyticsHeatmapCell[] }) {
   const maxRate = Math.max(0.001, ...cells.map((cell) => cell.engagement_rate));
   return (
     <div className="overflow-x-auto">
-      <div className="min-w-[620px] sm:min-w-[700px]">
-        <div className="grid grid-cols-[80px_repeat(24,minmax(0,1fr))] gap-1">
+      <div className="min-w-[500px] sm:min-w-[700px]">
+        <div className="grid grid-cols-[52px_repeat(24,minmax(0,1fr))] gap-0.5 sm:grid-cols-[80px_repeat(24,minmax(0,1fr))] sm:gap-1">
           <div />
           {Array.from({ length: 24 }).map((_, hour) => (
-            <div key={hour} className="text-center text-[10px] font-medium text-[#7b6e58]">
+            <div key={hour} className="text-center text-[8px] font-medium text-[#7b6e58] sm:text-[10px]">
               {hour}
             </div>
           ))}
@@ -356,7 +356,7 @@ function FragmentRow({
 }) {
   return (
     <>
-      <div className="flex items-center text-sm font-medium text-[#5d523d]">{day}</div>
+      <div className="flex items-center text-[11px] font-medium text-[#5d523d] sm:text-sm">{day}</div>
       {Array.from({ length: 24 }).map((_, hour) => {
         const cell = cells.find((item) => item.hour === hour) ?? {
           weekday,
@@ -370,7 +370,7 @@ function FragmentRow({
         return (
           <div
             key={`${weekday}-${hour}`}
-            className="group relative h-8 rounded-[10px] border border-white/50"
+            className="group relative h-6 rounded-[7px] border border-white/50 sm:h-8 sm:rounded-[10px]"
             style={{
               background:
                 intensity > 0
@@ -393,11 +393,11 @@ function FragmentRow({
 function WordCloud({ items }: { items: AnalyticsWordCloudItem[] }) {
   const maxWeight = Math.max(1, ...items.map((item) => item.weight));
   return (
-    <div className="relative min-h-[300px] overflow-hidden rounded-[24px] border border-[#efe4d2] bg-[radial-gradient(circle_at_top,rgba(255,227,160,0.28),transparent_45%),linear-gradient(180deg,rgba(255,255,255,0.74),rgba(246,241,232,0.88))]">
+    <div className="relative min-h-[240px] overflow-hidden rounded-[20px] border border-[#efe4d2] bg-[radial-gradient(circle_at_top,rgba(255,227,160,0.28),transparent_45%),linear-gradient(180deg,rgba(255,255,255,0.74),rgba(246,241,232,0.88))] sm:min-h-[300px] sm:rounded-[24px]">
       {items.map((item, index) => {
         const row = index % 6;
         const col = Math.floor(index / 6);
-        const size = 15 + (item.weight / maxWeight) * 18;
+        const size = 12 + (item.weight / maxWeight) * 14;
         const left = 8 + (col % 4) * 23 + (row % 2) * 4;
         const top = 10 + row * 14 + (col % 2) * 2;
         const rotate = (index % 5) * 4 - 8;
@@ -536,37 +536,37 @@ export function AnalyticsDashboard() {
   }
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(255,214,110,0.22),transparent_30%),radial-gradient(circle_at_top_right,rgba(28,144,207,0.16),transparent_26%),linear-gradient(180deg,#f9f3e7_0%,#f3ead9_52%,#efe6d4_100%)] px-2 py-3 sm:px-4 sm:py-4 lg:px-6">
+    <main className="min-h-screen overflow-x-hidden bg-[radial-gradient(circle_at_top_left,rgba(255,214,110,0.22),transparent_30%),radial-gradient(circle_at_top_right,rgba(28,144,207,0.16),transparent_26%),linear-gradient(180deg,#f9f3e7_0%,#f3ead9_52%,#efe6d4_100%)] px-2 py-3 text-[13px] sm:px-4 sm:py-4 sm:text-base lg:px-6">
       <div className="mx-auto max-w-[1480px] space-y-4 sm:space-y-5">
         <ErrorNotice error={error} fallback="We couldn't load analytics right now." />
         <ReviewCountdownAlert />
 
-        <section className="overflow-hidden rounded-[22px] border border-[#e7d8bd] bg-[linear-gradient(120deg,rgba(255,252,244,0.96),rgba(255,246,221,0.94)_44%,rgba(242,230,204,0.96))] p-4 shadow-[0_24px_60px_rgba(100,76,18,0.12)] sm:rounded-[34px] sm:p-6">
-          <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+        <section className="min-w-0 overflow-hidden rounded-[18px] border border-[#e7d8bd] bg-[linear-gradient(120deg,rgba(255,252,244,0.96),rgba(255,246,221,0.94)_44%,rgba(242,230,204,0.96))] p-3 shadow-[0_24px_60px_rgba(100,76,18,0.12)] sm:rounded-[34px] sm:p-6">
+          <div className="flex min-w-0 flex-col gap-4 sm:gap-5 xl:flex-row xl:items-end xl:justify-between">
             <div className="max-w-3xl">
-              <div className="inline-flex rounded-full border border-[#e2ca80] bg-[#fff2c7] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8e6a09]">
+              <div className="inline-flex rounded-full border border-[#e2ca80] bg-[#fff2c7] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-[#8e6a09] sm:px-3 sm:text-[11px] sm:tracking-[0.18em]">
                 Live Analytics
               </div>
-              <h1 className="mt-4 font-display text-3xl font-semibold tracking-[-0.03em] text-[#171311] sm:text-5xl sm:tracking-[-0.06em]">
+              <h1 className="mt-3 font-display text-2xl font-semibold leading-tight text-[#171311] sm:mt-4 sm:text-5xl sm:tracking-[-0.06em]">
                 Performance analytics for your connected publishing channels.
               </h1>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-[#615541] sm:text-[15px]">
+              <p className="mt-2 max-w-2xl text-xs leading-5 text-[#615541] sm:mt-3 sm:text-[15px] sm:leading-6">
                 Review impressions, reach, engagement, clicks, and publishing performance from official platform metrics snapshots across your connected accounts.
               </p>
-              <div className="mt-4 flex flex-wrap gap-2">
+              <div className="mt-3 flex flex-wrap gap-1.5 sm:mt-4 sm:gap-2">
                 {featuredPlatforms.map((platform) => (
                   <div
                     key={platform}
-                    className="group inline-flex items-center gap-2 rounded-full border border-white/65 bg-white/65 px-3 py-2 text-xs font-semibold text-[#5f533f] shadow-[0_10px_18px_rgba(125,94,33,0.08)] transition duration-300 hover:-translate-y-0.5 hover:border-[#e2ca80] hover:bg-white/85 hover:shadow-[0_16px_24px_rgba(125,94,33,0.16)]"
+                    className="group inline-flex items-center gap-1.5 rounded-full border border-white/65 bg-white/65 px-2 py-1.5 text-[10px] font-semibold text-[#5f533f] shadow-[0_10px_18px_rgba(125,94,33,0.08)] transition duration-300 hover:-translate-y-0.5 hover:border-[#e2ca80] hover:bg-white/85 hover:shadow-[0_16px_24px_rgba(125,94,33,0.16)] sm:gap-2 sm:px-3 sm:py-2 sm:text-xs"
                   >
                     <span
-                      className="flex h-7 w-7 items-center justify-center rounded-full transition duration-300 group-hover:scale-110"
+                      className="flex h-5 w-5 items-center justify-center rounded-full transition duration-300 group-hover:scale-110 sm:h-7 sm:w-7"
                       style={{
                         backgroundColor: PLATFORM_COLORS[platform].soft,
                         color: PLATFORM_COLORS[platform].strong,
                       }}
                     >
-                      <PlatformIcon platform={platform} className="text-sm" />
+                      <PlatformIcon platform={platform} className="text-xs sm:text-sm" />
                     </span>
                     {PLATFORM_LABELS[platform]}
                   </div>
@@ -580,7 +580,7 @@ export function AnalyticsDashboard() {
                   key={range.id}
                   type="button"
                   onClick={() => setTimeRange(range.id)}
-                  className={`rounded-full px-4 py-2 text-sm font-semibold transition ${timeRange === range.id ? "bg-[#171311] text-[#fff7ea]" : "border border-[#e5d8c3] bg-white/70 text-[#5f533f] hover:bg-white"}`}
+                  className={`rounded-full px-3 py-1.5 text-xs font-semibold transition sm:px-4 sm:py-2 sm:text-sm ${timeRange === range.id ? "bg-[#171311] text-[#fff7ea]" : "border border-[#e5d8c3] bg-white/70 text-[#5f533f] hover:bg-white"}`}
                 >
                   {range.label}
                 </button>
@@ -589,14 +589,14 @@ export function AnalyticsDashboard() {
                 type="button"
                 onClick={() => void handleSyncNow()}
                 disabled={syncing}
-                className="col-span-2 rounded-full bg-[linear-gradient(135deg,#171311,#3d3016)] px-5 py-2.5 text-sm font-semibold text-[#fff4da] shadow-[0_14px_30px_rgba(23,19,17,0.22)] transition hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-70 sm:col-auto"
+                className="col-span-2 rounded-full bg-[linear-gradient(135deg,#171311,#3d3016)] px-4 py-2 text-xs font-semibold text-[#fff4da] shadow-[0_14px_30px_rgba(23,19,17,0.22)] transition hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-70 sm:col-auto sm:px-5 sm:py-2.5 sm:text-sm"
               >
                 {syncing ? "Syncing..." : "Refresh Snapshots"}
               </button>
             </div>
           </div>
 
-          <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1.35fr)_320px]">
+          <div className="mt-4 grid min-w-0 gap-3 sm:mt-5 sm:gap-4 lg:grid-cols-[minmax(0,1.35fr)_320px]">
             <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
               {platformPills.map((platform) => {
                 const active = selectedPlatforms.includes(platform.value);
@@ -605,26 +605,26 @@ export function AnalyticsDashboard() {
                     key={platform.value}
                     type="button"
                     onClick={() => togglePlatform(platform.value)}
-                    className="group inline-flex min-w-0 items-center justify-center gap-2 rounded-full border px-3 py-2 text-sm font-semibold transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_22px_rgba(109,84,23,0.12)] sm:justify-start sm:px-4"
+                    className="group inline-flex min-w-0 items-center justify-center gap-1.5 rounded-full border px-2 py-1.5 text-[11px] font-semibold transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_22px_rgba(109,84,23,0.12)] sm:justify-start sm:gap-2 sm:px-4 sm:py-2 sm:text-sm"
                     style={{
                       borderColor: active ? PLATFORM_COLORS[platform.value].strong : "#e3d8c8",
                       backgroundColor: active ? PLATFORM_COLORS[platform.value].soft : "rgba(255,255,255,0.68)",
                       color: active ? PLATFORM_COLORS[platform.value].strong : "#5d523f",
                     }}
                   >
-                          <PlatformIcon platform={platform.value} className="text-sm transition duration-300 group-hover:scale-110" />
+                          <PlatformIcon platform={platform.value} className="text-xs transition duration-300 group-hover:scale-110 sm:text-sm" />
                     <span className="truncate">{platform.label}</span>
                   </button>
                 );
               })}
             </div>
 
-            <label className="flex flex-col gap-2 text-sm font-medium text-[#594d3a]">
+            <label className="flex flex-col gap-1.5 text-xs font-medium text-[#594d3a] sm:gap-2 sm:text-sm">
               Account focus
               <select
                 value={selectedAccountId ?? ""}
                 onChange={(event) => setSelectedAccountId(event.target.value ? Number(event.target.value) : null)}
-                className="rounded-2xl border border-[#dfd3c1] bg-white/78 px-4 py-3 text-sm text-[#171311] outline-none"
+                className="rounded-2xl border border-[#dfd3c1] bg-white/78 px-3 py-2 text-xs text-[#171311] outline-none sm:px-4 sm:py-3 sm:text-sm"
               >
                 <option value="">All active accounts</option>
                 {activeAccounts.map((account) => (
@@ -637,19 +637,19 @@ export function AnalyticsDashboard() {
           </div>
         </section>
 
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-4 xl:grid-cols-4">
           {metricCards.map((card) => (
-            <section key={card.label} className="rounded-[26px] border border-[#eadfcf] bg-white/80 p-4 shadow-[0_14px_34px_rgba(107,83,20,0.08)] transition duration-300 hover:-translate-y-1 hover:border-[#e3c98b] hover:shadow-[0_20px_40px_rgba(107,83,20,0.16)]">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#7d725e]">{card.label}</div>
-              <div className="mt-4 font-display text-4xl font-semibold tracking-[-0.05em] text-[#171311]">{loading ? "..." : card.value}</div>
-              <div className={`mt-2 text-sm font-semibold ${toneForDelta(card.delta ?? 0)}`}>
+            <section key={card.label} className="min-w-0 rounded-[18px] border border-[#eadfcf] bg-white/80 p-3 shadow-[0_14px_34px_rgba(107,83,20,0.08)] transition duration-300 hover:-translate-y-1 hover:border-[#e3c98b] hover:shadow-[0_20px_40px_rgba(107,83,20,0.16)] sm:rounded-[26px] sm:p-4">
+              <div className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#7d725e] sm:text-[11px] sm:tracking-[0.18em]">{card.label}</div>
+              <div className="mt-3 font-display text-2xl font-semibold text-[#171311] sm:mt-4 sm:text-4xl sm:tracking-[-0.05em]">{loading ? "..." : card.value}</div>
+              <div className={`mt-1.5 text-[11px] font-semibold sm:mt-2 sm:text-sm ${toneForDelta(card.delta ?? 0)}`}>
                 {loading ? "Loading..." : `${formatDelta(card.delta ?? 0)} vs prior period`}
               </div>
             </section>
           ))}
         </div>
 
-        <div className="grid gap-5 2xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
+        <div className="grid min-w-0 gap-4 sm:gap-5 2xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
           <ChartCard title="Momentum" subtitle="Impressions versus weighted engagement volume through the selected window.">
             <TrendChart points={timeseries?.points ?? []} />
           </ChartCard>
@@ -659,7 +659,7 @@ export function AnalyticsDashboard() {
           </ChartCard>
         </div>
 
-        <div className="grid gap-5 xl:grid-cols-2">
+        <div className="grid min-w-0 gap-4 sm:gap-5 xl:grid-cols-2">
           <ChartCard title="Post Opportunity Matrix" subtitle="Bubble size favors content that drives either views or raw engagement.">
             <BubbleChart items={topPosts.slice(0, 8)} />
           </ChartCard>
@@ -669,23 +669,23 @@ export function AnalyticsDashboard() {
           </ChartCard>
         </div>
 
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
+        <div className="grid min-w-0 gap-4 sm:gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
           <ChartCard title="Top Performing Posts" subtitle="Latest snapshot per post, ranked by total normalized engagements.">
             <div className="mb-4">
               <input
                 value={postSearch}
                 onChange={(event) => setPostSearch(event.target.value)}
                 placeholder="Search posts, accounts, or platforms"
-                className="w-full rounded-2xl border border-[#dfd3c1] bg-white/76 px-4 py-3 text-sm text-[#171311] outline-none"
+                className="w-full rounded-2xl border border-[#dfd3c1] bg-white/76 px-3 py-2 text-xs text-[#171311] outline-none sm:px-4 sm:py-3 sm:text-sm"
               />
             </div>
             <div className="grid gap-3 md:hidden">
               {filteredTopPosts.map((post) => (
-                <article key={post.post_id} className="rounded-2xl border border-[#eadfcf] bg-white/70 p-3">
+                <article key={post.post_id} className="rounded-2xl border border-[#eadfcf] bg-white/70 p-2.5 sm:p-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <div className="truncate font-semibold text-[#171311]">{post.account_name ?? "Unknown account"}</div>
-                      <div className="mt-1 line-clamp-2 text-sm leading-5 text-[#665946]">{post.content_preview ?? "No content preview"}</div>
+                      <div className="truncate text-sm font-semibold text-[#171311]">{post.account_name ?? "Unknown account"}</div>
+                      <div className="mt-1 max-h-10 overflow-hidden text-xs leading-5 text-[#665946]">{post.content_preview ?? "No content preview"}</div>
                     </div>
                     <span
                       className="inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold"
