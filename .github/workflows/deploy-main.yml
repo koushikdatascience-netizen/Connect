@@ -80,24 +80,26 @@ jobs:
 
           restart_frontend_service() {
             echo "Restarting frontend from ~/Connect/frontend..."
-            pm2 delete socialsync-frontend >/dev/null 2>&1 || true
-            if command -v fuser >/dev/null 2>&1; then
-              fuser -k 3000/tcp >/dev/null 2>&1 || true
-            fi
             cd ~/Connect/frontend
             PORT=3000 pm2 start npm --name socialsync-frontend -- start
             cd ~/Connect
           }
 
+          stop_frontend_service() {
+            echo "Stopping existing frontend..."
+            pm2 delete socialsync-frontend >/dev/null 2>&1 || true
+            if command -v fuser >/dev/null 2>&1; then
+              fuser -k 3000/tcp >/dev/null 2>&1 || true
+            fi
+          }
+
           build_frontend_release() {
-            echo "Building frontend in isolated release directory..."
-            cd ~
-            rm -rf Connect_frontend_release
-            cp -R ~/Connect/frontend ~/Connect_frontend_release
-            cd ~/Connect_frontend_release
+            echo "Building frontend in live directory..."
+            stop_frontend_service
+            cd ~/Connect/frontend
 
             load_frontend_env
-            rm -rf .next
+            rm -rf .next .next_previous
             mkdir -p public
             printf '%s\n' "$CURRENT_COMMIT" > public/deploy-version.txt
             npm ci
@@ -107,15 +109,7 @@ jobs:
           }
 
           promote_frontend_release() {
-            echo "Promoting isolated frontend build..."
-            rm -rf ~/Connect/frontend/.next_previous
-            if [ -d ~/Connect/frontend/.next ]; then
-              mv ~/Connect/frontend/.next ~/Connect/frontend/.next_previous
-            fi
-            cp -R ~/Connect_frontend_release/.next ~/Connect/frontend/.next
-            mkdir -p ~/Connect/frontend/public
-            cp ~/Connect_frontend_release/public/deploy-version.txt ~/Connect/frontend/public/deploy-version.txt
-            rm -rf ~/Connect_frontend_release
+            echo "Frontend build is already in the live directory."
           }
 
           load_frontend_env() {
