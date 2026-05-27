@@ -17,6 +17,7 @@ jobs:
           SERVER_USER: ${{ secrets.SERVER_USER }}
           SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
           SERVER_PORT: ${{ secrets.SERVER_PORT }}
+          PUBLIC_FRONTEND_URL: ${{ secrets.PUBLIC_FRONTEND_URL }}
         run: |
           set -euo pipefail
 
@@ -27,6 +28,7 @@ jobs:
 
           SSH_PORT="${SERVER_PORT:-22}"
           TARGET_COMMIT="${GITHUB_SHA}"
+          PUBLIC_FRONTEND_URL="${PUBLIC_FRONTEND_URL:-https://connect.snapkey.in}"
 
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
@@ -230,3 +232,18 @@ jobs:
           echo "DEPLOY SUCCESS"
           echo "===================================="
           REMOTE_SCRIPT
+
+          echo "Checking public frontend at $PUBLIC_FRONTEND_URL..."
+          for i in $(seq 1 24); do
+            DEPLOYED_PUBLIC_COMMIT=$(curl -fsS "$PUBLIC_FRONTEND_URL/deploy-version.txt" || true)
+            if [ "$DEPLOYED_PUBLIC_COMMIT" = "$TARGET_COMMIT" ]; then
+              echo "Public frontend is serving $DEPLOYED_PUBLIC_COMMIT"
+              exit 0
+            fi
+            echo "Waiting for public frontend commit $TARGET_COMMIT... ($i/24, got: ${DEPLOYED_PUBLIC_COMMIT:-none})"
+            sleep 5
+          done
+
+          echo "Public frontend did not update to $TARGET_COMMIT."
+          echo "Check that SERVER_HOST points to the instance behind connect.snapkey.in, or configure PUBLIC_FRONTEND_URL if the domain changed."
+          exit 1
