@@ -34,12 +34,26 @@ jobs:
           chmod 700 ~/.ssh
           printf '%s\n' "$SERVER_SSH_KEY" > ~/.ssh/socialsync_deploy_key
           chmod 600 ~/.ssh/socialsync_deploy_key
+          ssh-keygen -y -f ~/.ssh/socialsync_deploy_key >/dev/null
+
+          echo "Testing SSH connection to $SERVER_USER@$SERVER_HOST:$SSH_PORT..."
+          ssh \
+            -i ~/.ssh/socialsync_deploy_key \
+            -p "$SSH_PORT" \
+            -o StrictHostKeyChecking=accept-new \
+            -o IdentitiesOnly=yes \
+            -o BatchMode=yes \
+            -o ConnectTimeout=20 \
+            "$SERVER_USER@$SERVER_HOST" \
+            'echo "SSH OK: $(hostname)"'
 
           ssh \
             -i ~/.ssh/socialsync_deploy_key \
             -p "$SSH_PORT" \
             -o StrictHostKeyChecking=accept-new \
             -o IdentitiesOnly=yes \
+            -o BatchMode=yes \
+            -o ConnectTimeout=20 \
             "$SERVER_USER@$SERVER_HOST" \
             "TARGET_COMMIT=$TARGET_COMMIT bash -s" <<'REMOTE_SCRIPT'
           set -e
