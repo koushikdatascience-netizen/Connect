@@ -230,4 +230,8 @@ jobs:
         env:
           NEXT_PUBLIC_API_BASE_URL: http://127.0.0.1:8000
           NEXT_PUBLIC_TENANT_ID: tenant_123
-        run: npm run build
+        run: |
+          rm -rf .next .next_previous
+          mkdir -p public
+          printf '%s\n' "${GITHUB_SHA}" > public/deploy-version.txt
+          npm run build
