@@ -69,6 +69,8 @@ async def jwt_context_middleware(request: Request, call_next):
         "/api/v1/auth/reset-password",
         "/api/v1/auth/approve-access",
         "/api/v1/auth/logout",
+        "/api/v1/auth/google/login",
+        "/api/v1/auth/google/callback",
     }
 
     public_paths = [

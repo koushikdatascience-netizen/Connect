@@ -1,9 +1,11 @@
 from datetime import datetime, timezone
 import json
 import secrets
+import uuid
 from typing import Any, Dict, List, Optional
 from urllib.parse import urlencode
 
+import requests
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, Field
@@ -192,6 +194,102 @@ def _admin_approval_redirect(message: str) -> RedirectResponse:
     )
 
 
+def _auth_google_state_key(nonce: str) -> str:
+    return f"connect_google_auth_state:{nonce}"
+
+
+def _safe_frontend_next(value: Optional[str]) -> str:
+    if not value or not value.startswith("/") or value.startswith("//"):
+        return "/"
+    return value
+
+
+def _google_auth_redirect(params: Dict[str, str]) -> RedirectResponse:
+    return RedirectResponse(
+        f"{settings.frontend_url}/login?{urlencode(params)}",
+        status_code=status.HTTP_303_SEE_OTHER,
+    )
+
+
+def _frontend_redirect_url(next_path: Optional[str]) -> str:
+    return f"{settings.frontend_url}{_safe_frontend_next(next_path)}"
+
+
+def _connect_google_authorization_url(nonce: str) -> str:
+    params = {
+        "client_id": settings.GOOGLE_CLIENT_ID,
+        "redirect_uri": settings.connect_google_redirect_uri,
+        "response_type": "code",
+        "scope": "openid email profile",
+        "state": nonce,
+        "access_type": "online",
+        "prompt": "select_account",
+    }
+    return "https://accounts.google.com/o/oauth2/v2/auth?{0}".format(urlencode(params))
+
+
+def _exchange_connect_google_code(code: str) -> dict:
+    response = requests.post(
+        "https://oauth2.googleapis.com/token",
+        data={
+            "code": code,
+            "client_id": settings.GOOGLE_CLIENT_ID,
+            "client_secret": settings.GOOGLE_SECRET,
+            "redirect_uri": settings.connect_google_redirect_uri,
+            "grant_type": "authorization_code",
+        },
+        timeout=20,
+    )
+    if response.status_code >= 400:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Google sign-in failed during token exchange.")
+    return response.json()
+
+
+def _fetch_connect_google_profile(access_token: str) -> dict:
+    response = requests.get(
+        "https://openidconnect.googleapis.com/v1/userinfo",
+        headers={"Authorization": f"Bearer {access_token}"},
+        timeout=20,
+    )
+    if response.status_code >= 400:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Google sign-in failed while loading profile.")
+    return response.json()
+
+
+def _get_or_create_google_user(db: Session, profile: dict) -> ConnectUser:
+    email = str(profile.get("email") or "").strip().lower()
+    email_verified = bool(profile.get("email_verified"))
+    if not email or not email_verified:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Google account email must be verified.")
+
+    user = get_user_by_email(db, email)
+    now = datetime.now(timezone.utc)
+    if user:
+        if not user.email_verified_at:
+            user.email_verified_at = now
+        user.updated_at = now
+        return user
+
+    user_id = str(uuid.uuid4())
+    user = ConnectUser(
+        id=user_id,
+        tenant_id=f"connect_{user_id}",
+        email=email,
+        phone="",
+        password_hash=hash_password(secrets.token_urlsafe(32)),
+        status="pending_review" if settings.CONNECT_REVIEW_REQUIRED else "active",
+        is_admin=False,
+        max_social_accounts=settings.CONNECT_DEFAULT_MAX_SOCIAL_ACCOUNTS,
+        max_monthly_posts=settings.CONNECT_DEFAULT_MAX_MONTHLY_POSTS,
+        email_verified_at=now,
+        created_at=now,
+        updated_at=now,
+    )
+    db.add(user)
+    db.flush()
+    return user
+
+
 def _webview_code_key(code: str) -> str:
     return f"webview_auth:{code}"
 
@@ -221,6 +319,78 @@ def _deserialize_webview_payload(raw: str) -> Dict[str, Any]:
             detail="Invalid webview auth payload",
         ) from exc
     return payload
+
+
+@router.get("/google/login")
+def google_auth_login(next: Optional[str] = Query(default="/")):
+    nonce = secrets.token_urlsafe(24)
+    payload = json.dumps({"next": _safe_frontend_next(next)})
+    try:
+        redis_client.setex(_auth_google_state_key(nonce), 600, payload)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Google sign-in is temporarily unavailable. Please try again.",
+        ) from exc
+
+    return RedirectResponse(
+        _connect_google_authorization_url(nonce),
+        status_code=status.HTTP_303_SEE_OTHER,
+    )
+
+
+@router.get("/google/callback")
+def google_auth_callback(
+    code: Optional[str] = Query(default=None),
+    state: Optional[str] = Query(default=None),
+    error: Optional[str] = Query(default=None),
+    db: Session = Depends(_db_session),
+):
+    if error:
+        return _google_auth_redirect({"google_auth": "error", "message": f"Google sign-in cancelled: {error}"})
+    if not code or not state:
+        return _google_auth_redirect({"google_auth": "error", "message": "Google sign-in did not return a valid code."})
+
+    try:
+        raw_state = redis_client.get(_auth_google_state_key(state))
+        redis_client.delete(_auth_google_state_key(state))
+    except Exception:
+        return _google_auth_redirect({"google_auth": "error", "message": "Google sign-in state could not be verified."})
+
+    if not raw_state:
+        return _google_auth_redirect({"google_auth": "error", "message": "Google sign-in state expired. Please try again."})
+
+    try:
+        state_payload = json.loads(raw_state)
+    except (TypeError, json.JSONDecodeError):
+        state_payload = {"next": "/"}
+
+    try:
+        tokens = _exchange_connect_google_code(code)
+        access_token = tokens.get("access_token")
+        if not access_token:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Google did not return an access token.")
+        profile = _fetch_connect_google_profile(access_token)
+        user = _get_or_create_google_user(db, profile)
+        if user.status == "blocked":
+            db.rollback()
+            return _google_auth_redirect({"google_auth": "error", "message": "This account is not available."})
+        db.commit()
+        db.refresh(user)
+    except HTTPException as exc:
+        db.rollback()
+        return _google_auth_redirect({"google_auth": "error", "message": str(exc.detail)})
+    except Exception:
+        db.rollback()
+        return _google_auth_redirect({"google_auth": "error", "message": "Google sign-in failed. Please try again."})
+
+    token = _create_user_token(user)
+    redirect = RedirectResponse(
+        _frontend_redirect_url(state_payload.get("next")),
+        status_code=status.HTTP_303_SEE_OTHER,
+    )
+    _set_session_cookie(redirect, token)
+    return redirect
 
 
 @router.get("/session", response_model=SessionRead)

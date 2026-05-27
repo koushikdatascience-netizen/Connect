@@ -37,6 +37,7 @@ class Settings(BaseSettings):
     INSTAGRAM_REDIRECT_URI: Optional[str] = None
     LINKEDIN_REDIRECT_URI: Optional[str] = None
     GOOGLE_REDIRECT_URI: Optional[str] = None
+    CONNECT_GOOGLE_REDIRECT_URI: Optional[str] = None
     BLOGGER_REDIRECT_URI: Optional[str] = None
     GOOGLE_BUSINESS_REDIRECT_URI: Optional[str] = None
     TWITTER_REDIRECT_URI: Optional[str] = None
@@ -119,6 +120,12 @@ class Settings(BaseSettings):
     def google_redirect_uri(self) -> str:
         return self.GOOGLE_REDIRECT_URI or (
             self.backend_public_url + self.API_V1_STR + "/oauth/google/callback"
+        )
+
+    @property
+    def connect_google_redirect_uri(self) -> str:
+        return self.CONNECT_GOOGLE_REDIRECT_URI or (
+            self.backend_public_url + self.API_V1_STR + "/auth/google/callback"
         )
 
     @property

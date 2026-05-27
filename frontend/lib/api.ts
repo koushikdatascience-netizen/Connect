@@ -87,16 +87,14 @@ export function getDemoBearerToken() {
 }
 
 export function getGoogleAuthUrl(nextPath = "/") {
-  if (!GOOGLE_AUTH_URL) {
-    return "";
-  }
+  const authUrl = GOOGLE_AUTH_URL || `${API_BASE_URL}/api/v1/auth/google/login`;
 
   try {
-    const url = new URL(GOOGLE_AUTH_URL);
+    const url = new URL(authUrl);
     url.searchParams.set("next", nextPath);
     return url.toString();
   } catch {
-    return GOOGLE_AUTH_URL;
+    return authUrl;
   }
 }
 
