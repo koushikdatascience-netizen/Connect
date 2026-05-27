@@ -62,12 +62,11 @@ jobs:
           }
 
           restart_frontend_service() {
-            echo "Reloading frontend..."
+            echo "Restarting frontend from ~/Connect/frontend..."
             if pm2 describe socialsync-frontend >/dev/null 2>&1; then
-              pm2 reload socialsync-frontend --update-env || pm2 restart socialsync-frontend --update-env
-            else
-              pm2 start npm --name socialsync-frontend --cwd ~/Connect/frontend -- start
+              pm2 delete socialsync-frontend
             fi
+            pm2 start npm --name socialsync-frontend --cwd ~/Connect/frontend -- start
           }
 
           build_frontend_release() {

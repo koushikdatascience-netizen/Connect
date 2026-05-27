@@ -15,7 +15,7 @@ const navigation = [
   { href: "/connections", label: "Manage Accounts", mobileLabel: "Accounts", icon: "spark" },
 ] as const;
 
-const adminNavigation = { href: "/admin/users", label: "Admin Users", icon: "admin" } as const;
+const adminNavigation = { href: "/admin/users", label: "Admin Users", mobileLabel: "Admin", icon: "admin" } as const;
 
 function LogoMark() {
   return (
