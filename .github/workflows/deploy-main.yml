@@ -64,10 +64,13 @@ jobs:
 
           restart_frontend_service() {
             echo "Restarting frontend from ~/Connect/frontend..."
-            if pm2 describe socialsync-frontend >/dev/null 2>&1; then
-              pm2 delete socialsync-frontend
+            pm2 delete socialsync-frontend >/dev/null 2>&1 || true
+            if command -v fuser >/dev/null 2>&1; then
+              fuser -k 3000/tcp >/dev/null 2>&1 || true
             fi
-            pm2 start npm --name socialsync-frontend --cwd ~/Connect/frontend -- start
+            cd ~/Connect/frontend
+            PORT=3000 pm2 start npm --name socialsync-frontend -- start
+            cd ~/Connect
           }
 
           build_frontend_release() {
@@ -79,6 +82,8 @@ jobs:
 
             load_frontend_env
             rm -rf .next
+            mkdir -p public
+            printf '%s\n' "$CURRENT_COMMIT" > public/deploy-version.txt
             npm ci
             npm run build
 
@@ -92,6 +97,8 @@ jobs:
               mv ~/Connect/frontend/.next ~/Connect/frontend/.next_previous
             fi
             cp -R ~/Connect_frontend_release/.next ~/Connect/frontend/.next
+            mkdir -p ~/Connect/frontend/public
+            cp ~/Connect_frontend_release/public/deploy-version.txt ~/Connect/frontend/public/deploy-version.txt
             rm -rf ~/Connect_frontend_release
           }
 
@@ -129,6 +136,7 @@ jobs:
           rollback_deploy() {
             echo "Rolling back to $PREV_COMMIT..."
             git reset --hard "$PREV_COMMIT"
+            CURRENT_COMMIT=$(git rev-parse HEAD)
 
             echo "Restoring backend containers..."
             restart_backend_services
@@ -204,6 +212,13 @@ jobs:
           echo "Running health checks..."
           if ! curl -fsS http://127.0.0.1:3000 > /dev/null; then
             echo "Frontend failed!"
+            rollback_deploy
+            exit 1
+          fi
+
+          DEPLOYED_COMMIT=$(curl -fsS http://127.0.0.1:3000/deploy-version.txt || true)
+          if [ "$DEPLOYED_COMMIT" != "$CURRENT_COMMIT" ]; then
+            echo "Frontend commit mismatch. Expected $CURRENT_COMMIT but frontend served $DEPLOYED_COMMIT"
             rollback_deploy
             exit 1
           fi
