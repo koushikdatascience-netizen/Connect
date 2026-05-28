@@ -780,8 +780,8 @@ export function CreatePostStudio() {
       />
 
       {/* POST BUTTON BAR */}
-      <div className="order-last flex shrink-0 flex-col gap-3 border-t border-[#eadfcb] bg-[#fffef9] px-4 py-3 shadow-[0_-4px_18px_rgba(180,144,34,0.08)] sm:flex-row sm:items-center sm:justify-between sm:px-5">
-        <div className="min-w-0 text-xs text-[#9b7b3f]">
+      <div className="order-2 flex shrink-0 flex-col gap-2.5 border-t border-[#eadfcb] bg-[#fffef9] px-3 py-2.5 shadow-[0_-4px_18px_rgba(180,144,34,0.08)] sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-3">
+        <div className="min-w-0 text-[11px] leading-4 text-[#9b7b3f] sm:text-xs">
           {blockingValidationItems.length > 0
             ? `${blockingValidationItems.length} platform requirement${
                 blockingValidationItems.length === 1 ? "" : "s"
@@ -831,24 +831,24 @@ export function CreatePostStudio() {
       </div>
 
       {isPendingApproval ? (
-        <div className="shrink-0 overflow-y-auto border-t border-[#f1dacd] bg-[#fff8f2] px-4 py-3 sm:px-5 sm:py-4">
-          <div className="rounded-2xl border border-[#f0d2ca] bg-white px-4 py-3 text-sm text-[#7c3f36]">
+        <div className="order-3 max-h-[18dvh] shrink-0 overflow-y-auto border-t border-[#f1dacd] bg-[#fff8f2] px-3 py-2 sm:max-h-none sm:px-5 sm:py-4">
+          <div className="rounded-xl border border-[#f0d2ca] bg-white px-3 py-2 text-xs leading-5 text-[#7c3f36] sm:rounded-2xl sm:px-4 sm:py-3 sm:text-sm">
             <span className="font-semibold text-[#5b271f]">Publishing locked:</span> Approval is required before connecting accounts or publishing.
           </div>
         </div>
       ) : blockingValidationItems.length > 0 && (
-        <div className="max-h-[26dvh] shrink-0 overflow-y-auto border-t border-[#f1dacd] bg-[#fff8f2] px-4 py-3 sm:max-h-none sm:px-5 sm:py-4">
-          <div className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#b25a4f]">
+        <div className="order-3 max-h-[18dvh] shrink-0 overflow-y-auto border-t border-[#f1dacd] bg-[#fff8f2] px-3 py-2 sm:max-h-none sm:px-5 sm:py-4">
+          <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#b25a4f] sm:mb-2 sm:text-xs sm:tracking-[0.2em]">
             Fix Before Publishing
           </div>
-          <div className="grid gap-2">
+          <div className="grid gap-1.5 sm:gap-2">
             {blockingValidationItems.map((item) => (
               <div
                 key={item.platform}
-                className="rounded-2xl border border-[#f0d2ca] bg-white px-4 py-3 text-sm text-[#7c3f36]"
+                className="rounded-xl border border-[#f0d2ca] bg-white px-3 py-2 text-xs leading-5 text-[#7c3f36] sm:rounded-2xl sm:px-4 sm:py-3 sm:text-sm"
               >
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+                  <div className="min-w-0 break-words">
                     <span className="font-semibold text-[#5b271f]">{item.label}:</span>{" "}
                     {item.message}
                   </div>
@@ -856,7 +856,7 @@ export function CreatePostStudio() {
                     <button
                       type="button"
                       onClick={() => jumpToValidationFix(item)}
-                      className="shrink-0 rounded-full border border-[#f0d2ca] bg-[#fff8f2] px-3 py-1.5 text-xs font-semibold text-[#9f4035] transition-colors hover:bg-[#fff1ea]"
+                      className="shrink-0 rounded-full border border-[#f0d2ca] bg-[#fff8f2] px-3 py-1.5 text-xs font-semibold text-[#9f4035] transition-colors hover:bg-[#fff1ea] sm:w-auto"
                     >
                       {item.fixTarget.actionLabel}
                     </button>
