@@ -6,17 +6,15 @@ import { PlatformLogo } from "@/components/platform-logo";
 import { SidebarPlatform } from "@/components/create-post/types";
 import { PLATFORM_META } from "@/components/create-post/constants";
 
-/* 🎨 PLATFORM STYLES */
 const platformStyles: Record<string, string> = {
-  facebook: "from-[#1877F2]/20 to-[#1877F2]/5 border-[#1877F2]/30",
-  instagram:
-    "from-pink-500/20 via-purple-500/10 to-yellow-500/10 border-pink-400/30",
-  linkedin: "from-[#0A66C2]/20 to-[#0A66C2]/5 border-[#0A66C2]/30",
-  twitter: "from-black/10 to-black/5 border-black/20",
-  youtube: "from-red-500/20 to-red-400/10 border-red-400/30",
-  blogger: "from-orange-500/20 to-orange-400/10 border-orange-400/30",
-  google_business: "from-green-500/20 to-green-400/10 border-green-400/30",
-  wordpress: "from-sky-500/20 to-sky-400/10 border-sky-400/30",
+  facebook: "from-[#1877F2]/16 to-[#1877F2]/5 border-[#1877F2]/25",
+  instagram: "from-pink-500/16 via-purple-500/8 to-yellow-500/8 border-pink-400/25",
+  linkedin: "from-[#0A66C2]/16 to-[#0A66C2]/5 border-[#0A66C2]/25",
+  twitter: "from-black/8 to-black/5 border-black/15",
+  youtube: "from-red-500/16 to-red-400/8 border-red-400/25",
+  blogger: "from-orange-500/16 to-orange-400/8 border-orange-400/25",
+  google_business: "from-green-500/16 to-green-400/8 border-green-400/25",
+  wordpress: "from-sky-500/16 to-sky-400/8 border-sky-400/25",
 };
 
 type Props = {
@@ -35,7 +33,6 @@ export function PlatformSelector({
   onManageAccounts,
 }: Props) {
   const hasAccounts = platform.accounts.length > 0;
-
   const selectedCount = platform.selectedAccountIds.length;
   const allSelected =
     hasAccounts && selectedCount === platform.accounts.length;
@@ -43,12 +40,12 @@ export function PlatformSelector({
   const [expanded, setExpanded] = useState(platform.selected);
 
   useEffect(() => {
-    if (platform.selected) setExpanded(true);
+    if (platform.selected) {
+      setExpanded(true);
+    }
   }, [platform.selected]);
 
   const style = platformStyles[platform.id] || "";
-
-  // FIX: use the human-readable label from PLATFORM_META instead of raw id
   const platformLabel = PLATFORM_META[platform.id]?.label ?? platform.id;
 
   return (
@@ -58,51 +55,42 @@ export function PlatformSelector({
       animate={{ opacity: 1, y: 0 }}
       className="rounded-xl transition-all duration-200"
     >
-      {/* PLATFORM ROW */}
       <motion.div
-        whileHover={{ scale: 1.01 }}
-        whileTap={{ scale: 0.98 }}
+        whileHover={{ scale: 1.005 }}
+        whileTap={{ scale: 0.99 }}
         onClick={() => hasAccounts && onPlatformToggle(!platform.selected)}
-        className={`
-          relative flex items-center gap-3
-          rounded-xl border p-3 transition-all duration-200
-          ${
-            platform.selected
-              ? `bg-gradient-to-r ${style} shadow-md`
-              : hasAccounts
-              ? "cursor-pointer bg-white/60 hover:bg-white/90 border-[#eee3d0]"
-              : "cursor-not-allowed bg-[#f8f5ef] border-[#eee3d0] opacity-85"
-          }
-        `}
+        className={`relative flex items-center gap-2.5 rounded-xl border px-2.5 py-2 transition-all duration-200 ${
+          platform.selected
+            ? `bg-gradient-to-r ${style} shadow-sm`
+            : hasAccounts
+              ? "cursor-pointer border-[#eee3d0] bg-white/70 hover:bg-white"
+              : "cursor-not-allowed border-[#eee3d0] bg-[#f8f5ef] opacity-85"
+        }`}
       >
-        {/* LEFT ACTIVE BAR */}
-        {platform.selected && (
-          <div className="absolute left-0 top-0 h-full w-[3px] bg-gradient-to-b from-[#d4a94f] to-[#b8923a] rounded-l-md" />
-        )}
+        {platform.selected ? (
+          <div className="absolute left-0 top-1/2 h-7 w-[3px] -translate-y-1/2 rounded-r-full bg-gradient-to-b from-[#d4a94f] to-[#b8923a]" />
+        ) : null}
 
-        {/* CHECKBOX */}
         <input
           type="checkbox"
           checked={platform.selected}
           disabled={!hasAccounts}
-          onChange={(e) => {
+          onChange={(event) => {
             if (hasAccounts) {
-              onPlatformToggle(e.target.checked);
+              onPlatformToggle(event.target.checked);
             }
           }}
-          onClick={(e) => e.stopPropagation()}
+          onClick={(event) => event.stopPropagation()}
           aria-label={`Select ${platformLabel}`}
-          className="h-4 w-4 accent-[#d4a94f] disabled:cursor-not-allowed"
+          className="h-4 w-4 shrink-0 accent-[#d4a94f] disabled:cursor-not-allowed"
         />
 
-        {/* ICON */}
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white shadow-sm">
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white shadow-sm">
           <PlatformLogo platform={platform.id} className="h-4 w-4" />
         </div>
 
-        {/* NAME — FIX: use label, not raw id */}
         <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-medium text-[#2a2116]">
+          <div className="truncate text-[13px] font-semibold text-[#2a2116]">
             {platformLabel}
           </div>
           {!hasAccounts ? (
@@ -112,34 +100,32 @@ export function PlatformSelector({
           ) : null}
         </div>
 
-        {/* COUNT */}
-        {selectedCount > 0 && (
-          <span className="rounded-full bg-black/5 px-2 py-[2px] text-[10px]">
+        {selectedCount > 0 ? (
+          <span className="rounded-full bg-black/5 px-2 py-[2px] text-[10px] font-semibold text-[#5f513b]">
             {selectedCount}
           </span>
-        )}
+        ) : null}
 
-        {/* EXPAND */}
-        {hasAccounts && (
+        {hasAccounts ? (
           <button
             type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setExpanded((v) => !v);
+            onClick={(event) => {
+              event.stopPropagation();
+              setExpanded((value) => !value);
             }}
             aria-label={expanded ? `Collapse ${platformLabel}` : `Expand ${platformLabel}`}
-            className="text-xs text-gray-500 hover:text-black"
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-gray-500 transition-colors hover:bg-black/5 hover:text-black"
           >
-            {expanded ? "−" : "+"}
+            {expanded ? "-" : "+"}
           </button>
-        )}
+        ) : null}
       </motion.div>
 
       {!hasAccounts ? (
-        <div className="mt-2 rounded-xl border border-dashed border-[#eadfcb] bg-[#fffaf0] px-3 py-2">
+        <div className="mt-1.5 rounded-xl border border-dashed border-[#eadfcb] bg-[#fffaf0] px-3 py-2">
           <div className="flex items-center justify-between gap-3">
             <p className="min-w-0 text-[11px] leading-4 text-[#7a6f5c]">
-              Connect {platformLabel} before selecting it for this post.
+              Connect {platformLabel} before selecting it.
             </p>
             <button
               type="button"
@@ -152,89 +138,79 @@ export function PlatformSelector({
         </div>
       ) : null}
 
-      {/* ACCOUNTS LIST */}
       <AnimatePresence>
-        {expanded && hasAccounts && (
+        {expanded && hasAccounts ? (
           <motion.div
             key="accounts"
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25 }}
+            transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="mt-2 space-y-1 px-2 pb-2">
-
-              {/* SELECT ALL */}
-              {platform.accounts.length > 1 && (
-                <div className="flex justify-between px-1 text-[10px] text-gray-400">
+            <div className="mt-1.5 space-y-1 rounded-xl border border-[#f0e6d5] bg-[#fffdf8] px-1.5 py-1.5">
+              {platform.accounts.length > 1 ? (
+                <div className="flex justify-between px-1 text-[10px] font-medium text-[#9d917d]">
                   <span>
                     {selectedCount}/{platform.accounts.length}
                   </span>
                   <button
                     type="button"
                     onClick={() => onSelectAllAccounts(!allSelected)}
-                    className="hover:text-black"
+                    className="font-semibold text-[#8a6a18] hover:text-black"
                   >
                     {allSelected ? "Clear" : "All"}
                   </button>
                 </div>
-              )}
+              ) : null}
 
-              {/* ACCOUNTS */}
-              {platform.accounts.map((acc) => {
-                const checked =
-                  platform.selectedAccountIds.includes(acc.id);
+              {platform.accounts.map((account) => {
+                const checked = platform.selectedAccountIds.includes(account.id);
 
                 return (
                   <motion.label
-                    key={acc.id}
+                    key={account.id}
                     layout
-                    whileHover={{ scale: 1.02 }}
-                    className={`
-                      flex items-center gap-2 cursor-pointer rounded-lg px-2 py-2
-                      transition-all duration-200
-                      ${
-                        checked
-                          ? "bg-[#fff9ef] border border-[#d4a94f]/30 shadow-sm"
-                          : "hover:bg-[#f7f3ec]"
-                      }
-                    `}
+                    whileHover={{ x: 1 }}
+                    className={`flex cursor-pointer items-center gap-2 rounded-lg border px-2 py-1.5 transition-all duration-200 ${
+                      checked
+                        ? "border-[#d4a94f]/35 bg-[#fff9ef] shadow-sm"
+                        : "border-transparent hover:border-[#eee3d0] hover:bg-[#f7f3ec]"
+                    }`}
                   >
                     <input
                       type="checkbox"
                       checked={checked}
-                      onChange={(e) =>
-                        onAccountToggle(acc.id, e.target.checked)
+                      onChange={(event) =>
+                        onAccountToggle(account.id, event.target.checked)
                       }
-                      className="h-3.5 w-3.5 accent-[#d4a94f]"
+                      className="h-3.5 w-3.5 shrink-0 accent-[#d4a94f]"
                     />
 
-                    {/* FIX: fallback avatar when profile_picture_url is null */}
-                    {acc.profile_picture_url ? (
+                    {account.profile_picture_url ? (
                       <img
-                        src={acc.profile_picture_url}
-                        alt={acc.account_name}
-                        className="h-6 w-6 rounded-full object-cover flex-shrink-0"
+                        src={account.profile_picture_url}
+                        alt={account.account_name}
+                        className="h-5 w-5 flex-shrink-0 rounded-full object-cover"
                       />
                     ) : (
                       <div
                         aria-hidden="true"
-                        className="h-6 w-6 rounded-full bg-[#e8dfc8] flex items-center justify-center flex-shrink-0 text-[10px] font-semibold text-[#9b7b3f]"
+                        className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-[#e8dfc8] text-[10px] font-semibold text-[#9b7b3f]"
                       >
-                        {acc.account_name.charAt(0).toUpperCase()}
+                        {account.account_name.charAt(0).toUpperCase()}
                       </div>
                     )}
 
-                    <span className="text-xs truncate text-[#2a2116]">
-                      {acc.account_name}
+                    <span className="truncate text-xs font-medium text-[#2a2116]">
+                      {account.account_name}
                     </span>
                   </motion.label>
                 );
               })}
             </div>
           </motion.div>
-        )}
+        ) : null}
       </AnimatePresence>
     </motion.div>
   );
