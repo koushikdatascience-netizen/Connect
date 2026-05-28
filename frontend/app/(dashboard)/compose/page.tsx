@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 
 export default function ComposeDashboardPage() {
   return (
-    <div className="relative min-h-screen w-full bg-gradient-to-br from-[#f8f4ec] via-[#f3eadc] to-[#efe4d2]">
+    <div className="relative flex h-[calc(100dvh_-_9.25rem_-_env(safe-area-inset-bottom))] min-h-0 w-full bg-gradient-to-br from-[#f8f4ec] via-[#f3eadc] to-[#efe4d2] sm:h-[calc(100dvh_-_11rem_-_env(safe-area-inset-bottom))] lg:h-[calc(100dvh_-_2.5rem)] lg:min-h-[720px]">
 
       {/* subtle glow background */}
       <div className="pointer-events-none absolute inset-0">
@@ -13,7 +13,7 @@ export default function ComposeDashboardPage() {
         <div className="absolute bottom-[-100px] right-1/4 h-[300px] w-[300px] rounded-full bg-[#c9a45a]/10 blur-[120px]" />
       </div>
 
-      <div className="relative mx-auto flex min-h-screen w-full max-w-[1400px] flex-col px-0 py-0 sm:px-4 sm:py-4">
+      <div className="relative mx-auto flex min-h-0 w-full max-w-[1400px] flex-1 flex-col px-0 py-0 sm:px-4 sm:py-4">
         {/* main container animation */}
         <motion.div
           initial={{ opacity: 0, y: 8 }}

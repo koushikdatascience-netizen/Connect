@@ -43,6 +43,7 @@ export function AppShellUx({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { isPendingApproval, session } = useSessionState();
+  const isComposePage = pathname === "/compose" || pathname?.startsWith("/compose/");
   const visibleNavigation = useMemo(
     () => (session?.is_admin ? [...navigation, adminNavigation] : [...navigation]),
     [session?.is_admin],
@@ -131,7 +132,7 @@ export function AppShellUx({ children }: { children: ReactNode }) {
           <div className="min-w-0 flex-1">
           <PendingApprovalBanner />
           {children}
-          <ConnectComplianceFooter />
+          {!isComposePage ? <ConnectComplianceFooter /> : null}
         </div>
       </div>
 
