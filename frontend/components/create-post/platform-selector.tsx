@@ -59,7 +59,7 @@ export function PlatformSelector({
         whileHover={{ scale: 1.005 }}
         whileTap={{ scale: 0.99 }}
         onClick={() => hasAccounts && onPlatformToggle(!platform.selected)}
-        className={`relative flex items-center gap-2.5 rounded-xl border px-2.5 py-2 transition-all duration-200 ${
+        className={`relative flex items-center gap-2 rounded-lg border px-2 py-1.5 transition-all duration-200 ${
           platform.selected
             ? `bg-gradient-to-r ${style} shadow-sm`
             : hasAccounts
@@ -68,7 +68,7 @@ export function PlatformSelector({
         }`}
       >
         {platform.selected ? (
-          <div className="absolute left-0 top-1/2 h-7 w-[3px] -translate-y-1/2 rounded-r-full bg-gradient-to-b from-[#d4a94f] to-[#b8923a]" />
+          <div className="absolute left-0 top-1/2 h-6 w-[3px] -translate-y-1/2 rounded-r-full bg-gradient-to-b from-[#d4a94f] to-[#b8923a]" />
         ) : null}
 
         <input
@@ -82,19 +82,19 @@ export function PlatformSelector({
           }}
           onClick={(event) => event.stopPropagation()}
           aria-label={`Select ${platformLabel}`}
-          className="h-4 w-4 shrink-0 accent-[#d4a94f] disabled:cursor-not-allowed"
+          className="h-3.5 w-3.5 shrink-0 accent-[#d4a94f] disabled:cursor-not-allowed"
         />
 
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white shadow-sm">
-          <PlatformLogo platform={platform.id} className="h-4 w-4" />
+        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white shadow-sm">
+          <PlatformLogo platform={platform.id} className="h-3.5 w-3.5" />
         </div>
 
         <div className="min-w-0 flex-1">
-          <div className="truncate text-[13px] font-semibold text-[#2a2116]">
+          <div className="truncate text-xs font-semibold text-[#2a2116]">
             {platformLabel}
           </div>
           {!hasAccounts ? (
-            <div className="truncate text-[10px] font-medium text-[#9d6b2f]">
+            <div className="truncate text-[9px] font-medium leading-3 text-[#9d6b2f]">
               No account connected
             </div>
           ) : null}
@@ -114,29 +114,23 @@ export function PlatformSelector({
               setExpanded((value) => !value);
             }}
             aria-label={expanded ? `Collapse ${platformLabel}` : `Expand ${platformLabel}`}
-            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-gray-500 transition-colors hover:bg-black/5 hover:text-black"
+            className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-gray-500 transition-colors hover:bg-black/5 hover:text-black"
           >
             {expanded ? "-" : "+"}
           </button>
-        ) : null}
+        ) : (
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              onManageAccounts();
+            }}
+            className="shrink-0 rounded-md border border-[#d4a94f]/35 bg-white px-2 py-1 text-[9px] font-semibold text-[#7a5716] transition-colors hover:bg-[#fff3ce]"
+          >
+            Connect
+          </button>
+        )}
       </motion.div>
-
-      {!hasAccounts ? (
-        <div className="mt-1.5 rounded-xl border border-dashed border-[#eadfcb] bg-[#fffaf0] px-3 py-2">
-          <div className="flex items-center justify-between gap-3">
-            <p className="min-w-0 text-[11px] leading-4 text-[#7a6f5c]">
-              Connect {platformLabel} before selecting it.
-            </p>
-            <button
-              type="button"
-              onClick={onManageAccounts}
-              className="shrink-0 rounded-lg border border-[#d4a94f]/35 bg-white px-2.5 py-1.5 text-[10px] font-semibold text-[#7a5716] transition-colors hover:bg-[#fff3ce]"
-            >
-              Connect
-            </button>
-          </div>
-        </div>
-      ) : null}
 
       <AnimatePresence>
         {expanded && hasAccounts ? (
@@ -148,7 +142,7 @@ export function PlatformSelector({
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="mt-1.5 space-y-1 rounded-xl border border-[#f0e6d5] bg-[#fffdf8] px-1.5 py-1.5">
+            <div className="mt-1 space-y-1 rounded-lg border border-[#f0e6d5] bg-[#fffdf8] px-1.5 py-1.5">
               {platform.accounts.length > 1 ? (
                 <div className="flex justify-between px-1 text-[10px] font-medium text-[#9d917d]">
                   <span>
@@ -172,7 +166,7 @@ export function PlatformSelector({
                     key={account.id}
                     layout
                     whileHover={{ x: 1 }}
-                    className={`flex cursor-pointer items-center gap-2 rounded-lg border px-2 py-1.5 transition-all duration-200 ${
+                    className={`flex cursor-pointer items-center gap-2 rounded-md border px-2 py-1 transition-all duration-200 ${
                       checked
                         ? "border-[#d4a94f]/35 bg-[#fff9ef] shadow-sm"
                         : "border-transparent hover:border-[#eee3d0] hover:bg-[#f7f3ec]"
@@ -184,19 +178,19 @@ export function PlatformSelector({
                       onChange={(event) =>
                         onAccountToggle(account.id, event.target.checked)
                       }
-                      className="h-3.5 w-3.5 shrink-0 accent-[#d4a94f]"
+                      className="h-3 w-3 shrink-0 accent-[#d4a94f]"
                     />
 
                     {account.profile_picture_url ? (
                       <img
                         src={account.profile_picture_url}
                         alt={account.account_name}
-                        className="h-5 w-5 flex-shrink-0 rounded-full object-cover"
+                        className="h-[18px] w-[18px] flex-shrink-0 rounded-full object-cover"
                       />
                     ) : (
                       <div
                         aria-hidden="true"
-                        className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-[#e8dfc8] text-[10px] font-semibold text-[#9b7b3f]"
+                        className="flex h-[18px] w-[18px] flex-shrink-0 items-center justify-center rounded-full bg-[#e8dfc8] text-[9px] font-semibold text-[#9b7b3f]"
                       >
                         {account.account_name.charAt(0).toUpperCase()}
                       </div>

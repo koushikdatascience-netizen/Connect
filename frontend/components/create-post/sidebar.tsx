@@ -58,10 +58,10 @@ export function Sidebar({
     totalSelectedAccounts === totalAccounts && totalAccounts > 0;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3 p-3">
-      <div className="rounded-2xl border border-[#eadfcb] bg-white/85 p-3 shadow-sm backdrop-blur">
-        <div className="mb-2 flex items-center justify-between gap-3">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-[#9b7b3f]">
+    <div className="flex min-h-0 flex-1 flex-col gap-2.5 p-2.5 md:gap-2 md:p-2">
+      <div className="rounded-xl border border-[#eadfcb] bg-white/80 p-2.5 shadow-sm backdrop-blur md:p-2">
+        <div className="mb-2 flex items-center justify-between gap-2 md:mb-1.5">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-[#9b7b3f]">
             Account Groups
           </p>
           {accountGroups.length > 0 ? (
@@ -72,7 +72,7 @@ export function Sidebar({
         </div>
 
         {accountGroups.length > 0 ? (
-          <div className="mb-3 flex gap-2 overflow-x-auto pb-1">
+          <div className="mb-2 flex gap-2 overflow-x-auto pb-1">
             {accountGroups.map((group) => (
               <motion.div
                 key={group.id}
@@ -82,9 +82,9 @@ export function Sidebar({
                 <button
                   type="button"
                   onClick={() => onApplyGroup(group.id)}
-                  className="min-w-0 px-3 py-1.5 text-left"
+                  className="min-w-0 px-2.5 py-1 text-left"
                 >
-                  <span className="block max-w-[130px] truncate text-xs font-semibold text-[#2a2116]">
+                  <span className="block max-w-[130px] truncate text-[11px] font-semibold text-[#2a2116]">
                     {group.name}
                   </span>
                   <span className="block text-[10px] leading-none text-[#9d917d]">
@@ -103,7 +103,7 @@ export function Sidebar({
             ))}
           </div>
         ) : (
-          <p className="mb-3 text-xs leading-5 text-[#7a6f5c]">
+          <p className="mb-2 text-[11px] leading-4 text-[#7a6f5c] md:hidden">
             Save frequent account sets here for faster publishing.
           </p>
         )}
@@ -113,7 +113,7 @@ export function Sidebar({
             value={groupName}
             onChange={(event) => onGroupNameChange(event.target.value)}
             placeholder="New group name"
-            className="h-9 min-w-0 flex-1 rounded-xl border border-[#eee3d0] bg-white/80 px-3 text-xs text-[#2a2116] focus:border-[#d4a94f] focus:ring-2 focus:ring-[#d4a94f]/30"
+            className="h-8 min-w-0 flex-1 rounded-lg border border-[#eee3d0] bg-white/80 px-2.5 text-[11px] text-[#2a2116] focus:border-[#d4a94f] focus:ring-2 focus:ring-[#d4a94f]/30"
           />
           <motion.button
             whileHover={{ scale: 1.03 }}
@@ -121,20 +121,20 @@ export function Sidebar({
             type="button"
             onClick={onSaveGroup}
             disabled={!groupName.trim()}
-            className="rounded-xl bg-[#212121] px-3 text-xs font-semibold uppercase text-white shadow-sm transition-colors hover:bg-[#333] disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-lg bg-[#212121] px-2.5 text-[10px] font-semibold uppercase text-white shadow-sm transition-colors hover:bg-[#333] disabled:cursor-not-allowed disabled:opacity-40"
           >
             Save
           </motion.button>
         </div>
       </div>
 
-      <div className="rounded-2xl border border-[#eadfcb] bg-white/80 p-3 shadow-sm backdrop-blur">
-        <div className="mb-3 flex items-start justify-between gap-3">
+      <div className="rounded-xl border border-[#eadfcb] bg-white/80 p-2.5 shadow-sm backdrop-blur md:p-2">
+        <div className="mb-2 flex items-start justify-between gap-2">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-[#9b7b3f]">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-[#9b7b3f]">
               Platforms & Accounts
             </p>
-            <p className="text-[12px] text-[#7a6f5c]">
+            <p className="text-[11px] text-[#7a6f5c]">
               Select accounts to publish
             </p>
           </div>
@@ -144,7 +144,7 @@ export function Sidebar({
             whileTap={{ scale: 0.97 }}
             onClick={() => onSelectAll(!allSelected)}
             disabled={totalAccounts === 0}
-            className="rounded-full bg-gradient-to-r from-[#1f170c] to-[#3a2b10] px-3 py-1 text-[10px] font-semibold text-[#f6d48f] shadow-sm disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-full bg-gradient-to-r from-[#1f170c] to-[#3a2b10] px-2.5 py-1 text-[10px] font-semibold text-[#f6d48f] shadow-sm disabled:cursor-not-allowed disabled:opacity-40"
           >
             {allSelected ? "Clear" : "All"}
           </motion.button>
@@ -168,7 +168,7 @@ export function Sidebar({
           </div>
         ) : null}
 
-        <div className="space-y-1.5">
+        <div className="space-y-1">
           {platforms.map((platform) => (
             <PlatformSelector
               key={platform.id}
