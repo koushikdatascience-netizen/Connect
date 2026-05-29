@@ -733,18 +733,6 @@ export function PlatformSettings({
           </div>
         </div>
 
-        {/* SCHEDULE — shared */}
-        <Section title="Schedule">
-          <Field label="Publish time" hint="Leave blank to publish immediately after creating.">
-            <input
-              type="datetime-local"
-              value={formatDateTimeLocal(config.schedule)}
-              onChange={(e) => handleChange("schedule", e.target.value)}
-              className={inputCls}
-            />
-          </Field>
-        </Section>
-
         {/* PLATFORM-SPECIFIC */}
         {activeTab === "facebook" && <FacebookSettings config={config} onChange={handleChange} />}
         {activeTab === "instagram" && <InstagramSettings config={config} highlightedFixTargetId={highlightedFixTargetId} onChange={handleChange} />}

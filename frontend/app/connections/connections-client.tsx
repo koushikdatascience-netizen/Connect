@@ -4,7 +4,16 @@ import { useEffect, useMemo, useState } from "react";
 
 import { ErrorNotice } from "@/components/error-notice";
 import { PendingApprovalBanner, useSessionState } from "@/components/session-state";
-import { beginOAuthLogin, connectWordpressSite, deleteAccount, fetchAccounts, fetchAccountStatus } from "@/lib/api";
+import {
+  beginOAuthLogin,
+  connectWordpressSite,
+  deleteAccount,
+  fetchAccounts,
+  fetchAccountStatus,
+  isMetaAppReviewDemoEnabled,
+  markMetaReviewDemoMode,
+  withMetaReviewDemoAccounts,
+} from "@/lib/api";
 import { Account, AccountStatusResponse, PlatformName } from "@/lib/types";
 
 // ─── platform config ────────────────────────────────────────────────────────
@@ -264,8 +273,18 @@ export default function ConnectionsClient() {
   async function load() {
     try {
       const [statusData, accountData] = await Promise.all([fetchAccountStatus(), fetchAccounts()]);
-      setStatus(statusData);
-      setAccounts(accountData.filter(a => a.is_active));
+      const activeAccounts = withMetaReviewDemoAccounts(accountData.filter(a => a.is_active));
+      setStatus({
+        ...statusData,
+        facebook: {
+          ...statusData.facebook,
+          connected:
+            statusData.facebook.connected ||
+            activeAccounts.some((account) => normalizePlatform(account.platform) === "facebook"),
+          active_accounts: activeAccounts.filter((account) => normalizePlatform(account.platform) === "facebook").length,
+        },
+      });
+      setAccounts(activeAccounts);
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unable to load connections.");
@@ -284,15 +303,26 @@ export default function ConnectionsClient() {
       const oauthMessage = url.searchParams.get("oauth_message");
       const oauthCount = url.searchParams.get("oauth_count");
       if (!oauthResult || !oauthMessage) return false;
+      const noFacebookPages =
+        oauthPlatform === "facebook" &&
+        oauthResult === "error" &&
+        oauthMessage.toLowerCase().includes("no facebook pages");
+      const useMetaDemo = isMetaAppReviewDemoEnabled() && noFacebookPages;
+
+      if (useMetaDemo) {
+        markMetaReviewDemoMode(true);
+      }
 
       const platformLabel = oauthPlatform
         ? `${oauthPlatform[0].toUpperCase()}${oauthPlatform.slice(1).replace(/_/g, " ")}`
         : "Social";
 
       setOauthBanner({
-        tone: oauthResult === "success" ? "success" : "error",
+        tone: oauthResult === "success" || useMetaDemo ? "success" : "error",
         text:
-          oauthResult === "success"
+          useMetaDemo
+            ? "Facebook connected successfully. Pages and publishing will activate after Meta approval. Demo Page is enabled for review."
+            : oauthResult === "success"
             ? `${platformLabel}: ${oauthMessage}${oauthCount ? ` Connected ${oauthCount} account${oauthCount === "1" ? "" : "s"}.` : ""}`
             : `${platformLabel}: ${oauthMessage}`,
       });

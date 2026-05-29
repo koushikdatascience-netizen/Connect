@@ -21,6 +21,10 @@ const TOKEN_STORAGE_KEY =
 const DEMO_BEARER_TOKEN = process.env.NEXT_PUBLIC_DEBUG_BEARER_TOKEN ?? "";
 const GOOGLE_AUTH_URL = process.env.NEXT_PUBLIC_GOOGLE_AUTH_URL ?? "";
 const TENANT_CLAIMS = ["TenantId", "tenant_id"];
+const META_APP_REVIEW_DEMO =
+  process.env.NEXT_PUBLIC_META_APP_REVIEW_DEMO === "true";
+const META_REVIEW_DEMO_STORAGE_KEY = "snapkey_meta_review_demo";
+export const META_REVIEW_DEMO_FACEBOOK_ACCOUNT_ID = -1001;
 
 function readJwtClaim(token: string, claim: string) {
   try {
@@ -84,6 +88,57 @@ export function clearStoredAuthToken() {
 
 export function getDemoBearerToken() {
   return DEMO_BEARER_TOKEN;
+}
+
+export function isMetaAppReviewDemoEnabled() {
+  return META_APP_REVIEW_DEMO;
+}
+
+export function markMetaReviewDemoMode(enabled = true) {
+  if (typeof window === "undefined" || !META_APP_REVIEW_DEMO) {
+    return;
+  }
+  if (enabled) {
+    window.sessionStorage.setItem(META_REVIEW_DEMO_STORAGE_KEY, "facebook");
+  } else {
+    window.sessionStorage.removeItem(META_REVIEW_DEMO_STORAGE_KEY);
+  }
+}
+
+export function isMetaReviewDemoMode() {
+  if (typeof window === "undefined" || !META_APP_REVIEW_DEMO) {
+    return false;
+  }
+  return window.sessionStorage.getItem(META_REVIEW_DEMO_STORAGE_KEY) === "facebook";
+}
+
+export function getMetaReviewDemoFacebookAccount(): Account {
+  return {
+    id: META_REVIEW_DEMO_FACEBOOK_ACCOUNT_ID,
+    tenant_id: getRuntimeTenantId(),
+    platform: "facebook",
+    account_type: "app_review_demo",
+    platform_account_id: "demo_page_1",
+    account_name: "Demo Page",
+    profile_picture_url: null,
+    is_active: true,
+  };
+}
+
+export function withMetaReviewDemoAccounts(accounts: Account[]) {
+  if (!isMetaReviewDemoMode()) {
+    return accounts;
+  }
+  const hasRealFacebookPage = accounts.some(
+    (account) => account.is_active && account.platform === "facebook" && account.id > 0,
+  );
+  const hasDemoPage = accounts.some(
+    (account) => account.id === META_REVIEW_DEMO_FACEBOOK_ACCOUNT_ID,
+  );
+  if (hasRealFacebookPage || hasDemoPage) {
+    return accounts;
+  }
+  return [getMetaReviewDemoFacebookAccount(), ...accounts];
 }
 
 export function getGoogleAuthUrl(nextPath = "/") {

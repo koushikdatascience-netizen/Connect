@@ -23,7 +23,13 @@ import {
   SelectedAccountsMap,
 } from "@/components/create-post/types";
 
-import { fetchAccounts, uploadMedia, createPost } from "@/lib/api";
+import {
+  META_REVIEW_DEMO_FACEBOOK_ACCOUNT_ID,
+  createPost,
+  fetchAccounts,
+  uploadMedia,
+  withMetaReviewDemoAccounts,
+} from "@/lib/api";
 import { Account, MediaAsset, PlatformName } from "@/lib/types";
 
 /* ---------------- HELPERS ---------------- */
@@ -144,10 +150,52 @@ type PostResult = {
   accountName: string;
   accountId: number;
   status: "success" | "error";
+  scheduledAt?: string | null;
+  demo?: boolean;
   postId?: number;
   postUrl?: string;
   error?: string;
 };
+
+type PublishJob = {
+  platform: PlatformName;
+  accountId: number;
+  accountName: string;
+  cfg: import("@/components/create-post/types").PlatformConfig;
+  scheduledAt: string | null;
+  demo?: boolean;
+};
+
+function scheduleKey(platform: PlatformName, accountId: number) {
+  return `${platform}:${accountId}`;
+}
+
+function formatScheduleLabel(value?: string | null) {
+  if (!value) {
+    return "Publish now";
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "Scheduled";
+  }
+  return date.toLocaleString([], {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function toIsoOrNull(value?: string | null) {
+  if (!value) {
+    return null;
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+  return date.toISOString();
+}
 
 /* ---------------- COMPONENT ---------------- */
 
@@ -186,6 +234,8 @@ export function CreatePostStudio() {
   /* ---------------- SUBMIT STATE ---------------- */
   const [submitting, setSubmitting] = useState(false);
   const [resultsModal, setResultsModal] = useState<PostResult[] | null>(null);
+  const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
+  const [accountSchedules, setAccountSchedules] = useState<Record<string, string>>({});
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [mediaEditorAsset, setMediaEditorAsset] = useState<MediaAsset | null>(null);
   const [savingEditedMedia, setSavingEditedMedia] = useState(false);
@@ -198,7 +248,7 @@ export function CreatePostStudio() {
       setLoading(true);
       try {
         const data = await fetchAccounts();
-        setAccounts(data.filter((a) => a.is_active));
+        setAccounts(withMetaReviewDemoAccounts(data.filter((a) => a.is_active)));
       } catch (err) {
         console.error("Failed to load accounts:", err);
       } finally {
@@ -459,7 +509,39 @@ export function CreatePostStudio() {
 
   /* ---------------- SUBMIT ---------------- */
 
-  const handleSubmit = async () => {
+  const buildSelectedJobs = (mode: "publish" | "schedule"): PublishJob[] =>
+    selectedPlatformList.flatMap((platform) =>
+      selectedAccounts[platform].map((accountId) => {
+        const cfg = platformConfigs[platform];
+        const account = accountsByPlatform[platform].find(
+          (a) => a.id === accountId
+        );
+        const scheduledAt =
+          mode === "schedule"
+            ? toIsoOrNull(accountSchedules[scheduleKey(platform, accountId)])
+            : null;
+
+        return {
+          platform,
+          accountId,
+          accountName: account?.account_name ?? `Account ${accountId}`,
+          cfg,
+          scheduledAt,
+          demo: accountId === META_REVIEW_DEMO_FACEBOOK_ACCOUNT_ID,
+        };
+      })
+    );
+
+  const openScheduleModal = () => {
+    if (selectedPlatformList.length === 0) return;
+    if (blockingValidationItems.length > 0) {
+      setUploadError(blockingValidationItems[0].message);
+      return;
+    }
+    setScheduleModalOpen(true);
+  };
+
+  const handleSubmit = async (mode: "publish" | "schedule" = "publish") => {
     if (selectedPlatformList.length === 0) return;
     if (blockingValidationItems.length > 0) {
       setUploadError(blockingValidationItems[0].message);
@@ -470,27 +552,21 @@ export function CreatePostStudio() {
 
     setSubmitting(true);
 
-    const jobs = selectedPlatformList.flatMap((platform) =>
-      selectedAccounts[platform].map((accountId) => {
-        const cfg = platformConfigs[platform];
-        const account = accountsByPlatform[platform].find(
-          (a) => a.id === accountId
-        );
-        return {
-          platform,
-          accountId,
-          accountName: account?.account_name ?? `Account ${accountId}`,
-          cfg,
-        };
-      })
-    );
+    const jobs = buildSelectedJobs(mode);
 
     const results: PostResult[] = await Promise.all(
-      jobs.map(async ({ platform, accountId, accountName, cfg }) => {
+      jobs.map(async ({ platform, accountId, accountName, cfg, scheduledAt, demo }) => {
         try {
-          const scheduledAt = cfg.schedule
-            ? new Date(cfg.schedule).toISOString()
-            : null;
+          if (demo) {
+            return {
+              platform,
+              accountId,
+              accountName,
+              status: "success" as const,
+              scheduledAt,
+              demo: true,
+            };
+          }
           const res = await createPost({
             social_account_id: accountId,
             content,
@@ -503,6 +579,8 @@ export function CreatePostStudio() {
             accountId,
             accountName,
             status: "success" as const,
+            scheduledAt,
+            demo,
             postId: res.post_id,
           };
         } catch (err) {
@@ -511,6 +589,8 @@ export function CreatePostStudio() {
             accountId,
             accountName,
             status: "error" as const,
+            scheduledAt,
+            demo,
             error: err instanceof Error ? err.message : "Unknown error",
           };
         }
@@ -518,6 +598,7 @@ export function CreatePostStudio() {
     );
 
     setSubmitting(false);
+    setScheduleModalOpen(false);
     setResultsModal(results);
   };
 
@@ -641,6 +722,8 @@ export function CreatePostStudio() {
   );
 
   const totalSelectedAccounts = Object.values(selectedAccounts).flat().length;
+  const schedulePreviewJobs = buildSelectedJobs("schedule");
+  const scheduledPreviewCount = schedulePreviewJobs.filter((job) => job.scheduledAt).length;
   const canSubmit =
     totalSelectedAccounts > 0 &&
     !isPendingApproval &&
@@ -796,9 +879,33 @@ export function CreatePostStudio() {
             ? "Connect a social account before publishing"
             : "Select accounts to publish"}
         </div>
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
         <motion.button
           type="button"
-          onClick={() => void handleSubmit()}
+          onClick={openScheduleModal}
+          disabled={!canSubmit}
+          whileHover={{ scale: submitting ? 1 : 1.03 }}
+          whileTap={{ scale: 0.97 }}
+          className="relative flex w-full items-center justify-center gap-2.5 rounded-full border border-[#eadba6] bg-white px-5 py-2.5 text-sm font-bold text-[#6f5415] transition-all hover:bg-[#fff8e6] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+        >
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="12" cy="12" r="8" />
+            <path d="M12 8v5l3 2" />
+          </svg>
+          Schedule
+        </motion.button>
+        <motion.button
+          type="button"
+          onClick={() => void handleSubmit("publish")}
           disabled={!canSubmit}
           whileHover={{ scale: submitting ? 1 : 1.03 }}
           whileTap={{ scale: 0.97 }}
@@ -828,6 +935,7 @@ export function CreatePostStudio() {
             </>
           )}
         </motion.button>
+        </div>
       </div>
 
       {isPendingApproval ? (
@@ -868,6 +976,120 @@ export function CreatePostStudio() {
         </div>
       )}
 
+      {/* SCHEDULE MODAL */}
+      <AnimatePresence>
+        {scheduleModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end justify-center bg-black/45 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 32, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 18, scale: 0.98 }}
+              transition={{ type: "spring", damping: 24, stiffness: 260 }}
+              className="flex max-h-[calc(100dvh-0.75rem)] w-full max-w-2xl flex-col overflow-hidden rounded-t-[24px] border border-[#e8dbc5] bg-[#fffdf8] shadow-[0_28px_80px_rgba(31,23,12,0.28)] sm:max-h-[92dvh] sm:rounded-[24px]"
+            >
+              <div className="shrink-0 border-b border-[#eadfcb] px-4 py-3.5 sm:px-5 sm:py-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h2 className="text-base font-bold text-[#171311]">Schedule selected accounts</h2>
+                    <p className="mt-1 text-xs leading-5 text-[#8b7654]">
+                      Leave a row blank to publish immediately. Only rows with a time will be scheduled.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setScheduleModalOpen(false)}
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#eadfcb] bg-white text-[#8b7654] transition-colors hover:bg-[#fff7e6]"
+                    aria-label="Close schedule modal"
+                  >
+                    x
+                  </button>
+                </div>
+              </div>
+
+              <div className="min-h-0 flex-1 space-y-2 overflow-y-auto px-4 py-3 sm:px-5">
+                {schedulePreviewJobs.map((job) => {
+                  const key = scheduleKey(job.platform, job.accountId);
+                  return (
+                    <div
+                      key={key}
+                      className="grid gap-3 rounded-2xl border border-[#eadfcb] bg-white px-3 py-3 shadow-sm sm:grid-cols-[minmax(0,1fr)_220px_auto] sm:items-center"
+                    >
+                      <div className="flex min-w-0 items-center gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#fff4d8]">
+                          <PlatformLogo platform={job.platform} className="h-5 w-5" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="truncate text-sm font-semibold text-[#171311]">
+                            {job.accountName}
+                          </div>
+                          <div className="text-[11px] font-medium text-[#9b7b3f]">
+                            {PLATFORM_LABELS[job.platform]} - {job.scheduledAt ? "Scheduled" : "Publish now"}
+                          </div>
+                        </div>
+                      </div>
+                      <input
+                        type="datetime-local"
+                        value={accountSchedules[key] ?? ""}
+                        onChange={(event) =>
+                          setAccountSchedules((current) => ({
+                            ...current,
+                            [key]: event.target.value,
+                          }))
+                        }
+                        className="h-10 min-w-0 w-full rounded-xl border border-[#eadba6] bg-[#fffef9] px-3 text-xs text-[#2a2116] focus:border-[#d4a94f] focus:ring-2 focus:ring-[#d4a94f]/30"
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setAccountSchedules((current) => {
+                            const next = { ...current };
+                            delete next[key];
+                            return next;
+                          })
+                        }
+                        className="w-full rounded-full border border-[#eadfcb] px-3 py-2 text-xs font-semibold text-[#8b7654] transition-colors hover:bg-[#fff7e6] sm:w-auto"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="shrink-0 border-t border-[#eadfcb] bg-[#fff8ea] px-4 py-3 sm:px-5">
+                <div className="mb-3 text-xs leading-5 text-[#8b7654]">
+                  {scheduledPreviewCount > 0
+                    ? `${scheduledPreviewCount} account${scheduledPreviewCount === 1 ? "" : "s"} scheduled. The rest will publish immediately.`
+                    : "No schedule times set. Confirming will publish every selected account immediately."}
+                </div>
+                <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setScheduleModalOpen(false)}
+                    className="w-full rounded-full border border-[#eadfcb] bg-white px-5 py-2.5 text-sm font-semibold text-[#6f5415] transition-colors hover:bg-[#fff7e6] sm:w-auto"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleSubmit("schedule")}
+                    disabled={submitting}
+                    className="w-full rounded-full bg-[#ffd52a] px-6 py-2.5 text-sm font-bold text-[#09090e] shadow-[0_6px_22px_rgba(255,213,42,0.28)] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                  >
+                    {submitting ? "Submitting..." : "Confirm publish plan"}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* RESULTS MODAL */}
       <AnimatePresence>
         {resultsModal && (
@@ -890,6 +1112,9 @@ export function CreatePostStudio() {
                 ).length;
                 const errorCount = resultsModal.filter(
                   (r) => r.status === "error"
+                ).length;
+                const scheduledCount = resultsModal.filter(
+                  (r) => r.status === "success" && r.scheduledAt
                 ).length;
                 const allOk = errorCount === 0;
                 return (
@@ -916,7 +1141,9 @@ export function CreatePostStudio() {
                           <div>
                             <h2 className="text-base font-bold text-white">
                               {allOk
-                                ? "Posts published!"
+                                ? scheduledCount > 0
+                                  ? "Publish plan submitted!"
+                                  : "Posts published!"
                                 : errorCount === resultsModal.length
                                 ? "Publishing failed"
                                 : "Partially published"}
@@ -966,13 +1193,20 @@ export function CreatePostStudio() {
                                 }`}
                               >
                                 {result.status === "success"
-                                  ? "Published"
+                                  ? result.scheduledAt
+                                    ? "Scheduled"
+                                    : "Published"
                                   : "Failed"}
                               </span>
                             </div>
                             {result.status === "error" && result.error && (
                               <p className="mt-1 text-xs leading-relaxed text-[#ff9b8d]">
                                 {result.error}
+                              </p>
+                            )}
+                            {result.status === "success" && result.demo && (
+                              <p className="mt-1 text-xs leading-relaxed text-[#d9c36b]">
+                                Post scheduled successfully. It will be published after permissions are approved.
                               </p>
                             )}
                             {result.status === "success" && (
@@ -982,6 +1216,9 @@ export function CreatePostStudio() {
                                     Post #{result.postId}
                                   </span>
                                 )}
+                                <span className="text-[11px] text-[#a9975a]">
+                                  {formatScheduleLabel(result.scheduledAt)}
+                                </span>
                                 {result.postUrl && (
                                   <a
                                     href={result.postUrl}
@@ -1036,6 +1273,7 @@ export function CreatePostStudio() {
                             setSelectedMediaIds([]);
                             setSelectedPlatforms([]);
                             setSelectedAccounts(createEmptySelectedAccounts());
+                            setAccountSchedules({});
                           }
                         }}
                         className="w-full rounded-full bg-[#ffd52a] px-5 py-2 text-sm font-bold text-[#09090e] shadow-[0_4px_14px_rgba(255,213,42,0.3)] transition-colors hover:bg-[#ffe566] sm:w-auto"
