@@ -15,6 +15,14 @@ type Props = {
   editedMediaIds: number[];
   selectedPlatforms: PlatformName[];
   uploadError: string | null;
+  uploadProgressItems: {
+    id: string;
+    name: string;
+    size: number;
+    percent: number | null;
+    status: "uploading" | "processing" | "complete" | "error";
+    error?: string;
+  }[];
   editingMediaId: number | null;
   highlightedFixTargetId?: string | null;
 
@@ -26,6 +34,13 @@ type Props = {
   onFilesSelected: (files: FileList | null) => void;
   onEditMedia: (asset: MediaAsset) => void;
 };
+
+function formatFileSize(size: number) {
+  if (size < 1024 * 1024) {
+    return `${Math.max(1, Math.round(size / 1024))} KB`;
+  }
+  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 function parseTokenValue(value: string) {
   return value
@@ -165,6 +180,7 @@ export function PostEditor({
   editedMediaIds,
   selectedPlatforms,
   uploadError,
+  uploadProgressItems,
   editingMediaId,
   highlightedFixTargetId,
   onCaptionChange,
@@ -327,6 +343,63 @@ export function PostEditor({
             onChange={(e) => onFilesSelected(e.target.files)}
           />
         </label>
+
+        {uploadProgressItems.length > 0 && (
+          <div className="mt-3 space-y-2 rounded-xl border border-[#eadfcb] bg-[#fffdf8] p-3">
+            {uploadProgressItems.map((item) => {
+              const percent = item.percent ?? 0;
+              const label =
+                item.status === "processing"
+                  ? "Processing"
+                  : item.status === "complete"
+                  ? "Uploaded"
+                  : item.status === "error"
+                  ? "Failed"
+                  : "Uploading";
+
+              return (
+                <div key={item.id} className="rounded-lg bg-white px-3 py-2 shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={`inline-block h-4 w-4 shrink-0 rounded-full border-2 ${
+                        item.status === "error"
+                          ? "border-red-400"
+                          : item.status === "complete"
+                          ? "border-[#4fa35f] bg-[#4fa35f]"
+                          : "animate-spin border-[#d4a94f] border-t-transparent"
+                      }`}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="truncate text-xs font-semibold text-[#2a2116]">
+                          {item.name}
+                        </span>
+                        <span className="shrink-0 text-[11px] font-semibold text-[#8a6a18]">
+                          {item.percent === null ? label : `${percent}%`}
+                        </span>
+                      </div>
+                      <div className="mt-1 flex items-center justify-between gap-3 text-[10px] text-[#8b7f6b]">
+                        <span>{label}</span>
+                        <span>{formatFileSize(item.size)}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#f3ead8]">
+                    <div
+                      className={`h-full rounded-full transition-all duration-300 ${
+                        item.status === "error" ? "bg-red-400" : "bg-[#d4a94f]"
+                      }`}
+                      style={{ width: `${item.percent ?? 18}%` }}
+                    />
+                  </div>
+                  {item.error ? (
+                    <p className="mt-1.5 text-[11px] text-red-500">{item.error}</p>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         {/* UPLOAD ERROR */}
         {uploadError && (

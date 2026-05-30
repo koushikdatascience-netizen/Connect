@@ -29,6 +29,7 @@ import {
   fetchAccounts,
   saveMetaReviewDemoPost,
   uploadMedia,
+  uploadMediaWithProgress,
   withMetaReviewDemoAccounts,
 } from "@/lib/api";
 import { Account, MediaAsset, PlatformName } from "@/lib/types";
@@ -167,6 +168,15 @@ type PublishJob = {
   demo?: boolean;
 };
 
+type UploadProgressItem = {
+  id: string;
+  name: string;
+  size: number;
+  percent: number | null;
+  status: "uploading" | "processing" | "complete" | "error";
+  error?: string;
+};
+
 function scheduleKey(platform: PlatformName, accountId: number) {
   return `${platform}:${accountId}`;
 }
@@ -238,6 +248,7 @@ export function CreatePostStudio() {
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
   const [accountSchedules, setAccountSchedules] = useState<Record<string, string>>({});
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadProgressItems, setUploadProgressItems] = useState<UploadProgressItem[]>([]);
   const [mediaEditorAsset, setMediaEditorAsset] = useState<MediaAsset | null>(null);
   const [savingEditedMedia, setSavingEditedMedia] = useState(false);
   const [highlightedFixTargetId, setHighlightedFixTargetId] = useState<string | null>(null);
@@ -263,15 +274,53 @@ export function CreatePostStudio() {
 
   const handleFilesSelected = (files: FileList | null) => {
     if (!files) return;
+    const selectedFiles = Array.from(files);
+    if (selectedFiles.length === 0) return;
 
     const upload = async () => {
+      const items = selectedFiles.map((file, index) => ({
+        id: `${Date.now()}-${index}-${file.name}`,
+        name: file.name,
+        size: file.size,
+        percent: 0,
+        status: "uploading" as const,
+      }));
+
       try {
         setUploadError(null);
+        setUploadProgressItems((current) => [...items, ...current]);
         const uploaded = await Promise.all(
-          Array.from(files).map((file) => {
+          selectedFiles.map((file, index) => {
+            const itemId = items[index].id;
             const fd = new FormData();
             fd.append("file", file);
-            return uploadMedia(fd);
+            return uploadMediaWithProgress(fd, (progress) => {
+              setUploadProgressItems((current) =>
+                current.map((item) =>
+                  item.id === itemId
+                    ? {
+                        ...item,
+                        percent: progress.percent,
+                        status: progress.percent === 100 ? "processing" : "uploading",
+                      }
+                    : item,
+                ),
+              );
+            }).then((asset) => {
+              setUploadProgressItems((current) =>
+                current.map((item) =>
+                  item.id === itemId
+                    ? { ...item, percent: 100, status: "complete" }
+                    : item,
+                ),
+              );
+              window.setTimeout(() => {
+                setUploadProgressItems((current) =>
+                  current.filter((item) => item.id !== itemId),
+                );
+              }, 1200);
+              return asset;
+            });
           })
         );
 
@@ -281,7 +330,15 @@ export function CreatePostStudio() {
           ...current.filter((id) => !uploaded.some((item) => item.id === id)),
         ]);
       } catch (err) {
-        setUploadError(err instanceof Error ? err.message : "Upload failed.");
+        const message = err instanceof Error ? err.message : "Upload failed.";
+        setUploadError(message);
+        setUploadProgressItems((current) =>
+          current.map((item) =>
+            item.status === "uploading" || item.status === "processing"
+              ? { ...item, status: "error", error: message }
+              : item,
+          ),
+        );
       }
     };
 
@@ -832,6 +889,7 @@ export function CreatePostStudio() {
             onFilesSelected={handleFilesSelected}
             onEditMedia={handleOpenMediaEditor}
             uploadError={uploadError}
+            uploadProgressItems={uploadProgressItems}
           />
         </div>
 

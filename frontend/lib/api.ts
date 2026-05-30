@@ -525,6 +525,65 @@ export function uploadMedia(formData: FormData) {
   });
 }
 
+export function uploadMediaWithProgress(
+  formData: FormData,
+  onProgress?: (progress: { loaded: number; total: number | null; percent: number | null }) => void,
+) {
+  const token = getAuthToken();
+  const tenantId = getRuntimeTenantId();
+
+  return new Promise<MediaAsset>((resolve, reject) => {
+    const request = new XMLHttpRequest();
+    request.open("POST", `${API_BASE_URL}/api/v1/media/upload`);
+    request.withCredentials = true;
+
+    if (token) {
+      request.setRequestHeader("Authorization", `Bearer ${token}`);
+    } else {
+      request.setRequestHeader("X-Tenant-ID", tenantId);
+    }
+
+    request.upload.onprogress = (event) => {
+      const total = event.lengthComputable ? event.total : null;
+      onProgress?.({
+        loaded: event.loaded,
+        total,
+        percent: total ? Math.min(99, Math.round((event.loaded / total) * 100)) : null,
+      });
+    };
+
+    request.onload = () => {
+      const text = request.responseText;
+      if (request.status < 200 || request.status >= 300) {
+        try {
+          const parsed = JSON.parse(text) as { detail?: string; request_id?: string };
+          const detail = parsed.detail || `Request failed with ${request.status}`;
+          const requestId = parsed.request_id ? ` (Request ID: ${parsed.request_id})` : "";
+          reject(new Error(`${detail}${requestId}`));
+        } catch {
+          reject(new Error(text || `Request failed with ${request.status}`));
+        }
+        return;
+      }
+
+      try {
+        onProgress?.({
+          loaded: 1,
+          total: 1,
+          percent: 100,
+        });
+        resolve(JSON.parse(text) as MediaAsset);
+      } catch {
+        reject(new Error("Upload completed, but the response could not be read."));
+      }
+    };
+
+    request.onerror = () => reject(new Error("Upload failed. Check your connection and try again."));
+    request.onabort = () => reject(new Error("Upload was cancelled."));
+    request.send(formData);
+  });
+}
+
 export async function fetchPosts() {
   const posts = await apiFetch<Post[]>("/api/v1/posts/");
   return withMetaReviewDemoPosts(posts);
