@@ -24,13 +24,10 @@ import {
 } from "@/components/create-post/types";
 
 import {
-  META_REVIEW_DEMO_FACEBOOK_ACCOUNT_ID,
   createPost,
   fetchAccounts,
-  saveMetaReviewDemoPost,
   uploadMedia,
   uploadMediaWithProgress,
-  withMetaReviewDemoAccounts,
 } from "@/lib/api";
 import { Account, MediaAsset, PlatformName } from "@/lib/types";
 
@@ -153,7 +150,6 @@ type PostResult = {
   accountId: number;
   status: "success" | "error";
   scheduledAt?: string | null;
-  demo?: boolean;
   postId?: number;
   postUrl?: string;
   error?: string;
@@ -165,7 +161,6 @@ type PublishJob = {
   accountName: string;
   cfg: import("@/components/create-post/types").PlatformConfig;
   scheduledAt: string | null;
-  demo?: boolean;
 };
 
 type UploadProgressItem = {
@@ -260,7 +255,7 @@ export function CreatePostStudio() {
       setLoading(true);
       try {
         const data = await fetchAccounts();
-        setAccounts(withMetaReviewDemoAccounts(data.filter((a) => a.is_active)));
+        setAccounts(data.filter((a) => a.is_active));
       } catch (err) {
         console.error("Failed to load accounts:", err);
       } finally {
@@ -585,7 +580,6 @@ export function CreatePostStudio() {
           accountName: account?.account_name ?? `Account ${accountId}`,
           cfg,
           scheduledAt,
-          demo: accountId === META_REVIEW_DEMO_FACEBOOK_ACCOUNT_ID,
         };
       })
     );
@@ -613,26 +607,8 @@ export function CreatePostStudio() {
     const jobs = buildSelectedJobs(mode);
 
     const results: PostResult[] = await Promise.all(
-      jobs.map(async ({ platform, accountId, accountName, cfg, scheduledAt, demo }) => {
+      jobs.map(async ({ platform, accountId, accountName, cfg, scheduledAt }) => {
         try {
-          if (demo) {
-            saveMetaReviewDemoPost({
-              platform,
-              accountId,
-              accountName,
-              content,
-              scheduledAt,
-              mediaIds: selectedMediaIds,
-            });
-            return {
-              platform,
-              accountId,
-              accountName,
-              status: "success" as const,
-              scheduledAt,
-              demo: true,
-            };
-          }
           const res = await createPost({
             social_account_id: accountId,
             content,
@@ -646,7 +622,6 @@ export function CreatePostStudio() {
             accountName,
             status: "success" as const,
             scheduledAt,
-            demo,
             postId: res.post_id,
           };
         } catch (err) {
@@ -656,7 +631,6 @@ export function CreatePostStudio() {
             accountName,
             status: "error" as const,
             scheduledAt,
-            demo,
             error: err instanceof Error ? err.message : "Unknown error",
           };
         }
@@ -998,7 +972,7 @@ export function CreatePostStudio() {
                 <line x1="22" y1="2" x2="11" y2="13" />
                 <polygon points="22 2 15 22 11 13 2 9 22 2" />
               </svg>
-              {isPendingApproval ? "Approval required" : "Publish"}
+              {isPendingApproval ? "Activation required" : "Publish"}
             </>
           )}
         </motion.button>
@@ -1008,7 +982,7 @@ export function CreatePostStudio() {
       {isPendingApproval ? (
         <div className="order-3 max-h-[18dvh] shrink-0 overflow-y-auto border-t border-[#f1dacd] bg-[#fff8f2] px-3 py-2 sm:max-h-none sm:px-5 sm:py-4">
           <div className="rounded-xl border border-[#f0d2ca] bg-white px-3 py-2 text-xs leading-5 text-[#7c3f36] sm:rounded-2xl sm:px-4 sm:py-3 sm:text-sm">
-            <span className="font-semibold text-[#5b271f]">Publishing locked:</span> Approval is required before connecting accounts or publishing.
+            <span className="font-semibold text-[#5b271f]">Publishing locked:</span> Account activation is required before connecting accounts or publishing.
           </div>
         </div>
       ) : blockingValidationItems.length > 0 && (
@@ -1269,11 +1243,6 @@ export function CreatePostStudio() {
                             {result.status === "error" && result.error && (
                               <p className="mt-1 text-xs leading-relaxed text-[#ff9b8d]">
                                 {result.error}
-                              </p>
-                            )}
-                            {result.status === "success" && result.demo && (
-                              <p className="mt-1 text-xs leading-relaxed text-[#d9c36b]">
-                                Post scheduled successfully. It will be published after permissions are approved.
                               </p>
                             )}
                             {result.status === "success" && (

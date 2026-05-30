@@ -10,9 +10,6 @@ import {
   deleteAccount,
   fetchAccounts,
   fetchAccountStatus,
-  isMetaAppReviewDemoEnabled,
-  markMetaReviewDemoMode,
-  withMetaReviewDemoAccounts,
 } from "@/lib/api";
 import { Account, AccountStatusResponse, PlatformName } from "@/lib/types";
 
@@ -224,7 +221,7 @@ function PlatformCard({ meta, accounts, connected, onConnect, onRemoveAccount, d
               opacity: disabled ? 0.55 : 1,
             }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>
-            {disabled ? "Approval required" : accounts.length > 0 ? "Add another account" : "Connect Account"}
+            {disabled ? "Activation required" : accounts.length > 0 ? "Add another account" : "Connect Account"}
           </button>
         </div>
       )}
@@ -273,17 +270,8 @@ export default function ConnectionsClient() {
   async function load() {
     try {
       const [statusData, accountData] = await Promise.all([fetchAccountStatus(), fetchAccounts()]);
-      const activeAccounts = withMetaReviewDemoAccounts(accountData.filter(a => a.is_active));
-      setStatus({
-        ...statusData,
-        facebook: {
-          ...statusData.facebook,
-          connected:
-            statusData.facebook.connected ||
-            activeAccounts.some((account) => normalizePlatform(account.platform) === "facebook"),
-          active_accounts: activeAccounts.filter((account) => normalizePlatform(account.platform) === "facebook").length,
-        },
-      });
+      const activeAccounts = accountData.filter(a => a.is_active);
+      setStatus(statusData);
       setAccounts(activeAccounts);
       setError(null);
     } catch (e) {
@@ -303,26 +291,14 @@ export default function ConnectionsClient() {
       const oauthMessage = url.searchParams.get("oauth_message");
       const oauthCount = url.searchParams.get("oauth_count");
       if (!oauthResult || !oauthMessage) return false;
-      const noFacebookPages =
-        oauthPlatform === "facebook" &&
-        oauthResult === "error" &&
-        oauthMessage.toLowerCase().includes("no facebook pages");
-      const useMetaDemo = isMetaAppReviewDemoEnabled() && noFacebookPages;
-
-      if (useMetaDemo) {
-        markMetaReviewDemoMode(true);
-      }
-
       const platformLabel = oauthPlatform
         ? `${oauthPlatform[0].toUpperCase()}${oauthPlatform.slice(1).replace(/_/g, " ")}`
         : "Social";
 
       setOauthBanner({
-        tone: oauthResult === "success" || useMetaDemo ? "success" : "error",
+        tone: oauthResult === "success" ? "success" : "error",
         text:
-          useMetaDemo
-            ? "Facebook connected successfully. Pages and publishing will activate after Meta approval. Demo Page is enabled for review."
-            : oauthResult === "success"
+          oauthResult === "success"
             ? `${platformLabel}: ${oauthMessage}${oauthCount ? ` Connected ${oauthCount} account${oauthCount === "1" ? "" : "s"}.` : ""}`
             : `${platformLabel}: ${oauthMessage}`,
       });
@@ -422,7 +398,7 @@ export default function ConnectionsClient() {
             disabled={isPendingApproval}
             disabledMessage={
               isPendingApproval
-                ? "Account connections unlock after your Snapkey CRM approval is completed."
+                ? "Account connections unlock after your Snapkey Connect account is activated."
                 : undefined
             }
           />

@@ -151,14 +151,14 @@ export default function LoginPage() {
 
       {hasDemoToken ? (
         <div className="mt-6 rounded-2xl border border-[#eadba6] bg-[#fff8e2] px-4 py-4 text-xs leading-5 text-[#74664d]">
-          <div className="mb-3">Demo access is enabled in this environment.</div>
+          <div className="mb-3">Reviewer access is enabled in this environment.</div>
           <button
             type="button"
             onClick={() => void handleDemoLogin()}
             disabled={submitting}
             className="secondary-button w-full justify-center py-2.5 font-semibold text-[#8b6809]"
           >
-            Continue as Demo User
+            Continue with Reviewer Access
           </button>
         </div>
       ) : null}

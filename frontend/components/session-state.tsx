@@ -43,7 +43,7 @@ export function PendingApprovalBanner({ compact = false }: { compact?: boolean }
     >
       <p className="font-semibold">Your account is pending approval.</p>
       <p className="mt-1 leading-6">
-        Connections and publishing unlock after Snapkey CRM approval.
+        Connections and publishing unlock after your Snapkey Connect account is activated.
       </p>
     </div>
   );

@@ -21,11 +21,6 @@ const TOKEN_STORAGE_KEY =
 const DEMO_BEARER_TOKEN = process.env.NEXT_PUBLIC_DEBUG_BEARER_TOKEN ?? "";
 const GOOGLE_AUTH_URL = process.env.NEXT_PUBLIC_GOOGLE_AUTH_URL ?? "";
 const TENANT_CLAIMS = ["TenantId", "tenant_id"];
-const META_APP_REVIEW_DEMO =
-  process.env.NEXT_PUBLIC_META_APP_REVIEW_DEMO === "true";
-const META_REVIEW_DEMO_STORAGE_KEY = "snapkey_meta_review_demo";
-const META_REVIEW_DEMO_POSTS_STORAGE_KEY = "snapkey_meta_review_demo_posts";
-export const META_REVIEW_DEMO_FACEBOOK_ACCOUNT_ID = -1001;
 
 function readJwtClaim(token: string, claim: string) {
   try {
@@ -89,148 +84,6 @@ export function clearStoredAuthToken() {
 
 export function getDemoBearerToken() {
   return DEMO_BEARER_TOKEN;
-}
-
-export function isMetaAppReviewDemoEnabled() {
-  return META_APP_REVIEW_DEMO;
-}
-
-export function markMetaReviewDemoMode(enabled = true) {
-  if (typeof window === "undefined" || !META_APP_REVIEW_DEMO) {
-    return;
-  }
-  if (enabled) {
-    window.sessionStorage.setItem(META_REVIEW_DEMO_STORAGE_KEY, "facebook");
-  } else {
-    window.sessionStorage.removeItem(META_REVIEW_DEMO_STORAGE_KEY);
-  }
-}
-
-export function isMetaReviewDemoMode() {
-  if (typeof window === "undefined" || !META_APP_REVIEW_DEMO) {
-    return false;
-  }
-  return window.sessionStorage.getItem(META_REVIEW_DEMO_STORAGE_KEY) === "facebook";
-}
-
-export function getMetaReviewDemoFacebookAccount(): Account {
-  return {
-    id: META_REVIEW_DEMO_FACEBOOK_ACCOUNT_ID,
-    tenant_id: getRuntimeTenantId(),
-    platform: "facebook",
-    account_type: "app_review_demo",
-    platform_account_id: "demo_page_1",
-    account_name: "Demo Page",
-    profile_picture_url: null,
-    is_active: true,
-  };
-}
-
-export function withMetaReviewDemoAccounts(accounts: Account[]) {
-  if (!isMetaReviewDemoMode()) {
-    return accounts;
-  }
-  const hasRealFacebookPage = accounts.some(
-    (account) => account.is_active && account.platform === "facebook" && account.id > 0,
-  );
-  const hasDemoPage = accounts.some(
-    (account) => account.id === META_REVIEW_DEMO_FACEBOOK_ACCOUNT_ID,
-  );
-  if (hasRealFacebookPage || hasDemoPage) {
-    return accounts;
-  }
-  return [getMetaReviewDemoFacebookAccount(), ...accounts];
-}
-
-function readMetaReviewDemoPosts() {
-  if (typeof window === "undefined") {
-    return [];
-  }
-  try {
-    const raw = window.localStorage.getItem(META_REVIEW_DEMO_POSTS_STORAGE_KEY);
-    if (!raw) {
-      return [];
-    }
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-    return parsed.filter((post): post is Post => {
-      return (
-        post &&
-        typeof post === "object" &&
-        typeof post.id === "number" &&
-        typeof post.social_account_id === "number" &&
-        typeof post.platform === "string" &&
-        typeof post.status === "string" &&
-        Array.isArray(post.media_ids)
-      );
-    });
-  } catch {
-    return [];
-  }
-}
-
-export function saveMetaReviewDemoPost(input: {
-  platform: string;
-  accountId: number;
-  content: string;
-  scheduledAt: string | null;
-  mediaIds: number[];
-  accountName?: string;
-}) {
-  if (
-    !isMetaReviewDemoMode() ||
-    input.accountId !== META_REVIEW_DEMO_FACEBOOK_ACCOUNT_ID
-  ) {
-    return null;
-  }
-
-  const now = new Date().toISOString();
-  const post: Post = {
-    id: -Date.now(),
-    social_account_id: input.accountId,
-    tenant_id: getRuntimeTenantId(),
-    platform: input.platform,
-    content: input.content,
-    platform_options: {
-      meta_review_demo: true,
-      account_name: input.accountName ?? "Demo Page",
-    },
-    scheduled_at: input.scheduledAt ?? now,
-    posted_at: null,
-    status: input.scheduledAt ? "scheduled" : "queued",
-    retry_count: 0,
-    max_retries: 0,
-    error_message: "Demo mode: will publish after Meta permissions are approved.",
-    platform_post_id: null,
-    media_ids: input.mediaIds,
-    created_at: now,
-    updated_at: now,
-  };
-
-  const posts = [post, ...readMetaReviewDemoPosts()].slice(0, 25);
-  window.localStorage.setItem(META_REVIEW_DEMO_POSTS_STORAGE_KEY, JSON.stringify(posts));
-  return post;
-}
-
-export function withMetaReviewDemoPosts(posts: Post[]) {
-  if (!isMetaReviewDemoMode()) {
-    return posts;
-  }
-  const demoPosts = readMetaReviewDemoPosts();
-  if (!demoPosts.length) {
-    return posts;
-  }
-  const existingIds = new Set(posts.map((post) => post.id));
-  return [...demoPosts.filter((post) => !existingIds.has(post.id)), ...posts];
-}
-
-export function isMetaReviewDemoPost(post: Post) {
-  return (
-    post.social_account_id === META_REVIEW_DEMO_FACEBOOK_ACCOUNT_ID ||
-    post.platform_options?.meta_review_demo === true
-  );
 }
 
 export function getGoogleAuthUrl(nextPath = "/") {
@@ -510,8 +363,7 @@ export function fetchAccountStatus() {
 }
 
 export async function fetchAccounts() {
-  const accounts = await apiFetch<Account[]>("/api/v1/accounts/");
-  return withMetaReviewDemoAccounts(accounts);
+  return apiFetch<Account[]>("/api/v1/accounts/");
 }
 
 export function fetchMedia() {
@@ -585,8 +437,7 @@ export function uploadMediaWithProgress(
 }
 
 export async function fetchPosts() {
-  const posts = await apiFetch<Post[]>("/api/v1/posts/");
-  return withMetaReviewDemoPosts(posts);
+  return apiFetch<Post[]>("/api/v1/posts/");
 }
 
 export function fetchPostMetrics(postId: number) {
