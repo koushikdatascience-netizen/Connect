@@ -27,6 +27,7 @@ import {
   META_REVIEW_DEMO_FACEBOOK_ACCOUNT_ID,
   createPost,
   fetchAccounts,
+  saveMetaReviewDemoPost,
   uploadMedia,
   withMetaReviewDemoAccounts,
 } from "@/lib/api";
@@ -558,6 +559,14 @@ export function CreatePostStudio() {
       jobs.map(async ({ platform, accountId, accountName, cfg, scheduledAt, demo }) => {
         try {
           if (demo) {
+            saveMetaReviewDemoPost({
+              platform,
+              accountId,
+              accountName,
+              content,
+              scheduledAt,
+              mediaIds: selectedMediaIds,
+            });
             return {
               platform,
               accountId,

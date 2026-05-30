@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ErrorNotice } from "@/components/error-notice";
 import { EditPostModal } from "@/components/edit-post-modal-v2";
 import { PostComposerModal } from "@/components/post-composer-modal-v2";
-import { cancelPost, fetchAccounts, fetchPostMetrics, fetchPosts, processOverduePosts, publishPostNow } from "@/lib/api";
+import { cancelPost, fetchAccounts, fetchPostMetrics, fetchPosts, isMetaReviewDemoPost, processOverduePosts, publishPostNow } from "@/lib/api";
 import { Account, NormalizedPostMetrics, Post, PostLiveMetricsResponse } from "@/lib/types";
 
 type FilterStatus = "all" | "scheduled" | "posted" | "failed" | "cancelled";
@@ -455,9 +455,10 @@ export default function PostsClient() {
                   {items.map((post) => {
                     const account = accountMap.get(post.social_account_id);
                     const busy = busyPostId === post.id;
-                    const canEdit = !["posted","processing","cancelled"].includes(post.status);
-                    const canPublish = !["posted","processing"].includes(post.status);
-                    const canCancel = !["posted","cancelled"].includes(post.status);
+                    const demoPost = isMetaReviewDemoPost(post);
+                    const canEdit = !demoPost && !["posted","processing","cancelled"].includes(post.status);
+                    const canPublish = !demoPost && !["posted","processing"].includes(post.status);
+                    const canCancel = !demoPost && !["posted","cancelled"].includes(post.status);
                     const liveMetrics = metricsByPost[post.id];
                     const normalizedMetrics = normalizeMetrics(liveMetrics);
                     // FIX: liveMetrics may still be loading when the component first renders.
@@ -479,6 +480,11 @@ export default function PostsClient() {
                               {post.retry_count > 0 && (
                                 <span className="text-xs text-ink-500 bg-[#f0ebe0] rounded-full px-2 py-0.5">
                                   {post.retry_count}/{post.max_retries} retries
+                                </span>
+                              )}
+                              {demoPost && (
+                                <span className="rounded-full bg-[#fff1cc] px-2.5 py-1 text-xs font-semibold text-[#9c7620]">
+                                  Meta review demo
                                 </span>
                               )}
                             </div>
