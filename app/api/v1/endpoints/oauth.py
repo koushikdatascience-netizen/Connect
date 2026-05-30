@@ -365,8 +365,7 @@ def _facebook_authorization_url(tenant_id: str, user_id: str, add_another: bool 
         "client_id": settings.FACEBOOK_CLIENT_ID,
         "redirect_uri": settings.facebook_redirect_uri,
         "state": state,
-        # "scope": "pages_manage_posts,pages_read_engagement,pages_show_list,business_management,instagram_basic,instagram_content_publish",
-        "scope": "public_profile,email",
+        "scope": "public_profile,email,pages_show_list,pages_read_engagement,pages_manage_posts",
     }
     if add_another:
         params["auth_type"] = "rerequest"
@@ -379,8 +378,7 @@ def _instagram_authorization_url(tenant_id: str, user_id: str, add_another: bool
         "client_id": settings.FACEBOOK_CLIENT_ID,
         "redirect_uri": settings.instagram_redirect_uri,
         "state": state,
-        # "scope": "instagram_basic,instagram_content_publish,pages_show_list,pages_read_engagement,business_management",
-        "scope": "public_profile,email",  
+        "scope": "public_profile,email,instagram_basic,instagram_content_publish,pages_show_list,pages_read_engagement",
     }
     if add_another:
         params["auth_type"] = "rerequest"
