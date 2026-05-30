@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     # OAuth
     FACEBOOK_CLIENT_ID: str
     FACEBOOK_SECRET: str
+    FACEBOOK_OAUTH_SCOPES: str = "public_profile,email"
+    INSTAGRAM_OAUTH_SCOPES: str = "public_profile,email"
     LINKEDIN_CLIENT_ID: str
     LINKEDIN_SECRET: str
     GOOGLE_CLIENT_ID: str
