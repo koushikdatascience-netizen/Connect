@@ -13,6 +13,8 @@ import { Post } from "@/lib/types";
 type FilterStatus = "all" | "scheduled" | "posted" | "draft" | "failed";
 type ViewMode = "list" | "grid";
 
+const POSTS_PER_PAGE = 10;
+
 function formatDate(value?: string | null) {
   if (!value) return "Not scheduled";
   try {
@@ -88,6 +90,7 @@ export default function PostsStudio() {
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [selectedPostId, setSelectedPostId] = useState<number | null>(null);
   const [viewingMetricsPostId, setViewingMetricsPostId] = useState<number | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   async function load() {
     try {
@@ -118,6 +121,18 @@ export default function PostsStudio() {
   }, [platformFilter, posts, searchQuery, statusFilter]);
 
   const selectedPost = filteredPosts.find((post) => post.id === selectedPostId) ?? filteredPosts[0] ?? null;
+  const totalPages = Math.max(1, Math.ceil(filteredPosts.length / POSTS_PER_PAGE));
+  const paginatedPosts = filteredPosts.slice((currentPage - 1) * POSTS_PER_PAGE, currentPage * POSTS_PER_PAGE);
+  const pageStart = filteredPosts.length ? (currentPage - 1) * POSTS_PER_PAGE + 1 : 0;
+  const pageEnd = Math.min(currentPage * POSTS_PER_PAGE, filteredPosts.length);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [platformFilter, searchQuery, statusFilter, viewMode]);
+
+  useEffect(() => {
+    setCurrentPage((page) => Math.min(page, totalPages));
+  }, [totalPages]);
 
   async function handleDelete(postId: number) {
     try {
@@ -198,7 +213,7 @@ export default function PostsStudio() {
               <div className="rounded-[26px] border border-[#eadfcd] bg-[#fff8e8] p-4 shadow-[0_10px_24px_rgba(180,144,34,0.08)]">
                 {viewMode === "list" ? (
                   <div className="space-y-3">
-                    {filteredPosts.map((post) => {
+                    {paginatedPosts.map((post) => {
                       const liveUrl = getLivePostUrl(post);
                       const actionDisabled = isPendingApproval;
                       return (
@@ -296,7 +311,7 @@ export default function PostsStudio() {
                   </div>
                 ) : (
                   <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                    {filteredPosts.map((post) => (
+                    {paginatedPosts.map((post) => (
                       <button key={post.id} type="button" onClick={() => setSelectedPostId(post.id)} className={`overflow-hidden rounded-[22px] border text-left transition ${selectedPostId === post.id ? "border-[#e1ca8b] shadow-[0_12px_28px_rgba(244,180,0,0.14)]" : "border-[#eee4d6] bg-[#fffef9] hover:border-[#e2d4b1]"}`}>
                         <div className="relative h-36 bg-[linear-gradient(135deg,#2f2f2f,#8d867c)]">
                           <div className="absolute left-3 top-3 rounded-full bg-black/65 px-2 py-1 text-[11px] text-white">{post.media_ids.length ? "Video" : "Post"}</div>
@@ -314,6 +329,34 @@ export default function PostsStudio() {
                     ))}
                   </div>
                 )}
+                {filteredPosts.length > POSTS_PER_PAGE ? (
+                  <div className="mt-4 flex flex-col gap-3 border-t border-[#eadfcd] pt-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="text-sm text-ink-500">
+                      Showing {pageStart}-{pageEnd} of {filteredPosts.length}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                        disabled={currentPage === 1}
+                        className="secondary-button px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        Previous
+                      </button>
+                      <span className="rounded-full border border-[#eadfcd] bg-[#fffef9] px-4 py-2 text-sm font-semibold text-ink-700">
+                        {currentPage} / {totalPages}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                        disabled={currentPage === totalPages}
+                        className="secondary-button px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
               </div>
             </div>
 

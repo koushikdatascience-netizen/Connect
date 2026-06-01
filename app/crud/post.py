@@ -5,6 +5,8 @@ from app.models.media_asset import MediaAsset
 from app.models.scheduled_post import ScheduledPost
 from app.models.post_media import PostMedia
 from app.models.social_account import SocialAccount
+from app.models.analytics_metric_snapshot import AnalyticsMetricSnapshot
+from app.models.analytics_subject import AnalyticsSubject
 
 
 def _is_future_timestamp(value):
@@ -266,6 +268,24 @@ def delete_post(db: Session, tenant_id: str, post_id: int):
         PostMedia.post_id == post_id,
         PostMedia.tenant_id == tenant_id,
     ).delete()
+    subject_ids = [
+        row[0]
+        for row in db.query(AnalyticsSubject.id)
+        .filter(
+            AnalyticsSubject.scheduled_post_id == post_id,
+            AnalyticsSubject.tenant_id == tenant_id,
+        )
+        .all()
+    ]
+    if subject_ids:
+        db.query(AnalyticsMetricSnapshot).filter(
+            AnalyticsMetricSnapshot.analytics_subject_id.in_(subject_ids),
+            AnalyticsMetricSnapshot.tenant_id == tenant_id,
+        ).delete(synchronize_session=False)
+        db.query(AnalyticsSubject).filter(
+            AnalyticsSubject.id.in_(subject_ids),
+            AnalyticsSubject.tenant_id == tenant_id,
+        ).delete(synchronize_session=False)
     db.delete(post)
     db.commit()
     return True
