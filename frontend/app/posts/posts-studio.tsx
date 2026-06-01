@@ -329,34 +329,32 @@ export default function PostsStudio() {
                     ))}
                   </div>
                 )}
-                {filteredPosts.length > POSTS_PER_PAGE ? (
-                  <div className="mt-4 flex flex-col gap-3 border-t border-[#eadfcd] pt-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="text-sm text-ink-500">
-                      Showing {pageStart}-{pageEnd} of {filteredPosts.length}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-                        disabled={currentPage === 1}
-                        className="secondary-button px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        Previous
-                      </button>
-                      <span className="rounded-full border border-[#eadfcd] bg-[#fffef9] px-4 py-2 text-sm font-semibold text-ink-700">
-                        {currentPage} / {totalPages}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
-                        disabled={currentPage === totalPages}
-                        className="secondary-button px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        Next
-                      </button>
-                    </div>
+                <div className="mt-4 flex flex-col gap-3 border-t border-[#eadfcd] pt-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="text-sm text-ink-500">
+                    Showing {pageStart}-{pageEnd} of {filteredPosts.length}
                   </div>
-                ) : null}
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                      disabled={currentPage === 1}
+                      className="secondary-button px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      Previous
+                    </button>
+                    <span className="rounded-full border border-[#eadfcd] bg-[#fffef9] px-4 py-2 text-sm font-semibold text-ink-700">
+                      {currentPage} / {totalPages}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                      disabled={currentPage === totalPages}
+                      className="secondary-button px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
 

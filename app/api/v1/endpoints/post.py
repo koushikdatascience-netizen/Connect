@@ -415,7 +415,21 @@ def delete_single_post(
                 f"{exc}"
             )
 
-    deleted = delete_post(db, tenant_id, post_id)
+    try:
+        deleted = delete_post(db, tenant_id, post_id)
+    except Exception as exc:
+        db.rollback()
+        logger.exception(
+            "posts.delete.local_failed tenant=%s post_id=%s platform=%s status=%s",
+            tenant_id,
+            post_id,
+            post.platform,
+            post.status,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Unable to delete post locally: {exc.__class__.__name__}",
+        ) from exc
     if not deleted:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
