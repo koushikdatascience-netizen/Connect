@@ -366,9 +366,9 @@ def _facebook_authorization_url(tenant_id: str, user_id: str, add_another: bool 
         "redirect_uri": settings.facebook_redirect_uri,
         "state": state,
         "scope": "public_profile,email,pages_show_list,pages_read_engagement,pages_manage_posts",
+        "auth_type": "rerequest",
+        "return_scopes": "true",
     }
-    if add_another:
-        params["auth_type"] = "rerequest"
     return "https://www.facebook.com/v18.0/dialog/oauth?{0}".format(urlencode(params))
 
 
@@ -379,9 +379,9 @@ def _instagram_authorization_url(tenant_id: str, user_id: str, add_another: bool
         "redirect_uri": settings.instagram_redirect_uri,
         "state": state,
         "scope": "public_profile,email,pages_show_list,pages_read_engagement,instagram_basic,instagram_content_publish,instagram_manage_insights",
+        "auth_type": "rerequest",
+        "return_scopes": "true",
     }
-    if add_another:
-        params["auth_type"] = "rerequest"
     return "https://www.facebook.com/v18.0/dialog/oauth?{0}".format(urlencode(params))
 
 
@@ -736,10 +736,26 @@ def instagram_callback(
 
         saved_accounts = []
 
-        for page in _page_accounts(access_token):
+        pages = _page_accounts(access_token)
+        logger.info(
+            "oauth.instagram.pages_loaded tenant=%s user=%s pages=%s",
+            tenant_id,
+            user_id,
+            len(pages),
+        )
+
+        for page in pages:
             page_data = _page_details(page["id"], page["access_token"])
             instagram_account = page_data.get("instagram_business_account") or page_data.get("connected_instagram_account")
             if not instagram_account:
+                logger.info(
+                    "oauth.instagram.page_without_instagram tenant=%s user=%s page_id=%s page_name=%s fields=%s",
+                    tenant_id,
+                    user_id,
+                    page.get("id"),
+                    page.get("name"),
+                    sorted(page_data.keys()),
+                )
                 continue
 
             account = save_social_account(
