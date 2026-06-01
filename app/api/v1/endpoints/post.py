@@ -28,6 +28,7 @@ from app.crud.post import (
 from app.utils.deps import get_db, get_tenant
 from app.models.social_account import SocialAccount
 from app.services.provider_publishers import (
+    ProviderAPIError,
     PublishError,
     UnsupportedPublishError,
     delete_provider_post,
@@ -410,6 +411,11 @@ def delete_single_post(
                 f"this platform yet: {exc}"
             )
         except PublishError as exc:
+            message = (
+                "Post removed from SocialSync, but the platform copy could not be deleted: "
+                f"{exc}"
+            )
+        except ProviderAPIError as exc:
             message = (
                 "Post removed from SocialSync, but the platform copy could not be deleted: "
                 f"{exc}"
