@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { MediaAsset, PlatformName } from "@/lib/types";
 
@@ -140,6 +141,7 @@ function createEditedCanvas(image: HTMLImageElement, settings: RenderSettings, l
 }
 
 export function MediaEditModal({ asset, open, saving, selectedPlatforms, onClose, onSave }: Props) {
+  const [mounted, setMounted] = useState(false);
   const [sourceImage, setSourceImage] = useState<HTMLImageElement | null>(null);
   const [sourceUrl, setSourceUrl] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -159,6 +161,10 @@ export function MediaEditModal({ asset, open, saving, selectedPlatforms, onClose
 
   const imgRef = useRef<HTMLImageElement>(null);
   const getImgRect = useCallback(() => imgRef.current?.getBoundingClientRect() ?? null, []);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   
   const clientToImg = useCallback((cX: number, cY: number, r: DOMRect) => ({
     x: clamp((cX - r.left) / r.width, 0, 1),
@@ -243,10 +249,10 @@ export function MediaEditModal({ asset, open, saving, selectedPlatforms, onClose
 
   const isFreeCrop = aspect === "free" && !compareOriginal;
 
-  return (
+  const modal = (
     <AnimatePresence>
       {open && asset && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[70] flex items-stretch justify-center bg-black/75 p-0 backdrop-blur-md sm:items-center sm:p-4">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[9999] flex items-stretch justify-center bg-black/75 p-0 backdrop-blur-md sm:items-center sm:p-4">
           <motion.div initial={{ scale: 0.98 }} animate={{ scale: 1 }} className="flex h-[100dvh] w-full max-w-7xl flex-col overflow-hidden bg-[#f8f2e8] shadow-2xl sm:h-[95dvh] sm:rounded-[24px] sm:border sm:border-[#d8ccb5]">
             
             <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[#eadfcb] bg-white/70 px-3 py-3 sm:px-6 sm:py-4">
@@ -258,7 +264,7 @@ export function MediaEditModal({ asset, open, saving, selectedPlatforms, onClose
             </div>
 
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
-              <div className={`relative flex shrink-0 items-center justify-center overflow-hidden bg-[#f1e7d6] p-2 sm:p-4 lg:h-auto lg:min-h-0 lg:flex-1 lg:shrink lg:p-6 ${isFreeCrop ? "h-[48dvh] min-h-[300px] sm:h-[64dvh] sm:min-h-[380px]" : "h-[34dvh] min-h-[210px] sm:h-[48dvh] sm:min-h-[260px]"}`}>
+              <div className={`relative flex shrink-0 items-center justify-center overflow-hidden bg-[#f1e7d6] p-2 sm:p-4 lg:h-auto lg:min-h-0 lg:flex-1 lg:shrink lg:p-6 ${isFreeCrop ? "h-[42dvh] min-h-[260px] sm:h-[64dvh] sm:min-h-[380px]" : "h-[28dvh] min-h-[170px] sm:h-[48dvh] sm:min-h-[260px]"}`}>
                 <div className="relative flex h-full w-full touch-none items-center justify-center overflow-hidden" onMouseDown={startInteraction} onTouchStart={startInteraction}>
                   {previewUrl ? (
                     <img
@@ -290,7 +296,7 @@ export function MediaEditModal({ asset, open, saving, selectedPlatforms, onClose
                 </div>
               </div>
 
-              <div className="min-h-0 w-full flex-1 space-y-4 overflow-y-auto border-t border-[#eadfcb] bg-white p-3 pb-0 sm:space-y-6 sm:p-4 sm:pb-0 lg:w-[380px] lg:flex-none lg:space-y-8 lg:border-l lg:border-t-0 lg:p-6 lg:pb-0">
+              <div className="min-h-0 w-full flex-1 space-y-3 overflow-y-auto border-t border-[#eadfcb] bg-white p-3 pb-0 sm:space-y-6 sm:p-4 sm:pb-0 lg:w-[380px] lg:flex-none lg:space-y-8 lg:border-l lg:border-t-0 lg:p-6 lg:pb-0">
                 {!isFreeCrop && <section>
                   <label className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Recommended</label>
                   <div className="mt-2 grid grid-cols-1 gap-1.5 sm:mt-3 sm:grid-cols-3 sm:gap-2 lg:grid-cols-1">
@@ -350,4 +356,7 @@ export function MediaEditModal({ asset, open, saving, selectedPlatforms, onClose
       )}
     </AnimatePresence>
   );
+
+  if (!mounted) return null;
+  return createPortal(modal, document.body);
 }
