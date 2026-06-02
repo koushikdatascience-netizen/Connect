@@ -43,7 +43,11 @@ export function AppShellUx({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { isPendingApproval, session } = useSessionState();
-  const isComposePage = pathname === "/compose" || pathname?.startsWith("/compose/");
+  const isComposePage =
+    pathname === "/compose" ||
+    pathname?.startsWith("/compose/") ||
+    pathname === "/create-post" ||
+    pathname?.startsWith("/create-post/");
   const visibleNavigation = useMemo(
     () => (session?.is_admin ? [...navigation, adminNavigation] : [...navigation]),
     [session?.is_admin],
@@ -94,7 +98,10 @@ export function AppShellUx({ children }: { children: ReactNode }) {
               <button type="button" onClick={() => setMobileMenuOpen(false)} className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[#3b3421] bg-[#151515] p-0 text-[#f4d24a] transition-colors hover:border-[#5a4b1e] hover:bg-[#1b1b1b]" aria-label="Close navigation"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><line x1="2" y1="2" x2="14" y2="14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><line x1="14" y1="2" x2="2" y2="14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg></button>
             </div>
             <nav className="space-y-2">{visibleNavigation.map((item) => {
-              const active = pathname === item.href || pathname?.startsWith(`${item.href}/`);
+              const active =
+                pathname === item.href ||
+                pathname?.startsWith(`${item.href}/`) ||
+                (item.href === "/compose" && pathname === "/create-post");
               return <Link key={item.href} href={item.href} className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium ${active ? "bg-[#1d1a10] text-[#f4d24a]" : "text-[#efe3aa] hover:bg-[#171717] hover:text-white"}`} onClick={() => setMobileMenuOpen(false)}><NavIcon icon={item.icon} /><span className="flex-1">{item.label}</span>{active ? <span className="h-2 w-2 rounded-full bg-[#f4d24a]" /> : null}</Link>;
             })}</nav>
             <a href="https://crm.snapkey.in" className="mt-6 inline-flex w-full items-center justify-center rounded-full border border-[#3b3421] bg-[#151515] px-5 py-3 text-sm font-medium text-[#f4d24a] transition-colors hover:border-[#5a4b1e] hover:bg-[#1b1b1b]">Back to Snapkey CRM</a>
@@ -110,7 +117,10 @@ export function AppShellUx({ children }: { children: ReactNode }) {
               <div className="mb-6 flex items-center gap-3"><LogoMark /><div><div className="font-display text-[22px] font-semibold tracking-[-0.06em] text-white">Snapkey Connect</div><div className="text-[10px] uppercase tracking-[0.24em] text-[#f4d24a]">Part of Snapkey CRM</div></div></div>
               <nav className="space-y-1.5">
                 {visibleNavigation.map((item) => {
-                  const active = pathname === item.href || pathname?.startsWith(`${item.href}/`);
+                  const active =
+                    pathname === item.href ||
+                    pathname?.startsWith(`${item.href}/`) ||
+                    (item.href === "/compose" && pathname === "/create-post");
                   return (
                     <Link key={item.href} href={item.href} className={`group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-all ${active ? "bg-[#1d1a10] text-[#f4d24a] shadow-[0_10px_24px_rgba(0,0,0,0.28)]" : "text-[#efe3aa] hover:bg-[#171717] hover:text-white"}`}>
                       <NavIcon icon={item.icon} />
@@ -139,7 +149,10 @@ export function AppShellUx({ children }: { children: ReactNode }) {
       <nav className="fixed inset-x-2 bottom-2 z-40 rounded-[22px] border border-[#2b2414] bg-[rgba(10,10,10,0.96)] p-1.5 shadow-[0_18px_40px_rgba(0,0,0,0.3)] backdrop-blur sm:inset-x-4 sm:bottom-4 sm:rounded-[26px] sm:p-2 lg:hidden">
         <div className="grid grid-cols-4 gap-1">
           {visibleNavigation.slice(0, 4).map((item) => {
-            const active = pathname === item.href || pathname?.startsWith(`${item.href}/`);
+            const active =
+              pathname === item.href ||
+              pathname?.startsWith(`${item.href}/`) ||
+              (item.href === "/compose" && pathname === "/create-post");
             return (
               <Link key={item.href} href={item.href} className={`flex min-w-0 flex-col items-center justify-center rounded-[16px] px-1 py-2 text-[10px] font-medium sm:rounded-[18px] sm:px-2 sm:text-[11px] ${active ? "bg-[#1d1a10] text-[#f4d24a]" : "text-[#d8cfa7] hover:bg-[#171717] hover:text-white"}`}>
                 <NavIcon icon={item.icon} />
