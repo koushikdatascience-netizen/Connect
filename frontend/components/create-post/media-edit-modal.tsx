@@ -258,7 +258,7 @@ export function MediaEditModal({ asset, open, saving, selectedPlatforms, onClose
             </div>
 
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
-              <div className={`relative flex shrink-0 items-center justify-center overflow-hidden bg-[#f1e7d6] p-2 sm:p-4 lg:h-auto lg:min-h-0 lg:flex-1 lg:shrink lg:p-6 ${isFreeCrop ? "h-[62dvh] min-h-[380px] sm:h-[64dvh]" : "h-[44dvh] min-h-[260px] sm:h-[48dvh]"}`}>
+              <div className={`relative flex shrink-0 items-center justify-center overflow-hidden bg-[#f1e7d6] p-2 sm:p-4 lg:h-auto lg:min-h-0 lg:flex-1 lg:shrink lg:p-6 ${isFreeCrop ? "h-[48dvh] min-h-[300px] sm:h-[64dvh] sm:min-h-[380px]" : "h-[34dvh] min-h-[210px] sm:h-[48dvh] sm:min-h-[260px]"}`}>
                 <div className="relative flex h-full w-full touch-none items-center justify-center overflow-hidden" onMouseDown={startInteraction} onTouchStart={startInteraction}>
                   {previewUrl ? (
                     <img
@@ -290,18 +290,18 @@ export function MediaEditModal({ asset, open, saving, selectedPlatforms, onClose
                 </div>
               </div>
 
-              <div className="min-h-0 w-full flex-1 overflow-y-auto border-t border-[#eadfcb] bg-white p-4 lg:w-[380px] lg:flex-none lg:border-l lg:border-t-0 lg:p-6 space-y-5 sm:space-y-6 lg:space-y-8">
+              <div className="min-h-0 w-full flex-1 space-y-4 overflow-y-auto border-t border-[#eadfcb] bg-white p-3 pb-0 sm:space-y-6 sm:p-4 sm:pb-0 lg:w-[380px] lg:flex-none lg:space-y-8 lg:border-l lg:border-t-0 lg:p-6 lg:pb-0">
                 {!isFreeCrop && <section>
                   <label className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Recommended</label>
-                  <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3 lg:grid-cols-1">
+                  <div className="mt-2 grid grid-cols-1 gap-1.5 sm:mt-3 sm:grid-cols-3 sm:gap-2 lg:grid-cols-1">
                     {QUICK_PRESETS.map((p) => (
                       <button key={p.id} onClick={() => setAspect(p.aspect)}
-                        className={`w-full rounded-2xl border-2 p-3 text-left transition-all sm:p-4 ${aspect === p.aspect ? 'border-amber-500 bg-amber-50' : 'border-gray-100 hover:border-gray-200'}`}>
+                        className={`w-full rounded-xl border-2 p-2 text-left transition-all sm:rounded-2xl sm:p-3 lg:p-4 ${aspect === p.aspect ? 'border-amber-500 bg-amber-50' : 'border-gray-100 hover:border-gray-200'}`}>
                         <div className="flex items-start justify-between gap-2">
-                          <span className="font-bold text-sm text-gray-900">{p.label}</span>
-                          {p.recommendedFor?.some(r => selectedPlatforms.includes(r)) && <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold">MATCH</span>}
+                          <span className="text-xs font-bold text-gray-900 sm:text-sm">{p.label}</span>
+                          {p.recommendedFor?.some(r => selectedPlatforms.includes(r)) && <span className="rounded-full bg-green-100 px-1.5 py-0.5 text-[9px] font-bold text-green-700 sm:px-2 sm:text-[10px]">MATCH</span>}
                         </div>
-                        <p className="text-xs text-gray-500 mt-1">{p.description}</p>
+                        <p className="mt-0.5 text-[11px] text-gray-500 sm:mt-1 sm:text-xs">{p.description}</p>
                       </button>
                     ))}
                   </div>
@@ -309,10 +309,10 @@ export function MediaEditModal({ asset, open, saving, selectedPlatforms, onClose
 
                 <section>
                   <label className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Aspects</label>
-                  <div className="mt-3 grid grid-cols-3 gap-2">
+                  <div className="mt-2 grid grid-cols-3 gap-1.5 sm:mt-3 sm:gap-2">
                     {ASPECT_OPTIONS.map(opt => (
                       <button key={opt.id} onClick={() => setAspect(opt.id)}
-                        className={`py-2.5 text-xs font-bold rounded-xl border transition-all ${aspect === opt.id ? 'bg-black text-white border-black' : 'bg-gray-50 border-gray-100 text-gray-600 hover:border-gray-300'}`}>
+                        className={`rounded-lg border px-1.5 py-1.5 text-[11px] font-bold transition-all sm:rounded-xl sm:py-2.5 sm:text-xs ${aspect === opt.id ? 'bg-black text-white border-black' : 'bg-gray-50 border-gray-100 text-gray-600 hover:border-gray-300'}`}>
                         {opt.label}
                       </button>
                     ))}
@@ -330,17 +330,19 @@ export function MediaEditModal({ asset, open, saving, selectedPlatforms, onClose
                 <section>
                   <label className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Alt Text</label>
                   <textarea value={altText} onChange={e => setAltText(e.target.value)}
-                    className="mt-2 w-full p-4 text-sm border-gray-100 border rounded-2xl focus:ring-2 focus:ring-amber-500 bg-gray-50 outline-none min-h-[100px]"
+                    className="mt-2 min-h-[72px] w-full rounded-2xl border border-gray-100 bg-gray-50 p-3 text-sm outline-none focus:ring-2 focus:ring-amber-500 sm:min-h-[100px] sm:p-4"
                     placeholder="Describe for accessibility..." />
                 </section>
 
-                <button disabled={saving || loading} onClick={() => {
-                   const canvas = createEditedCanvas(sourceImage!, { rotation, zoom, panX, panY, aspect, freeWidth: 1, freeHeight: 1, freeCropBox }, 1600);
-                   canvas.toBlob(b => onSave({ blob: b!, altText, fileName: 'edit.jpg', mimeType: 'image/jpeg' }), 'image/jpeg', 0.92);
-                }}
-                  className="sticky bottom-0 w-full rounded-2xl bg-amber-500 py-4 text-sm font-black text-white shadow-xl shadow-amber-100 transition-all hover:bg-amber-600 active:scale-[0.97] disabled:opacity-30 sm:py-5">
-                  {saving ? "Saving..." : "Apply All Changes"}
-                </button>
+                <div className="sticky bottom-0 -mx-3 bg-white/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-12px_24px_rgba(255,255,255,0.92)] backdrop-blur sm:-mx-4 sm:px-4 sm:pb-4 lg:-mx-6 lg:px-6">
+                  <button disabled={saving || loading} onClick={() => {
+                    const canvas = createEditedCanvas(sourceImage!, { rotation, zoom, panX, panY, aspect, freeWidth: 1, freeHeight: 1, freeCropBox }, 1600);
+                    canvas.toBlob(b => onSave({ blob: b!, altText, fileName: 'edit.jpg', mimeType: 'image/jpeg' }), 'image/jpeg', 0.92);
+                  }}
+                    className="w-full rounded-xl bg-amber-500 py-3 text-sm font-black text-white shadow-xl shadow-amber-100 transition-all hover:bg-amber-600 active:scale-[0.97] disabled:opacity-30 sm:rounded-2xl sm:py-4">
+                    {saving ? "Saving..." : "Apply All Changes"}
+                  </button>
+                </div>
               </div>
             </div>
           </motion.div>
