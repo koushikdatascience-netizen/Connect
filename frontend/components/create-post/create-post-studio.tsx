@@ -904,8 +904,8 @@ export function CreatePostStudio() {
       />
 
       {/* POST BUTTON BAR */}
-      <div className="order-2 flex shrink-0 flex-col gap-2.5 border-t border-[#eadfcb] bg-[#fffef9] px-3 py-2.5 shadow-[0_-4px_18px_rgba(180,144,34,0.08)] sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-3">
-        <div className="min-w-0 text-[11px] leading-4 text-[#9b7b3f] sm:text-xs">
+      <div className="order-2 flex shrink-0 flex-col gap-1.5 border-t border-[#eadfcb] bg-[#fffef9] px-2.5 pb-[calc(0.375rem+env(safe-area-inset-bottom))] pt-1.5 shadow-[0_-4px_18px_rgba(180,144,34,0.08)] sm:flex-row sm:items-center sm:justify-between sm:gap-2.5 sm:px-5 sm:py-3">
+        <div className="min-w-0 truncate text-[10px] leading-4 text-[#9b7b3f] sm:text-xs">
           {blockingValidationItems.length > 0
             ? `${blockingValidationItems.length} platform requirement${
                 blockingValidationItems.length === 1 ? "" : "s"
@@ -920,18 +920,18 @@ export function CreatePostStudio() {
             ? "Connect a social account before publishing"
             : "Select accounts to publish"}
         </div>
-        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+        <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-row">
         <motion.button
           type="button"
           onClick={openScheduleModal}
           disabled={!canSubmit}
           whileHover={{ scale: submitting ? 1 : 1.03 }}
           whileTap={{ scale: 0.97 }}
-          className="relative flex w-full items-center justify-center gap-2.5 rounded-full border border-[#eadba6] bg-white px-5 py-2.5 text-sm font-bold text-[#6f5415] transition-all hover:bg-[#fff8e6] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+          className="relative flex min-h-9 w-full items-center justify-center gap-1.5 rounded-full border border-[#eadba6] bg-white px-3 py-2 text-xs font-bold text-[#6f5415] transition-all hover:bg-[#fff8e6] disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-0 sm:w-auto sm:gap-2.5 sm:px-5 sm:py-2.5 sm:text-sm"
         >
           <svg
-            width="15"
-            height="15"
+            width="13"
+            height="13"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -950,7 +950,7 @@ export function CreatePostStudio() {
           disabled={!canSubmit}
           whileHover={{ scale: submitting ? 1 : 1.03 }}
           whileTap={{ scale: 0.97 }}
-          className="relative flex w-full items-center justify-center gap-2.5 rounded-full bg-[#ffd52a] px-7 py-2.5 text-sm font-bold text-[#09090e] shadow-[0_6px_22px_rgba(255,213,42,0.35)] transition-all disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+          className="relative flex min-h-9 w-full items-center justify-center gap-1.5 rounded-full bg-[#ffd52a] px-3 py-2 text-xs font-bold text-[#09090e] shadow-[0_6px_18px_rgba(255,213,42,0.28)] transition-all disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-0 sm:w-auto sm:gap-2.5 sm:px-7 sm:py-2.5 sm:text-sm"
         >
           {submitting ? (
             <>
@@ -960,8 +960,8 @@ export function CreatePostStudio() {
           ) : (
             <>
               <svg
-                width="15"
-                height="15"
+                width="13"
+                height="13"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
