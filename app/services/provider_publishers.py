@@ -2184,15 +2184,10 @@ def delete_provider_post(
         return True
 
     if platform == "instagram":
-        access_token = decrypt_token(account.encrypted_token)
-        response = requests.delete(
-            f"https://graph.facebook.com/v18.0/{quote(post.platform_post_id, safe='')}",
-            params={"access_token": access_token},
-            timeout=30,
+        raise UnsupportedPublishError(
+            "Instagram does not support deleting published media through the Instagram Graph publishing API. "
+            "Delete the post directly in Instagram."
         )
-        if not response.ok:
-            _raise_provider_error("instagram", response, retryable=False)
-        return True
 
     if platform == "twitter":
         access_token = decrypt_token(account.encrypted_token)

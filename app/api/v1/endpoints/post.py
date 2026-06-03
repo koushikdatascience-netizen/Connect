@@ -411,20 +411,21 @@ def delete_single_post(
             remote_deleted = delete_provider_post(post, account)
             message = "Post deleted from the platform and removed from SocialSync."
         except UnsupportedPublishError as exc:
-            message = (
-                "Post removed from SocialSync, but remote deletion is not supported for "
-                f"this platform yet: {exc}"
-            )
-        except PublishError as exc:
-            message = (
-                "Post removed from SocialSync, but the platform copy could not be deleted: "
-                f"{exc}"
-            )
-        except ProviderAPIError as exc:
-            message = (
-                "Post removed from SocialSync, but the platform copy could not be deleted: "
-                f"{exc}"
-            )
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=(
+                    "This published post cannot be deleted from the platform through Snapkey Connect. "
+                    f"{exc}"
+                ),
+            ) from exc
+        except (PublishError, ProviderAPIError) as exc:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=(
+                    "The platform copy could not be deleted, so the post was kept in Snapkey Connect. "
+                    f"{exc}"
+                ),
+            ) from exc
 
     try:
         deleted = delete_post(db, tenant_id, post_id)
