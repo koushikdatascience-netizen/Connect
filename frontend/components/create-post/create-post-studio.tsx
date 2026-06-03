@@ -812,11 +812,11 @@ export function CreatePostStudio() {
       </div>
 
       {/* PANELS */}
-      <div className="flex min-h-0 flex-1 overflow-hidden">
+      <div className="flex flex-col md:min-h-0 md:flex-1 md:flex-row md:overflow-hidden">
 
         {/* LEFT — Accounts */}
         <div
-          className={`min-h-0 w-full overflow-y-auto border-b bg-white md:block md:w-[260px] md:border-b-0 md:border-r ${
+          className={`w-full bg-white md:min-h-0 md:w-[260px] md:overflow-y-auto md:border-r ${
             mobileTab === "accounts" ? "block" : "hidden md:block"
           }`}
         >
@@ -842,7 +842,7 @@ export function CreatePostStudio() {
 
         {/* CENTER — Compose */}
         <div
-          className={`min-h-0 w-full flex-1 flex-col overflow-y-auto bg-white ${
+          className={`w-full flex-col bg-white md:min-h-0 md:flex-1 md:overflow-y-auto ${
             mobileTab === "compose" ? "flex" : "hidden md:flex"
           }`}
         >
@@ -869,7 +869,7 @@ export function CreatePostStudio() {
 
         {/* RIGHT — Settings */}
         <div
-          className={`min-h-0 w-full overflow-y-auto bg-white md:block md:w-[300px] md:border-l ${
+          className={`w-full bg-white md:min-h-0 md:w-[300px] md:overflow-y-auto md:border-l ${
             mobileTab === "settings" ? "block" : "hidden md:block"
           }`}
         >
@@ -904,7 +904,7 @@ export function CreatePostStudio() {
       />
 
       {/* POST BUTTON BAR */}
-      <div className="order-2 flex shrink-0 flex-col gap-1.5 border-t border-[#eadfcb] bg-[#fffef9] px-2.5 pb-[calc(0.375rem+env(safe-area-inset-bottom))] pt-1.5 shadow-[0_-4px_18px_rgba(180,144,34,0.08)] sm:flex-row sm:items-center sm:justify-between sm:gap-2.5 sm:px-5 sm:py-3">
+      <div className="order-2 flex shrink-0 flex-col gap-1.5 border-t border-[#eadfcb] bg-[#fffef9] px-2.5 pb-[calc(4.5rem+env(safe-area-inset-bottom))] pt-1.5 shadow-[0_-4px_18px_rgba(180,144,34,0.08)] sm:flex-row sm:items-center sm:justify-between sm:gap-2.5 sm:px-5 sm:py-3 md:pb-[calc(0.375rem+env(safe-area-inset-bottom))]">
         <div className="min-w-0 truncate text-[10px] leading-4 text-[#9b7b3f] sm:text-xs">
           {blockingValidationItems.length > 0
             ? `${blockingValidationItems.length} platform requirement${
