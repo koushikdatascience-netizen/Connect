@@ -58,6 +58,7 @@ def _build_developer_user(request: Request, settings) -> CurrentUser:
 
 async def jwt_context_middleware(request: Request, call_next):
     """JWT authentication middleware with CORS support for error responses."""
+    settings = get_settings()
     oauth_path = request.url.path.startswith("/api/v1/oauth/")
     oauth_callback_path = oauth_path and request.url.path.endswith("/callback")
     auth_exchange_path = request.url.path == "/api/v1/auth/webview/exchange"
@@ -73,14 +74,17 @@ async def jwt_context_middleware(request: Request, call_next):
         "/api/v1/auth/google/callback",
     }
 
-    public_paths = [
-        "/docs",
-        "/openapi.json",
-        "/redoc",
-        "/docs/oauth2-redirect",
-        "/api/v1/openapi.json",
-        "/api/v1/health",
-    ]
+    public_paths = ["/api/v1/health"]
+    if settings.ENABLE_API_DOCS:
+        public_paths.extend(
+            [
+                "/docs",
+                "/openapi.json",
+                "/redoc",
+                "/docs/oauth2-redirect",
+                "/api/v1/openapi.json",
+            ]
+        )
     if any(request.url.path.startswith(p) for p in public_paths):
         return await call_next(request)
 
@@ -93,7 +97,6 @@ async def jwt_context_middleware(request: Request, call_next):
     if request.method == "OPTIONS":
         return await call_next(request)
 
-    settings = get_settings()
     token = _extract_request_token(request, settings)
     current_user: Optional[CurrentUser] = None
 

@@ -29,19 +29,17 @@ logger = get_logger("app.oauth")
 
 
 def _build_state(tenant_id: str, user_id: str):
+    state = secrets.token_urlsafe(32)
     payload = {
         "tenant_id": tenant_id,
         "user_id": user_id,
-        "nonce": secrets.token_urlsafe(16),
         "exp": int(time.time()) + 600  # 10 min expiry
     }
 
-    encoded = base64.urlsafe_b64encode(json.dumps(payload).encode()).decode()
-
-    # Store nonce in Redis (anti-replay). If Redis is unavailable, surface a
-    # service-level error instead of a generic 500.
+    # Store the full OAuth context server-side. The provider only receives an
+    # opaque state id, so tenant/user values cannot be tampered with in transit.
     try:
-        redis_client.setex(f"oauth_state:{payload['nonce']}", 600, "1")
+        redis_client.setex(f"oauth_state:{state}", 600, json.dumps(payload))
     except Exception:
         logger.exception("oauth.state_store_unavailable operation=setex")
         raise HTTPException(
@@ -49,25 +47,13 @@ def _build_state(tenant_id: str, user_id: str):
             detail="OAuth is temporarily unavailable. Please try again in a moment.",
         )
 
-    return encoded
+    return state
 
 
 def _validate_and_extract_state(state: str):
     try:
-        decoded = json.loads(base64.urlsafe_b64decode(state.encode()).decode())
-
-        tenant_id = decoded["tenant_id"]
-        user_id = decoded["user_id"]
-        nonce = decoded["nonce"]
-        exp = decoded["exp"]
-
-        # expiry check
-        if time.time() > exp:
-            raise HTTPException(status_code=400, detail="State expired")
-
-        # Nonce check (anti-replay).
         try:
-            nonce_exists = redis_client.get(f"oauth_state:{nonce}")
+            raw_state = redis_client.get(f"oauth_state:{state}")
         except Exception:
             logger.exception("oauth.state_store_unavailable operation=get")
             raise HTTPException(
@@ -75,17 +61,25 @@ def _validate_and_extract_state(state: str):
                 detail="OAuth is temporarily unavailable. Please try again in a moment.",
             )
 
-        if not nonce_exists:
+        if not raw_state:
             raise HTTPException(status_code=400, detail="Invalid state")
 
         try:
-            redis_client.delete(f"oauth_state:{nonce}")
+            redis_client.delete(f"oauth_state:{state}")
         except Exception:
             logger.exception("oauth.state_store_unavailable operation=delete")
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="OAuth is temporarily unavailable. Please try again in a moment.",
             )
+
+        decoded = json.loads(raw_state)
+        tenant_id = decoded["tenant_id"]
+        user_id = decoded["user_id"]
+        exp = decoded["exp"]
+
+        if time.time() > exp:
+            raise HTTPException(status_code=400, detail="State expired")
 
         return tenant_id, user_id
 
@@ -537,14 +531,12 @@ def _list_google_business_locations(access_token: str) -> list[dict]:
 
 def _twitter_authorization_url(tenant_id: str, user_id: str, add_another: bool = False) -> str:
     state = _build_state(tenant_id, user_id)
-    decoded = json.loads(base64.urlsafe_b64decode(state.encode()).decode())
-    nonce = decoded["nonce"]
 
     verifier = secrets.token_urlsafe(48)
     challenge = base64.urlsafe_b64encode(
         hashlib.sha256(verifier.encode("utf-8")).digest()
     ).decode("utf-8").rstrip("=")
-    _store_verifier(nonce, verifier)
+    _store_verifier(state, verifier)
 
     params = {
         "response_type": "code",
@@ -1215,14 +1207,11 @@ def twitter_callback(
         return _dashboard_redirect("twitter", "error", "Missing OAuth state from X callback.")
     tenant_id, user_id = _validate_and_extract_state(state)
 
-    # decode nonce after validation (safe version)
-    decoded = json.loads(base64.urlsafe_b64decode(state.encode()).decode())
-    nonce = decoded["nonce"]
     if not code:
         return _dashboard_redirect("twitter", "error", "X did not return an authorization code.")
 
     try:
-        verifier = _pop_verifier(nonce)
+        verifier = _pop_verifier(state)
         if not verifier:
             return _dashboard_redirect("twitter", "error", "Missing Twitter code verifier.")
 

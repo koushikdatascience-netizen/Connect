@@ -45,6 +45,7 @@ class Settings(BaseSettings):
     # Application
     PROJECT_NAME: str = "SocialSync"
     API_V1_STR: str = "/api/v1"
+    ENABLE_API_DOCS: bool = False
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
     WEBVIEW_AUTH_CODE_TTL_SECONDS: int = 60
     SESSION_COOKIE_NAME: str = "snapkey_session"

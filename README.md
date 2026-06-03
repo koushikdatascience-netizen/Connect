@@ -163,7 +163,7 @@ npm run dev
 ### 7. Open the app
 
 - Frontend: http://localhost:3000
-- Backend docs: http://localhost:8000/docs
+- Backend docs: disabled by default. Set `ENABLE_API_DOCS=true` for local API docs at http://localhost:8000/docs.
 
 ## Local auth and testing notes
 

@@ -13,6 +13,8 @@ from app.middleware.jwt_context import jwt_context_middleware
 
 configure_logging()
 logger = get_logger("app.main")
+settings = get_settings()
+api_docs_enabled = settings.ENABLE_API_DOCS
 
 
 @asynccontextmanager
@@ -24,21 +26,20 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title=get_settings().PROJECT_NAME,
+    title=settings.PROJECT_NAME,
     description="Multi-platform Social Media Scheduler",
     version="1.0.1",  # Bumped version to trigger Railway deploy
     lifespan=lifespan,
-    openapi_url=f"{get_settings().API_V1_STR}/openapi.json",
+    docs_url="/docs" if api_docs_enabled else None,
+    redoc_url="/redoc" if api_docs_enabled else None,
+    openapi_url=f"{settings.API_V1_STR}/openapi.json" if api_docs_enabled else None,
     swagger_ui_init_oauth={
-        "clientId": get_settings().GOOGLE_CLIENT_ID,
-        "clientSecret": get_settings().GOOGLE_SECRET,
+        "clientId": settings.GOOGLE_CLIENT_ID,
         "scopes": "openid email profile",
-        "appName": get_settings().PROJECT_NAME,
-    },
-    swagger_ui_oauth2_redirect_url="/docs/oauth2-redirect",
+        "appName": settings.PROJECT_NAME,
+    } if api_docs_enabled else None,
+    swagger_ui_oauth2_redirect_url="/docs/oauth2-redirect" if api_docs_enabled else None,
 )
-
-settings = get_settings()
 
 app.add_middleware(
     CORSMiddleware,
@@ -67,10 +68,10 @@ app.include_router(api_router, prefix=get_settings().API_V1_STR)
 
 @app.get("/")
 async def root():
-    return {
-        "message": "Welcome to SocialSync API",
-        "docs": "/docs"
-    }
+    payload = {"message": "Welcome to SocialSync API"}
+    if settings.ENABLE_API_DOCS:
+        payload["docs"] = "/docs"
+    return payload
 
 
 @app.middleware("http")
