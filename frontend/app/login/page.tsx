@@ -8,6 +8,7 @@ import { AuthPasswordField } from "@/components/auth-password-field";
 import { AuthSideShell } from "@/components/auth-side-shell";
 import { GoogleAuthButton } from "@/components/google-auth-button";
 import { getDemoBearerToken, getGoogleAuthUrl, loginConnectUser, setStoredAuthToken } from "@/lib/api";
+import { resolvePostLoginPath } from "@/lib/post-login";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -17,7 +18,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const nextPath = useMemo(() => searchParams.get("next") || "/compose", [searchParams]);
+  const nextPath = useMemo(() => searchParams.get("next") || "/post-login", [searchParams]);
   const approvalNotice = useMemo(() => searchParams.get("approval"), [searchParams]);
   const hasDemoToken = Boolean(getDemoBearerToken());
   const googleAuthUrl = useMemo(() => getGoogleAuthUrl(nextPath), [nextPath]);
@@ -32,7 +33,7 @@ export default function LoginPage() {
         password,
       });
       setStoredAuthToken(session.token);
-      router.replace(nextPath);
+      router.replace(await resolvePostLoginPath(nextPath));
     } catch (loginError) {
       setError(loginError instanceof Error ? loginError.message : "Unable to sign in.");
     } finally {
@@ -51,7 +52,7 @@ export default function LoginPage() {
       setSubmitting(true);
       setError(null);
       setStoredAuthToken(token);
-      router.replace(nextPath);
+      router.replace(await resolvePostLoginPath(nextPath));
     } catch (loginError) {
       setError(loginError instanceof Error ? loginError.message : "Unable to store the demo token.");
     } finally {

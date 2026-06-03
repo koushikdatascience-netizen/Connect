@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 
 import { clearStoredAuthToken, fetchSession } from "@/lib/api";
 import { SessionState, SessionStateContext } from "@/components/session-state";
+import { resolvePostLoginPath } from "@/lib/post-login";
 
 const PUBLIC_PATHS = new Set([
   "/login",
@@ -71,9 +72,9 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
         if ((pathname === "/login" || pathname === "/webview-auth") && isAuthenticated) {
           const nextPath =
             typeof window !== "undefined"
-              ? new URLSearchParams(window.location.search).get("next") || "/compose"
-              : "/compose";
-          router.replace(nextPath);
+              ? new URLSearchParams(window.location.search).get("next") || "/post-login"
+              : "/post-login";
+          router.replace(await resolvePostLoginPath(nextPath));
           return;
         }
         setReady(true);

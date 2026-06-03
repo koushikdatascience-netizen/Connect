@@ -16,7 +16,7 @@ export default function RegisterPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const googleAuthUrl = getGoogleAuthUrl("/compose");
+  const googleAuthUrl = getGoogleAuthUrl("/post-login");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
