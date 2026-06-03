@@ -71,8 +71,8 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
         if ((pathname === "/login" || pathname === "/webview-auth") && isAuthenticated) {
           const nextPath =
             typeof window !== "undefined"
-              ? new URLSearchParams(window.location.search).get("next") || "/"
-              : "/";
+              ? new URLSearchParams(window.location.search).get("next") || "/compose"
+              : "/compose";
           router.replace(nextPath);
           return;
         }

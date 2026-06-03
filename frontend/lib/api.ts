@@ -86,7 +86,7 @@ export function getDemoBearerToken() {
   return DEMO_BEARER_TOKEN;
 }
 
-export function getGoogleAuthUrl(nextPath = "/") {
+export function getGoogleAuthUrl(nextPath = "/compose") {
   const authUrl = GOOGLE_AUTH_URL || `${API_BASE_URL}/api/v1/auth/google/login`;
 
   try {

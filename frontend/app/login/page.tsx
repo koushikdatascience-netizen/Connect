@@ -17,7 +17,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const nextPath = useMemo(() => searchParams.get("next") || "/", [searchParams]);
+  const nextPath = useMemo(() => searchParams.get("next") || "/compose", [searchParams]);
   const approvalNotice = useMemo(() => searchParams.get("approval"), [searchParams]);
   const hasDemoToken = Boolean(getDemoBearerToken());
   const googleAuthUrl = useMemo(() => getGoogleAuthUrl(nextPath), [nextPath]);
