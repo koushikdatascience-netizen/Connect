@@ -204,7 +204,7 @@ export function PostEditor({
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="sticky top-0 z-10 rounded-2xl border border-[#eadfcb] bg-[#fffdf8]/95 px-3 py-2 shadow-sm backdrop-blur md:static md:z-auto"
+          className="rounded-2xl border border-[#eadfcb] bg-[#fffdf8]/95 px-3 py-2 shadow-sm backdrop-blur"
         >
           <div className="flex items-center gap-2 overflow-x-auto">
             <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wider text-[#9b7b3f]">
