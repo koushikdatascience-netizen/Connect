@@ -816,7 +816,7 @@ export function CreatePostStudio() {
 
         {/* LEFT — Accounts */}
         <div
-          className={`h-full min-h-0 w-full overflow-y-auto bg-white pb-[8.5rem] md:w-[260px] md:border-r md:pb-0 ${
+          className={`h-full min-h-0 w-full overflow-y-auto bg-white pb-3 md:w-[260px] md:border-r md:pb-0 ${
             mobileTab === "accounts" ? "block" : "hidden md:block"
           }`}
         >
@@ -842,7 +842,7 @@ export function CreatePostStudio() {
 
         {/* CENTER — Compose */}
         <div
-          className={`h-full min-h-0 w-full flex-col overflow-y-auto bg-white pb-[8.5rem] md:flex-1 md:pb-0 ${
+          className={`h-full min-h-0 w-full flex-col overflow-y-auto bg-white pb-3 md:flex-1 md:pb-0 ${
             mobileTab === "compose" ? "flex" : "hidden md:flex"
           }`}
         >
@@ -869,7 +869,7 @@ export function CreatePostStudio() {
 
         {/* RIGHT — Settings */}
         <div
-          className={`h-full min-h-0 w-full overflow-y-auto bg-white pb-[8.5rem] md:w-[300px] md:border-l md:pb-0 ${
+          className={`h-full min-h-0 w-full overflow-y-auto bg-white pb-3 md:w-[300px] md:border-l md:pb-0 ${
             mobileTab === "settings" ? "block" : "hidden md:block"
           }`}
         >
@@ -904,7 +904,7 @@ export function CreatePostStudio() {
       />
 
       {/* POST BUTTON BAR */}
-      <div className="fixed inset-x-3 bottom-[5.35rem] z-30 flex shrink-0 flex-col gap-1.5 rounded-2xl border border-[#eadfcb] bg-[#fffef9]/95 px-3 py-2 shadow-[0_-4px_22px_rgba(83,62,16,0.16)] backdrop-blur sm:bottom-[6.1rem] sm:flex-row sm:items-center sm:justify-between sm:gap-2.5 sm:px-5 sm:py-3 md:static md:z-auto md:rounded-none md:border-x-0 md:border-b-0 md:bg-[#fffef9] md:shadow-[0_-4px_18px_rgba(180,144,34,0.08)] md:backdrop-blur-0">
+      <div className="z-20 mx-3 mb-2 mt-2 flex shrink-0 flex-col gap-1.5 rounded-2xl border border-[#eadfcb] bg-[#fffef9]/95 px-3 py-2 shadow-[0_-4px_22px_rgba(83,62,16,0.16)] backdrop-blur sm:mx-4 sm:mb-3 sm:flex-row sm:items-center sm:justify-between sm:gap-2.5 sm:px-5 sm:py-3 md:mx-0 md:mb-0 md:mt-0 md:rounded-none md:border-x-0 md:border-b-0 md:bg-[#fffef9] md:shadow-[0_-4px_18px_rgba(180,144,34,0.08)] md:backdrop-blur-0">
         <div className="min-w-0 truncate text-[10px] leading-4 text-[#9b7b3f] sm:text-xs">
           {blockingValidationItems.length > 0
             ? `${blockingValidationItems.length} platform requirement${
