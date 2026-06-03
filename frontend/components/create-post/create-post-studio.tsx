@@ -812,11 +812,11 @@ export function CreatePostStudio() {
       </div>
 
       {/* PANELS */}
-      <div className="flex flex-col md:min-h-0 md:flex-1 md:flex-row md:overflow-hidden">
+      <div className="min-h-0 flex-1 overflow-hidden md:flex md:flex-row">
 
         {/* LEFT — Accounts */}
         <div
-          className={`w-full bg-white md:min-h-0 md:w-[260px] md:overflow-y-auto md:border-r ${
+          className={`h-full min-h-0 w-full overflow-y-auto bg-white md:w-[260px] md:border-r ${
             mobileTab === "accounts" ? "block" : "hidden md:block"
           }`}
         >
@@ -842,7 +842,7 @@ export function CreatePostStudio() {
 
         {/* CENTER — Compose */}
         <div
-          className={`w-full flex-col bg-white md:min-h-0 md:flex-1 md:overflow-y-auto ${
+          className={`h-full min-h-0 w-full flex-col overflow-y-auto bg-white md:flex-1 ${
             mobileTab === "compose" ? "flex" : "hidden md:flex"
           }`}
         >
@@ -869,7 +869,7 @@ export function CreatePostStudio() {
 
         {/* RIGHT — Settings */}
         <div
-          className={`w-full bg-white md:min-h-0 md:w-[300px] md:overflow-y-auto md:border-l ${
+          className={`h-full min-h-0 w-full overflow-y-auto bg-white md:w-[300px] md:border-l ${
             mobileTab === "settings" ? "block" : "hidden md:block"
           }`}
         >
