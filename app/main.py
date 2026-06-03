@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse
 import app.db.models  # noqa: F401
 from app.core.config import get_settings
 from app.core.logging import configure_logging, get_logger
+from app.core.security_controls import apply_security_headers
 from app.middleware.jwt_context import jwt_context_middleware
 
 configure_logging()
@@ -48,6 +49,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def security_headers_middleware(request: Request, call_next):
+    response = await call_next(request)
+    apply_security_headers(response)
+    return response
 
 
 app.middleware("http")(jwt_context_middleware)
@@ -108,6 +116,7 @@ async def request_id_middleware(request: Request, call_next):
         
         # Add request_id to response headers
         response.headers["X-Request-ID"] = request_id
+        apply_security_headers(response)
         
         duration_ms = (time.perf_counter() - started) * 1000
         logger.info(
@@ -136,10 +145,12 @@ async def request_id_middleware(request: Request, call_next):
             }
         )
         
-        return JSONResponse(
+        response = JSONResponse(
             status_code=500,
             content={
                 "detail": "Internal server error",
                 "request_id": request_id,  # User can report this for debugging
             },
         )
+        apply_security_headers(response)
+        return response

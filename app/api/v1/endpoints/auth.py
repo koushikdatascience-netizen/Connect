@@ -6,13 +6,14 @@ from typing import Any, Dict, List, Optional
 from urllib.parse import urlencode
 
 import requests
-from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.core.auth import CurrentUser, create_bearer_token
 from app.core.config import get_settings
+from app.core.security_controls import enforce_rate_limit
 from app.core.redis_client import redis_client
 from app.db.database import SessionLocal
 from app.models.connect_user import ConnectUser
@@ -322,7 +323,8 @@ def _deserialize_webview_payload(raw: str) -> Dict[str, Any]:
 
 
 @router.get("/google/login")
-def google_auth_login(next: Optional[str] = Query(default="/")):
+def google_auth_login(request: Request, next: Optional[str] = Query(default="/")):
+    enforce_rate_limit(request, "auth_google_login", settings.RATE_LIMIT_OAUTH_START_PER_MINUTE, 60)
     nonce = secrets.token_urlsafe(24)
     payload = json.dumps({"next": _safe_frontend_next(next)})
     try:
@@ -411,7 +413,8 @@ def read_session(
 
 
 @router.post("/register", response_model=RegisterResponse, status_code=status.HTTP_201_CREATED)
-def register(payload: RegisterRequest, db: Session = Depends(_db_session)):
+def register(payload: RegisterRequest, request: Request, db: Session = Depends(_db_session)):
+    enforce_rate_limit(request, "auth_register", settings.RATE_LIMIT_LOGIN_PER_MINUTE, 60)
     if not settings.CONNECT_PUBLIC_REGISTRATION_ENABLED:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Registration is currently closed.")
     if payload.password != payload.confirm_password:
@@ -458,7 +461,8 @@ def verify_email(payload: TokenRequest, db: Session = Depends(_db_session)):
 
 
 @router.post("/login", response_model=LoginResponse)
-def login(payload: LoginRequest, response: Response, db: Session = Depends(_db_session)):
+def login(payload: LoginRequest, request: Request, response: Response, db: Session = Depends(_db_session)):
+    enforce_rate_limit(request, "auth_login", settings.RATE_LIMIT_LOGIN_PER_MINUTE, 60)
     user = get_user_by_email(db, payload.email)
     if not user or not verify_password(payload.password, user.password_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password.")
@@ -479,7 +483,8 @@ def login(payload: LoginRequest, response: Response, db: Session = Depends(_db_s
 
 
 @router.post("/forgot-password")
-def forgot_password(payload: ForgotPasswordRequest, db: Session = Depends(_db_session)):
+def forgot_password(payload: ForgotPasswordRequest, request: Request, db: Session = Depends(_db_session)):
+    enforce_rate_limit(request, "auth_forgot_password", settings.RATE_LIMIT_PASSWORD_RESET_PER_HOUR, 3600)
     user = get_user_by_email(db, payload.email)
     if user:
         token = create_auth_token(db, user.id, "password_reset", settings.CONNECT_PASSWORD_RESET_TTL_MINUTES)
@@ -497,7 +502,8 @@ def forgot_password(payload: ForgotPasswordRequest, db: Session = Depends(_db_se
 
 
 @router.post("/reset-password")
-def reset_password(payload: ResetPasswordRequest, db: Session = Depends(_db_session)):
+def reset_password(payload: ResetPasswordRequest, request: Request, db: Session = Depends(_db_session)):
+    enforce_rate_limit(request, "auth_reset_password", settings.RATE_LIMIT_PASSWORD_RESET_PER_HOUR, 3600)
     if payload.password != payload.confirm_password:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Passwords do not match.")
     user = consume_auth_token(db, payload.token, "password_reset")

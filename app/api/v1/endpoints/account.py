@@ -1,9 +1,10 @@
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 
 import requests
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.core.security_controls import assert_public_https_url
 from app.crud.account import (
     create_account,
     delete_account,
@@ -37,7 +38,27 @@ def _normalize_wordpress_site_url(site_url: str) -> str:
         )
     if not normalized.startswith(("http://", "https://")):
         normalized = f"https://{normalized}"
-    return normalized.rstrip("/")
+    normalized = normalized.rstrip("/")
+    assert_public_https_url(normalized)
+    return normalized
+
+
+def _get_public_wordpress_url(url: str, **kwargs) -> requests.Response:
+    current_url = url
+    for _ in range(4):
+        assert_public_https_url(current_url)
+        response = requests.get(current_url, allow_redirects=False, timeout=30, **kwargs)
+        if response.is_redirect:
+            location = response.headers.get("Location")
+            if not location:
+                break
+            current_url = urljoin(current_url, location)
+            continue
+        return response
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail="Unable to verify the WordPress site redirect chain.",
+    )
 
 
 @router.post("/", response_model=AccountRead, status_code=status.HTTP_201_CREATED)
@@ -66,10 +87,9 @@ def connect_wordpress_site(
             detail="WordPress username and application password are required",
         )
 
-    me_response = requests.get(
+    me_response = _get_public_wordpress_url(
         f"{site_url}/wp-json/wp/v2/users/me",
         auth=(username, application_password),
-        timeout=30,
     )
     if me_response.status_code in {401, 403}:
         raise HTTPException(
@@ -82,9 +102,8 @@ def connect_wordpress_site(
             detail=f"Unable to verify the WordPress site. Status: {me_response.status_code}",
         )
 
-    site_response = requests.get(
+    site_response = _get_public_wordpress_url(
         f"{site_url}/wp-json",
-        timeout=30,
     )
     site_name = data.account_name.strip() if data.account_name else ""
     if site_response.ok:

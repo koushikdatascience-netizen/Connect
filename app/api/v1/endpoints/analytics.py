@@ -1,9 +1,11 @@
 from datetime import date, datetime, timedelta
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.orm import Session
 
+from app.core.config import get_settings
+from app.core.security_controls import enforce_rate_limit
 from app.schemas.analytics import (
     AnalyticsHeatmapCell,
     AnalyticsOverviewResponse,
@@ -25,6 +27,7 @@ from app.services.analytics_service import (
 from app.utils.deps import get_db, get_tenant
 
 router = APIRouter()
+settings = get_settings()
 
 
 def _default_start_date() -> date:
@@ -160,10 +163,12 @@ def analytics_topics(
 
 @router.post("/sync", response_model=AnalyticsSyncResponse)
 def analytics_sync_now(
+    request: Request,
     platforms: Optional[str] = None,
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant),
 ):
+    enforce_rate_limit(request, "analytics_sync", settings.RATE_LIMIT_ANALYTICS_SYNC_PER_HOUR, 3600)
     run = sync_tenant_analytics(
         db,
         tenant_id,

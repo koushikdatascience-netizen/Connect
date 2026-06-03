@@ -51,6 +51,14 @@ class Settings(BaseSettings):
     SESSION_COOKIE_NAME: str = "snapkey_session"
     SESSION_COOKIE_SECURE: bool = True
     SESSION_COOKIE_SAMESITE: str = "lax"
+    RATE_LIMIT_ENABLED: bool = True
+    RATE_LIMIT_LOGIN_PER_MINUTE: int = 10
+    RATE_LIMIT_PASSWORD_RESET_PER_HOUR: int = 5
+    RATE_LIMIT_OAUTH_START_PER_MINUTE: int = 20
+    RATE_LIMIT_UPLOAD_PER_MINUTE: int = 20
+    RATE_LIMIT_PUBLISH_PER_MINUTE: int = 30
+    RATE_LIMIT_ANALYTICS_SYNC_PER_HOUR: int = 10
+    MEDIA_MAX_UPLOAD_BYTES: int = 100 * 1024 * 1024
 
     # Snapkey Connect registration / beta access
     CONNECT_PUBLIC_REGISTRATION_ENABLED: bool = True

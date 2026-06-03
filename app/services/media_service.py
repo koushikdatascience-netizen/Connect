@@ -21,6 +21,15 @@ cloudinary.config(
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
 VIDEO_EXTENSIONS = {".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v"}
+ALLOWED_IMAGE_MIME_TYPES = {"image/jpeg", "image/png", "image/gif", "image/webp"}
+ALLOWED_VIDEO_MIME_TYPES = {
+    "video/mp4",
+    "video/quicktime",
+    "video/x-msvideo",
+    "video/x-matroska",
+    "video/webm",
+    "video/x-m4v",
+}
 
 
 def _detect_file_type(content_type: Optional[str], filename: Optional[str]) -> str:
@@ -91,6 +100,34 @@ def create_media_from_upload(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="File name is required",
+        )
+
+    suffix = Path(file.filename).suffix.lower()
+    content_type = (file.content_type or "").lower()
+    file_type = _detect_file_type(content_type, file.filename)
+    if file_type == "raw":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unsupported media type. Upload an image or video file.",
+        )
+    if file_type == "image" and (suffix not in IMAGE_EXTENSIONS or content_type not in ALLOWED_IMAGE_MIME_TYPES):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unsupported image type.",
+        )
+    if file_type == "video" and (suffix not in VIDEO_EXTENSIONS or content_type not in ALLOWED_VIDEO_MIME_TYPES):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unsupported video type.",
+        )
+
+    file.file.seek(0, 2)
+    size = file.file.tell()
+    file.file.seek(0)
+    if size > settings.MEDIA_MAX_UPLOAD_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="Media file is too large.",
         )
 
     uploaded = upload_to_cloudinary(file, tenant_id)

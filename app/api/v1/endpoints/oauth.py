@@ -11,6 +11,7 @@ import json
 import time
 from app.core.config import get_settings
 from app.core.logging import get_logger
+from app.core.security_controls import enforce_rate_limit
 from app.core.redis_client import redis_client
 from app.services.oauth_service import save_social_account
 from app.services.connect_access_service import ensure_user_can_connect_accounts
@@ -94,6 +95,7 @@ def _validate_and_extract_state(state: str):
 
 def _get_tenant_and_user(request: Request):
     """Extract tenant_id and user_id from the JWT-populated request context."""
+    enforce_rate_limit(request, "oauth_start", settings.RATE_LIMIT_OAUTH_START_PER_MINUTE, 60)
     context = getattr(request.state, "request_context", None)
 
     tenant_id = getattr(context, "tenant_id", None) if context else None

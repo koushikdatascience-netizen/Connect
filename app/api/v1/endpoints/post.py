@@ -36,10 +36,13 @@ from app.services.provider_publishers import (
 )
 from app.services.connect_access_service import ensure_user_can_publish
 from app.worker.celery_app import celery_app
+from app.core.config import get_settings
 from app.core.logging import get_logger
+from app.core.security_controls import enforce_rate_limit
 
 router = APIRouter()
 logger = get_logger("app.api.posts")
+settings = get_settings()
 
 
 def _is_future_timestamp(value):
@@ -175,6 +178,7 @@ def process_overdue_posts(
     Manually trigger processing of all overdue scheduled/queued posts.
     Useful when the worker was down and posts didn't get published on time.
     """
+    enforce_rate_limit(request, "publish_process_overdue", settings.RATE_LIMIT_PUBLISH_PER_MINUTE, 60)
     ensure_user_can_publish(tenant_id)
     posts = list_posts(db, tenant_id)
     now = datetime.now(timezone.utc)
@@ -230,6 +234,7 @@ def create(
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant),
 ):
+    enforce_rate_limit(request, "publish_create", settings.RATE_LIMIT_PUBLISH_PER_MINUTE, 60)
     ensure_user_can_publish(tenant_id)
     try:
         post = create_post(db, tenant_id, data)
@@ -457,6 +462,7 @@ def publish_now(
     db: Session = Depends(get_db),
     tenant_id: str = Depends(get_tenant),
 ):
+    enforce_rate_limit(request, "publish_now", settings.RATE_LIMIT_PUBLISH_PER_MINUTE, 60)
     ensure_user_can_publish(tenant_id)
     post = get_post(db, tenant_id, post_id)
     if not post:
