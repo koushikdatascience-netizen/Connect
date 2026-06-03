@@ -24,7 +24,6 @@ Next.js-based frontend for the SocialSync social media scheduling platform.
    Edit `.env.local` and update:
    ```env
    NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000
-   NEXT_PUBLIC_TENANT_ID=tenant_123
    ```
 
 3. **Start the development server:**
@@ -61,9 +60,7 @@ Next.js-based frontend for the SocialSync social media scheduling platform.
 3. **Set Environment Variables in Vercel Dashboard:**
    ```
    NEXT_PUBLIC_API_BASE_URL=https://your-production-api.com
-   NEXT_PUBLIC_TENANT_ID=your_tenant_id
    NEXT_PUBLIC_AUTH_TOKEN_STORAGE_KEY=snapkey_jwt
-   NEXT_PUBLIC_DEBUG_BEARER_TOKEN=your_raw_jwt_if_needed
    ```
 
 4. **Deploy:**
@@ -93,9 +90,7 @@ docker run -p 3000:3000 socialsync-frontend
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `NEXT_PUBLIC_API_BASE_URL` | Backend API URL | `http://localhost:8000` |
-| `NEXT_PUBLIC_TENANT_ID` | Multi-tenant identifier | `tenant_123` |
 | `NEXT_PUBLIC_AUTH_TOKEN_STORAGE_KEY` | JWT storage key | `snapkey_jwt` |
-| `NEXT_PUBLIC_DEBUG_BEARER_TOKEN` | Optional demo login JWT | empty |
 
 ### API Integration
 

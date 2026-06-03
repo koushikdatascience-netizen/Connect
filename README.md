@@ -144,9 +144,7 @@ Update `frontend/.env.local`:
 
 ```env
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
-NEXT_PUBLIC_TENANT_ID=tenant_123
 NEXT_PUBLIC_AUTH_TOKEN_STORAGE_KEY=snapkey_jwt
-NEXT_PUBLIC_DEBUG_BEARER_TOKEN=<raw_jwt_if_using_demo_login>
 ```
 
 Important:

@@ -48,7 +48,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
     WEBVIEW_AUTH_CODE_TTL_SECONDS: int = 60
     SESSION_COOKIE_NAME: str = "snapkey_session"
-    SESSION_COOKIE_SECURE: bool = False
+    SESSION_COOKIE_SECURE: bool = True
     SESSION_COOKIE_SAMESITE: str = "lax"
 
     # Snapkey Connect registration / beta access
@@ -71,7 +71,7 @@ class Settings(BaseSettings):
 
     # Auth / JWT
     AUTH_REQUIRED: bool = True
-    ALLOW_DEV_TENANT_HEADER: bool = True
+    ALLOW_DEV_TENANT_HEADER: bool = False
     ALLOW_PUBLIC_OAUTH_LOGIN: bool = False
     JWT_ALGORITHM: str = "HS256"
     JWT_SECRET: Optional[str] = None

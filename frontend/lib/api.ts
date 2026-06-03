@@ -15,7 +15,6 @@ import {
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
-const TENANT_ID = process.env.NEXT_PUBLIC_TENANT_ID ?? "tenant_123";
 const TOKEN_STORAGE_KEY =
   process.env.NEXT_PUBLIC_AUTH_TOKEN_STORAGE_KEY ?? "snapkey_jwt";
 const DEMO_BEARER_TOKEN = process.env.NEXT_PUBLIC_DEBUG_BEARER_TOKEN ?? "";
@@ -101,20 +100,18 @@ export function getGoogleAuthUrl(nextPath = "/compose") {
 function getRuntimeTenantId() {
   const token = getAuthToken();
   if (token) {
-    return readTenantClaim(token) ?? TENANT_ID;
+    return readTenantClaim(token);
   }
-  return TENANT_ID;
+  return null;
 }
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const token = getAuthToken();
-  const tenantId = getRuntimeTenantId();
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     credentials: "include",
     headers: {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(!token ? { "X-Tenant-ID": tenantId } : {}),
       ...(init?.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
       ...(init?.headers ?? {}),
     },
@@ -200,7 +197,7 @@ export function logoutSession() {
 
 export function getOAuthLoginUrl(platform: string) {
   const oauthPlatform = platform === "youtube" ? "google" : platform;
-  return `${API_BASE_URL}/api/v1/oauth/${oauthPlatform}/login?tenant_id=${getRuntimeTenantId()}`;
+  return `${API_BASE_URL}/api/v1/oauth/${oauthPlatform}/login`;
 }
 
 export async function beginOAuthLogin(
@@ -382,7 +379,6 @@ export function uploadMediaWithProgress(
   onProgress?: (progress: { loaded: number; total: number | null; percent: number | null }) => void,
 ) {
   const token = getAuthToken();
-  const tenantId = getRuntimeTenantId();
 
   return new Promise<MediaAsset>((resolve, reject) => {
     const request = new XMLHttpRequest();
@@ -391,8 +387,6 @@ export function uploadMediaWithProgress(
 
     if (token) {
       request.setRequestHeader("Authorization", `Bearer ${token}`);
-    } else {
-      request.setRequestHeader("X-Tenant-ID", tenantId);
     }
 
     request.upload.onprogress = (event) => {
