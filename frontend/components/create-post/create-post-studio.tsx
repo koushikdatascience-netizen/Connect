@@ -779,7 +779,7 @@ export function CreatePostStudio() {
   }
 
   return (
-    <main className="flex h-full min-h-0 flex-col overflow-hidden">
+    <main className="flex h-full min-h-0 flex-col overflow-hidden pb-[4.5rem] sm:pb-[5rem] lg:pb-0">
       <div className="shrink-0 px-3 pt-3 md:px-5 md:pt-4">
         <PendingApprovalBanner compact />
       </div>

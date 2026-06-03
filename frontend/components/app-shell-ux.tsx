@@ -110,7 +110,7 @@ export function AppShellUx({ children }: { children: ReactNode }) {
         </div>
       ) : null}
 
-      <div className="mx-auto flex min-h-screen w-full max-w-[1440px] gap-4 px-3 pb-20 pt-5 sm:px-4 sm:pb-24 lg:px-6 lg:pb-5">
+      <div className="mx-auto flex min-h-screen w-full max-w-[1440px] gap-4 overflow-x-hidden px-3 pb-20 pt-5 sm:px-4 sm:pb-24 lg:px-6 lg:pb-5">
         <aside className="hidden w-[220px] shrink-0 lg:block">
           <div className="sticky top-5 flex h-[calc(100vh-2.5rem)] flex-col justify-between rounded-[28px] border border-[#2b2414] bg-[#0b0b0b] p-4 shadow-[0_24px_64px_rgba(0,0,0,0.42)]">
             <div>
@@ -146,7 +146,7 @@ export function AppShellUx({ children }: { children: ReactNode }) {
         </div>
       </div>
 
-      <nav className="fixed inset-x-2 bottom-2 z-40 rounded-[22px] border border-[#2b2414] bg-[rgba(10,10,10,0.96)] p-1.5 shadow-[0_18px_40px_rgba(0,0,0,0.3)] backdrop-blur sm:inset-x-4 sm:bottom-4 sm:rounded-[26px] sm:p-2 lg:hidden">
+      <nav className="fixed inset-x-2 bottom-2 z-40 max-w-[calc(100vw-1rem)] rounded-[22px] border border-[#2b2414] bg-[rgba(10,10,10,0.96)] p-1.5 shadow-[0_18px_40px_rgba(0,0,0,0.3)] backdrop-blur sm:inset-x-4 sm:bottom-4 sm:max-w-[calc(100vw-2rem)] sm:rounded-[26px] sm:p-2 lg:hidden">
         <div className="grid grid-cols-4 gap-1">
           {visibleNavigation.slice(0, 4).map((item) => {
             const active =
