@@ -156,7 +156,7 @@ export default function PostsStudio() {
         <div className="rounded-[30px] border border-[#1e2535] bg-[linear-gradient(135deg,rgba(255,255,255,0.92)_0%,rgba(255,250,240,0.96)_52%,rgba(255,245,221,0.9)_100%)] p-4 shadow-[0_18px_48px_rgba(24,24,24,0.08)] sm:p-5 lg:p-6">
           <div className="grid gap-5 xl:grid-cols-[minmax(0,1.55fr)_320px]">
             <div className="space-y-5">
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <h1 className="font-display text-3xl font-semibold tracking-[-0.06em] text-ink-900">Scheduled Posts</h1>
                   <p className="mt-1 text-sm leading-5 text-ink-600">Manage queued, posted, and failed posts.</p>
@@ -235,7 +235,7 @@ export default function PostsStudio() {
                             )}
                           </div>
                           <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusTone(post.status)}`}>{post.status}</span>
-                          <div className="flex gap-2">
+                          <div className="hidden shrink-0 gap-2 sm:flex">
                             <button
                               type="button"
                               onClick={(event) => {
@@ -358,7 +358,7 @@ export default function PostsStudio() {
               </div>
             </div>
 
-            <aside className="rounded-[26px] border border-[#eadfcd] bg-[#fffef9] p-4 shadow-[0_10px_24px_rgba(180,144,34,0.08)] sm:p-5">
+           <aside className={`rounded-[26px] border border-[#eadfcd] bg-[#fffef9] p-4 shadow-[0_10px_24px_rgba(180,144,34,0.08)] sm:p-5 ${selectedPost ? "block" : "hidden xl:block"}`}>
               <div className="mb-4 flex items-center justify-between">
                 <div className="text-xl font-semibold text-ink-900">Post Details</div>
                 <button type="button" className="text-ink-400 hover:text-ink-900">×</button>
