@@ -769,6 +769,9 @@ export function CreatePostStudio() {
     !isPendingApproval &&
     !submitting &&
     blockingValidationItems.length === 0;
+  const primaryBlockingItem =
+    blockingValidationItems.find((item) => item.fixTarget) ?? blockingValidationItems[0];
+  const extraBlockingCount = Math.max(0, blockingValidationItems.length - 1);
 
   /* ---------------- UI ---------------- */
 
@@ -904,21 +907,53 @@ export function CreatePostStudio() {
       />
 
       {/* POST BUTTON BAR */}
-      <div className="z-20 mx-3 mb-2 mt-2 flex shrink-0 flex-col gap-1.5 rounded-2xl border border-[#eadfcb] bg-[#fffef9]/95 px-3 py-2 shadow-[0_-4px_22px_rgba(83,62,16,0.16)] backdrop-blur sm:mx-4 sm:mb-3 sm:flex-row sm:items-center sm:justify-between sm:gap-2.5 sm:px-5 sm:py-3 md:mx-0 md:mb-0 md:mt-0 md:rounded-none md:border-x-0 md:border-b-0 md:bg-[#fffef9] md:shadow-[0_-4px_18px_rgba(180,144,34,0.08)] md:backdrop-blur-0">
-        <div className="min-w-0 truncate text-[10px] leading-4 text-[#9b7b3f] sm:text-xs">
-          {blockingValidationItems.length > 0
-            ? `${blockingValidationItems.length} platform requirement${
-                blockingValidationItems.length === 1 ? "" : "s"
-              } still need attention`
-            : totalSelectedAccounts > 0
-            ? `Publishing to ${totalSelectedAccounts} account${
-                totalSelectedAccounts !== 1 ? "s" : ""
-              } across ${selectedPlatforms.length} platform${
-                selectedPlatforms.length !== 1 ? "s" : ""
-              }`
-            : accounts.length === 0
-            ? "Connect a social account before publishing"
-            : "Select accounts to publish"}
+      <div className="z-20 mx-3 mb-2 mt-2 flex shrink-0 flex-col gap-2 rounded-2xl border border-[#eadfcb] bg-[#fffef9]/95 px-3 py-2 shadow-[0_-4px_22px_rgba(83,62,16,0.16)] backdrop-blur sm:mx-4 sm:mb-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-5 sm:py-3 md:mx-0 md:mb-0 md:mt-0 md:rounded-none md:border-x-0 md:border-b-0 md:bg-[#fffef9] md:shadow-[0_-4px_18px_rgba(180,144,34,0.08)] md:backdrop-blur-0">
+        <div className="min-w-0 flex-1">
+          {isPendingApproval ? (
+            <div className="rounded-xl border border-[#f0d2ca] bg-[#fff8f2] px-3 py-2 text-[11px] font-medium leading-4 text-[#7c3f36] sm:text-xs">
+              <span className="font-bold text-[#5b271f]">Publishing locked:</span> activation is required first.
+            </div>
+          ) : primaryBlockingItem ? (
+            <div className="flex min-w-0 items-center gap-2 rounded-xl border border-[#f0d2ca] bg-[#fff8f2] px-2.5 py-2 text-[#7c3f36] sm:px-3">
+              <div className="min-w-0 flex-1">
+                <div className="mb-0.5 flex items-center gap-1.5">
+                  <span className="rounded-full bg-[#b25a4f] px-1.5 py-0.5 text-[9px] font-bold uppercase leading-none tracking-[0.08em] text-white">
+                    {blockingValidationItems.length} issue{blockingValidationItems.length === 1 ? "" : "s"}
+                  </span>
+                  {extraBlockingCount > 0 ? (
+                    <span className="text-[10px] font-semibold text-[#a05a4f]">
+                      +{extraBlockingCount} more
+                    </span>
+                  ) : null}
+                </div>
+                <div className="truncate text-[11px] leading-4 sm:text-xs">
+                  <span className="font-bold text-[#5b271f]">{primaryBlockingItem.label}:</span>{" "}
+                  {primaryBlockingItem.message}
+                </div>
+              </div>
+              {primaryBlockingItem.fixTarget ? (
+                <button
+                  type="button"
+                  onClick={() => jumpToValidationFix(primaryBlockingItem)}
+                  className="shrink-0 rounded-full bg-[#ffd52a] px-3 py-1.5 text-[11px] font-bold text-[#271d02] shadow-[0_4px_12px_rgba(255,213,42,0.22)] transition-colors hover:bg-[#ffe566] sm:text-xs"
+                >
+                  Fix now
+                </button>
+              ) : null}
+            </div>
+          ) : (
+            <div className="truncate text-[10px] leading-4 text-[#9b7b3f] sm:text-xs">
+              {totalSelectedAccounts > 0
+                ? `Publishing to ${totalSelectedAccounts} account${
+                    totalSelectedAccounts !== 1 ? "s" : ""
+                  } across ${selectedPlatforms.length} platform${
+                    selectedPlatforms.length !== 1 ? "s" : ""
+                  }`
+                : accounts.length === 0
+                ? "Connect a social account before publishing"
+                : "Select accounts to publish"}
+            </div>
+          )}
         </div>
         <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-row">
         <motion.button
@@ -978,44 +1013,6 @@ export function CreatePostStudio() {
         </motion.button>
         </div>
       </div>
-
-      {isPendingApproval ? (
-        <div className="order-3 max-h-[18dvh] shrink-0 overflow-y-auto border-t border-[#f1dacd] bg-[#fff8f2] px-3 py-2 sm:max-h-none sm:px-5 sm:py-4">
-          <div className="rounded-xl border border-[#f0d2ca] bg-white px-3 py-2 text-xs leading-5 text-[#7c3f36] sm:rounded-2xl sm:px-4 sm:py-3 sm:text-sm">
-            <span className="font-semibold text-[#5b271f]">Publishing locked:</span> Account activation is required before connecting accounts or publishing.
-          </div>
-        </div>
-      ) : blockingValidationItems.length > 0 && (
-        <div className="order-3 max-h-[18dvh] shrink-0 overflow-y-auto border-t border-[#f1dacd] bg-[#fff8f2] px-3 py-2 sm:max-h-none sm:px-5 sm:py-4">
-          <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#b25a4f] sm:mb-2 sm:text-xs sm:tracking-[0.2em]">
-            Fix Before Publishing
-          </div>
-          <div className="grid gap-1.5 sm:gap-2">
-            {blockingValidationItems.map((item) => (
-              <div
-                key={item.platform}
-                className="rounded-xl border border-[#f0d2ca] bg-white px-3 py-2 text-xs leading-5 text-[#7c3f36] sm:rounded-2xl sm:px-4 sm:py-3 sm:text-sm"
-              >
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
-                  <div className="min-w-0 break-words">
-                    <span className="font-semibold text-[#5b271f]">{item.label}:</span>{" "}
-                    {item.message}
-                  </div>
-                  {item.fixTarget ? (
-                    <button
-                      type="button"
-                      onClick={() => jumpToValidationFix(item)}
-                      className="shrink-0 rounded-full border border-[#f0d2ca] bg-[#fff8f2] px-3 py-1.5 text-xs font-semibold text-[#9f4035] transition-colors hover:bg-[#fff1ea] sm:w-auto"
-                    >
-                      {item.fixTarget.actionLabel}
-                    </button>
-                  ) : null}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* SCHEDULE MODAL */}
       <AnimatePresence>
