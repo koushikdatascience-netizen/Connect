@@ -137,10 +137,6 @@ jobs:
               return 1
             fi
 
-            if [ -z "${NEXT_PUBLIC_TENANT_ID:-}" ]; then
-              echo "NEXT_PUBLIC_TENANT_ID is required for frontend production builds."
-              return 1
-            fi
           }
 
           rollback_deploy() {

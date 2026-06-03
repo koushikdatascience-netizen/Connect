@@ -100,6 +100,7 @@ jobs:
           BACKEND_PUBLIC_URL: http://127.0.0.1:8000
           FRONTEND_URL: http://localhost:3000
           AUTH_REQUIRED: "false"
+          ALLOW_DEV_TENANT_HEADER: "true"
           FACEBOOK_CLIENT_ID: ci
           FACEBOOK_SECRET: ci
           LINKEDIN_CLIENT_ID: ci
@@ -121,6 +122,7 @@ jobs:
           BACKEND_PUBLIC_URL: http://127.0.0.1:8000
           FRONTEND_URL: http://localhost:3000
           AUTH_REQUIRED: "false"
+          ALLOW_DEV_TENANT_HEADER: "true"
           FACEBOOK_CLIENT_ID: ci
           FACEBOOK_SECRET: ci
           LINKEDIN_CLIENT_ID: ci
@@ -154,6 +156,7 @@ jobs:
           BACKEND_PUBLIC_URL: http://127.0.0.1:8000
           FRONTEND_URL: http://localhost:3000
           AUTH_REQUIRED: "false"
+          ALLOW_DEV_TENANT_HEADER: "true"
           API_BASE_URL: http://127.0.0.1:8000
           API_TENANT_ID: tenant_123
           FACEBOOK_CLIENT_ID: ci
@@ -229,7 +232,6 @@ jobs:
       - name: Build frontend
         env:
           NEXT_PUBLIC_API_BASE_URL: http://127.0.0.1:8000
-          NEXT_PUBLIC_TENANT_ID: tenant_123
         run: |
           rm -rf .next .next_previous
           mkdir -p public
