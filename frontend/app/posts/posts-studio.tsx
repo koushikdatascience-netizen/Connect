@@ -77,6 +77,10 @@ function getLivePostUrl(post: Post): string | null {
   }
 }
 
+function requiresPlatformDeletion(post: Post) {
+  return post.status === "posted" && post.platform === "instagram";
+}
+
 export default function PostsStudio() {
   const router = useRouter();
   const { isPendingApproval } = useSessionState();
@@ -145,8 +149,10 @@ export default function PostsStudio() {
       setSelectedPostId((current) => (current === postId ? null : current));
       await load();
     } catch (deleteError) {
-      setDeleteNotice(null);
-      setError(deleteError instanceof Error ? deleteError.message : "Unable to delete post.");
+      setDeleteNotice({
+        tone: "warning",
+        text: deleteError instanceof Error ? deleteError.message : "Unable to delete post.",
+      });
     }
   }
 
@@ -216,6 +222,7 @@ export default function PostsStudio() {
                     {paginatedPosts.map((post) => {
                       const liveUrl = getLivePostUrl(post);
                       const actionDisabled = isPendingApproval;
+                      const platformDeleteOnly = requiresPlatformDeletion(post);
                       return (
                         <button key={post.id} type="button" onClick={() => setSelectedPostId(post.id)} className={`flex w-full items-center gap-3 rounded-[20px] border p-3 text-left transition ${selectedPostId === post.id ? "border-[#e1ca8b] bg-[#fff9e9]" : "border-[#eee4d6] bg-[#fffef9] hover:border-[#e2d4b1]"}`}>
                           <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${platformTone(post.platform)}`}>
@@ -262,24 +269,45 @@ export default function PostsStudio() {
                             >
                               {actionDisabled ? "Activation required" : "Reschedule"}
                             </button>
-                            <button
-                              type="button"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                if (!actionDisabled) {
-                                  void handleDelete(post.id);
-                                }
-                              }}
-                              disabled={actionDisabled}
-                              className="secondary-button px-3 py-2 text-xs text-[#b64e48] hover:border-[#f5d5d0] hover:bg-[#fff1ef]"
-                            >
-                              {actionDisabled ? "Activation required" : "Delete"}
-                            </button>
+                            {platformDeleteOnly ? (
+                              <button
+                                type="button"
+                                disabled
+                                title="Instagram published posts must be deleted directly in Instagram."
+                                className="secondary-button px-3 py-2 text-xs opacity-60"
+                              >
+                                Delete in Instagram
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  if (!actionDisabled) {
+                                    void handleDelete(post.id);
+                                  }
+                                }}
+                                disabled={actionDisabled}
+                                className="secondary-button px-3 py-2 text-xs text-[#b64e48] hover:border-[#f5d5d0] hover:bg-[#fff1ef]"
+                              >
+                                {actionDisabled ? "Activation required" : "Delete"}
+                              </button>
+                            )}
                             {post.status === "posted" && (
                               <>
                                 {/* FIX: "Live View" now opens the actual post in a new tab.
                                     Metrics are still accessible via the details panel on the right. */}
-                                {liveUrl ? (
+                                {liveUrl && platformDeleteOnly ? (
+                                  <a
+                                    href={liveUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="secondary-button px-3 py-2 text-xs inline-flex items-center gap-1"
+                                  >
+                                    Open in Instagram
+                                  </a>
+                                ) : liveUrl ? (
                                   <a
                                     href={liveUrl}
                                     target="_blank"
@@ -388,10 +416,26 @@ export default function PostsStudio() {
                   <div className="mt-5 space-y-3">
                     <button type="button" onClick={() => !isPendingApproval && setEditingPost(selectedPost)} disabled={isPendingApproval} className="primary-button w-full justify-center py-3 disabled:cursor-not-allowed disabled:opacity-60">{isPendingApproval ? "Activation required" : "Edit Post"}</button>
                     <button type="button" onClick={() => !isPendingApproval && setEditingPost(selectedPost)} disabled={isPendingApproval} className="secondary-button w-full justify-center py-3 disabled:cursor-not-allowed disabled:opacity-60">{isPendingApproval ? "Activation required" : "Reschedule"}</button>
-                    <button type="button" onClick={() => !isPendingApproval && void handleDelete(selectedPost.id)} disabled={isPendingApproval} className="secondary-button w-full justify-center py-3 disabled:cursor-not-allowed disabled:opacity-60">{isPendingApproval ? "Activation required" : "Delete"}</button>
+                    {requiresPlatformDeletion(selectedPost) ? (
+                      <div className="rounded-2xl border border-[#e8c88b] bg-[#fff8e1] px-4 py-3 text-sm leading-6 text-[#8a6116]">
+                        Instagram published posts must be deleted directly in Instagram. Snapkey keeps this record visible so you can still review the post status here.
+                      </div>
+                    ) : (
+                      <button type="button" onClick={() => !isPendingApproval && void handleDelete(selectedPost.id)} disabled={isPendingApproval} className="secondary-button w-full justify-center py-3 disabled:cursor-not-allowed disabled:opacity-60">{isPendingApproval ? "Activation required" : "Delete"}</button>
+                    )}
                     {selectedPost.status === "posted" && (() => {
                       const liveUrl = getLivePostUrl(selectedPost);
-                      return liveUrl ? (
+                      const platformDeleteOnly = requiresPlatformDeletion(selectedPost);
+                      return liveUrl && platformDeleteOnly ? (
+                        <a
+                          href={liveUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="secondary-button w-full justify-center py-3 inline-flex items-center gap-2"
+                        >
+                          Open in Instagram
+                        </a>
+                      ) : liveUrl ? (
                         // FIX: opens the actual live post in a new tab
                         <a
                           href={liveUrl}
