@@ -61,38 +61,23 @@ def _dispatch_publish(post_id: int, tenant_id: str, request_id: str, eta=None):
     try:
         worker_heartbeats = celery_app.control.ping(timeout=2.0)
         if not worker_heartbeats:
-            logger.error(
-                "publish.worker_ping_empty post_id=%s request_id=%s; refusing to enqueue",
+            logger.warning(
+                "publish.worker_ping_empty post_id=%s request_id=%s; enqueueing_anyway",
                 post_id,
                 request_id,
             )
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail=(
-                    "Publishing worker is offline, so the post cannot be processed right now. "
-                    "Please retry after the queue service is restored."
-                ),
+        else:
+            logger.info(
+                "publish.worker_ping_ok post_id=%s workers=%d",
+                post_id,
+                len(worker_heartbeats),
             )
-        logger.info(
-            "publish.worker_ping_ok post_id=%s workers=%d",
-            post_id,
-            len(worker_heartbeats),
-        )
-    except HTTPException:
-        raise
     except Exception as exc:
         logger.warning(
-            "publish.queue_healthcheck_failed request_id=%s error=%s; refusing to enqueue",
+            "publish.queue_healthcheck_failed request_id=%s error=%s; enqueueing_anyway",
             request_id,
             str(exc),
         )
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=(
-                "Unable to verify the publishing worker status. "
-                "Please retry once the queue service is healthy."
-            ),
-        ) from exc
 
     kwargs = {"args": [post_id, tenant_id, request_id]}
     if eta is not None:
