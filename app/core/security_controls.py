@@ -6,10 +6,12 @@ from urllib.parse import urlparse
 from fastapi import HTTPException, Request, status
 
 from app.core.config import get_settings
+from app.core.logging import get_logger
 from app.core.redis_client import redis_client
 
 
 PRIVATE_HOSTNAMES = {"localhost", "localhost.localdomain"}
+logger = get_logger("app.security_controls")
 
 
 def client_ip(request: Request) -> str:
@@ -32,10 +34,13 @@ def enforce_rate_limit(request: Request, action: str, limit: int, window_seconds
         if current == 1:
             redis_client.expire(key, window_seconds)
     except Exception as exc:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Rate limiting is temporarily unavailable. Please try again.",
-        ) from exc
+        logger.warning(
+            "rate_limit.unavailable action=%s client_ip=%s error=%s",
+            action,
+            client_ip(request),
+            exc,
+        )
+        return
 
     if current > limit:
         raise HTTPException(
