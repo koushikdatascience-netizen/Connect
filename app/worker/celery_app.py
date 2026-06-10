@@ -33,6 +33,18 @@ celery_app.conf.update(
     task_acks_late=True,  # Acknowledge tasks after completion
     worker_prefetch_multiplier=1,  # Process one task at a time
     task_reject_on_worker_lost=True,  # Requeue if worker dies
+    broker_connection_retry=True,
+    broker_connection_retry_on_startup=True,
+    broker_connection_max_retries=None,
+    result_backend_always_retry=True,
+    result_backend_max_retries=None,
+    broker_transport_options={
+        "visibility_timeout": 3600,
+        "socket_connect_timeout": 5,
+        "socket_timeout": 10,
+        "retry_on_timeout": True,
+        "health_check_interval": 30,
+    },
 )
 
 import app.worker.tasks  # noqa: E402,F401
