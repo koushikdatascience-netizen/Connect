@@ -94,9 +94,9 @@ services:
       - -c
       - |
         if [ -n "$$REDIS_PASSWORD" ]; then
-          exec redis-server --appendonly yes --protected-mode yes --requirepass "$$REDIS_PASSWORD"
+          exec redis-server --appendonly yes --protected-mode no --requirepass "$$REDIS_PASSWORD"
         fi
-        exec redis-server --appendonly yes --protected-mode yes
+        exec redis-server --appendonly yes --protected-mode no
     expose:
       - "6379"
     volumes:
