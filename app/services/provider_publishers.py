@@ -28,6 +28,13 @@ logger = get_logger("app.provider_publishers")
 settings = get_settings()
 LINKEDIN_VERSION = "202603"
 TWITTER_MEDIA_CHUNK_SIZE = 4 * 1024 * 1024
+SENSITIVE_LOG_KEYS = {
+    "access_token",
+    "authorization",
+    "client_secret",
+    "refresh_token",
+    "token",
+}
 
 # ============================================================================
 # CUSTOM EXCEPTIONS
@@ -248,6 +255,25 @@ def validate_carousel_media(media_assets: List[MediaAsset], platform: str) -> No
 # ============================================================================
 
 
+def _redact_for_log(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {
+            key: "***REDACTED***" if key.lower() in SENSITIVE_LOG_KEYS else _redact_for_log(item)
+            for key, item in value.items()
+        }
+    if isinstance(value, list):
+        return [_redact_for_log(item) for item in value]
+    return value
+
+
+def _payload_for_log(value: Any, limit: int = 2000) -> str:
+    try:
+        text = json.dumps(_redact_for_log(value), ensure_ascii=True)
+    except TypeError:
+        text = str(value)
+    return text[:limit]
+
+
 def _raise_provider_error(
     provider: str,
     response: requests.Response,
@@ -271,6 +297,8 @@ def _raise_provider_error(
     error_code = None
     error_message = str(payload)
     error_type = "unknown"
+    error_fb_subcode = None
+    logged_provider_error = False
     
     # User-friendly error message mapping
     user_friendly_messages = {
@@ -322,6 +350,17 @@ def _raise_provider_error(
             error_message = error_data.get("message", str(payload))
             error_type = error_data.get("type", "unknown")
             error_fb_subcode = error_data.get("error_subcode")
+            logger.error(
+                "provider.api_error provider=%s status_code=%s error_code=%s error_subcode=%s error_type=%s error_message=%s response=%s",
+                provider,
+                response.status_code,
+                error_code,
+                error_fb_subcode,
+                error_type,
+                error_message,
+                _payload_for_log(payload),
+            )
+            logged_provider_error = True
 
             # Map Meta API error codes to specific exceptions
             if error_code == 190:
@@ -343,6 +382,18 @@ def _raise_provider_error(
                     retryable=retryable,
                     error_code=error_code,
                 )
+
+    if not logged_provider_error:
+        logger.error(
+            "provider.api_error provider=%s status_code=%s error_code=%s error_subcode=%s error_type=%s error_message=%s response=%s",
+            provider,
+            response.status_code,
+            error_code,
+            error_fb_subcode,
+            error_type,
+            error_message,
+            _payload_for_log(payload),
+        )
 
     # Check HTTP status code for user-friendly messages
     if isinstance(payload, dict):
