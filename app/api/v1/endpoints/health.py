@@ -71,7 +71,7 @@ def queue_check():
 @router.post("/queue/dispatch-test")
 def queue_dispatch_test():
     """Dispatch a no-op task so worker logs can confirm message consumption."""
-    task = celery_app.send_task("app.worker.tasks.healthcheck_task")
+    task = celery_app.send_task("app.worker.tasks.healthcheck_task", ignore_result=True)
     return {
         "status": "queued",
         "task_id": task.id,

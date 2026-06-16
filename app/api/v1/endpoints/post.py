@@ -91,7 +91,7 @@ def _dispatch_publish(post_id: int, tenant_id: str, request_id: str, eta=None):
     )
 
     try:
-        task = celery_app.send_task("app.worker.tasks.publish_post_task", **kwargs)
+        task = celery_app.send_task("app.worker.tasks.publish_post_task", ignore_result=True, **kwargs)
         logger.info(
             "publish.task_enqueued post_id=%s task_id=%s",
             post_id,
